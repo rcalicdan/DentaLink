@@ -71,20 +71,18 @@
     <button type="{{ $type }}" {{ $attributes->merge(['class' => implode(' ', $classes)]) }}
         @if ($disabled || $loading) disabled @endif
         @foreach ($wireAttributes as $attr => $value)
-                {{ $attr }}="{{ $value }}" @endforeach
-        @if ($loading) wire:loading.attr="disabled" @endif>
+                {{ $attr }}="{{ $value }}" @endforeach>
 
         @if ($loading)
-            <i class="fas fa-spinner fa-spin mr-2" wire:loading></i>
+            <i class="fas fa-spinner fa-spin mr-2"></i>
         @elseif($icon && $iconPosition === 'left')
-            <i class="{{ $icon }} mr-2" wire:loading.remove></i>
+            <i class="{{ $icon }} mr-2"></i>
         @endif
 
-        <span @if ($loading) wire:loading.remove @endif>{{ $slot }}</span>
-        <span wire:loading wire:target="{{ $wire }}">Processing...</span>
+        {{ $slot }}
 
         @if ($icon && $iconPosition === 'right')
-            <i class="{{ $icon }} ml-2" wire:loading.remove></i>
+            <i class="{{ $icon }} ml-2"></i>
         @endif
     </button>
 @endif
