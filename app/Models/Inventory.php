@@ -6,5 +6,33 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
-    //
+    protected $table = 'inventory_items';
+
+    protected $fillable = [
+        'branch_id',
+        'item_name',
+        'category',
+        'current_stock',
+        'minimum_stock',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'current_stock' => 'integer',
+            'minimum_stock' => 'integer',
+        ];
+    }
+
+    // Relationships
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    // Check if item is low stock
+    public function getIsLowStockAttribute()
+    {
+        return $this->current_stock <= $this->minimum_stock;
+    }
 }
