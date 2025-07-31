@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRoles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -32,6 +33,21 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => 'string',
         ];
+    }
+
+    public function isSuperadmin(): bool
+    {
+        return $this->role === UserRoles::SUPER_ADMIN;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRoles::ADMIN;
+    }
+
+    public function isEmployee(): bool
+    {
+        return $this->role === UserRoles::EMPLOYEE;
     }
 
     // Relationships

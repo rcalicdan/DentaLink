@@ -4,9 +4,9 @@ namespace App\Enums;
 
 enum UserRoles: string
 {
-    case ADMIN = 'superadmin';
-    case DOCTOR = 'admin';
-    case STAFF = 'employee';
+    case SUPER_ADMIN = 'superadmin';
+    case ADMIN = 'admin';
+    case EMPLOYEE = 'employee';
 
     public static function getAllRoles(): array
     {
