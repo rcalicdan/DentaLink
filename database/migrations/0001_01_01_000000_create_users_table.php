@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRoles;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +19,7 @@ return new class extends Migration
             $table->string('first_name', 50);
             $table->string('last_name', 50);
             $table->string('phone', 20)->nullable();
-            $table->enum('role', ['superadmin', 'admin', 'employee']);
+            $table->enum('role', UserRoles::getAllRoles());
             $table->foreignId('branch_id')->nullable()->constrained('branches');
             $table->timestamps();
         });
