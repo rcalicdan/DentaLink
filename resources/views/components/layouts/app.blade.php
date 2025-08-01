@@ -1,7 +1,7 @@
 @props([
-'title' => 'Nice Smile Dental Clinic',
-'pageTitle' => 'Dashboard',
-'showBranchFilter' => true
+    'title' => 'Nice Smile Dental Clinic',
+    'pageTitle' => 'Dashboard',
+    'showBranchFilter' => true,
 ])
 
 <!DOCTYPE html>
@@ -13,16 +13,15 @@
     <meta name="description" content="Responsive admin dashboard for Nice Smile Dental Clinic.">
     <meta name="theme-color" content="#3b82f6">
     <title>{{ $title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <!-- Theme Script -->
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
+                '(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -136,8 +135,9 @@
             }
         }
     </style>
-
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+    @livewireStyles
 </head>
 
 <body class="font-sans text-slate-800 dark:text-slate-200" x-data="adminLayout()">
@@ -153,10 +153,11 @@
             x-transition:leave-end="opacity-0"></div>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col main-content" :class="{
-                 'md:ml-64': !sidebarCollapsed,
-                 'md:ml-20': sidebarCollapsed
-             }">
+        <div class="flex-1 flex flex-col main-content"
+            :class="{
+                'md:ml-64': !sidebarCollapsed,
+                'md:ml-20': sidebarCollapsed
+            }">
 
             <!-- Header -->
             <x-partials.header :page-title="$pageTitle" :show-branch-filter="$showBranchFilter" />
@@ -191,6 +192,7 @@
     </script>
 
     @stack('scripts')
+    @livewireScripts
 </body>
 
 </html>

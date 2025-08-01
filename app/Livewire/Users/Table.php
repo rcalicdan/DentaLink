@@ -5,218 +5,97 @@ namespace App\Livewire\Users;
 use App\DataTable\DataTableFactory;
 use App\Models\User;
 use App\Traits\Livewire\WithDataTable;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
+#[Layout('components.layouts.app')]
 class Table extends Component
 {
-    use WithDataTable;
+    use WithDataTable, WithPagination;
 
-    public function mount()
+    public function boot()
     {
         $this->deleteAction = 'deleteUser';
-        
-        $dataTable = DataTableFactory::make()
-            ->model(User::class)
-            ->headers([
-                [
-                    'key' => 'id',
-                    'label' => 'ID',
-                    'sortable' => true,
-                    'type' => 'text'
-                ],
-                [
-                    'key' => 'first_name',
-                    'label' => 'First Name',
-                    'sortable' => true,
-                    'searchable' => true,
-                    'type' => 'text'
-                ],
-                [
-                    'key' => 'last_name',
-                    'label' => 'Last Name',
-                    'sortable' => true,
-                    'searchable' => true,
-                    'type' => 'text'
-                ],
-                [
-                    'key' => 'email',
-                    'label' => 'Email',
-                    'sortable' => true,
-                    'searchable' => true,
-                    'type' => 'text'
-                ],
-                [
-                    'key' => 'phone',
-                    'label' => 'Phone',
-                    'sortable' => true,
-                    'searchable' => true,
-                    'type' => 'text'
-                ],
-                [
-                    'key' => 'role',
-                    'label' => 'Role',
-                    'sortable' => true,
-                    'searchable' => true,
-                    'type' => 'badge'
-                ],
-                [
-                    'key' => 'branch.name',
-                    'label' => 'Branch',
-                    'sortable' => true,
-                    'searchable' => true,
-                    'accessor' => true,
-                    'search_columns' => ['branch.name'],
-                    'sort_columns' => ['branch.name'],
-                    'type' => 'text',
-                    'defaultValue' => 'No Branch'
-                ],
-                [
-                    'key' => 'created_at',
-                    'label' => 'Created',
-                    'sortable' => true,
-                    'type' => 'date'
-                ]
-            ])
-            ->config([
-                'showActions' => true,
-                'showSearch' => true,
-                'showCreate' => true,
-                'showBulkActions' => true,
-                'createRoute' => 'users.create',
-                'createButtonName' => 'Add User',
-                'editRoute' => 'users.edit',
-                'viewRoute' => 'users.show',
-                'deleteAction' => 'deleteUser',
-                'bulkDeleteAction' => 'bulkDeleteUsers',
-                'searchPlaceholder' => 'Search users...',
-                'emptyMessage' => 'No users found',
-            ])
-            ->searchableColumns([
-                'first_name',
-                'last_name', 
-                'email',
-                'phone',
-                'role'
-            ]);
-
-        $this->setDataTableFactory($dataTable);
+        $this->routeIdColumn = 'id';
+        $this->setDataTableFactory($this->getDataTableConfig());
     }
 
-    public function getRowsQueryProperty()
+    private function getDataTableConfig(): DataTableFactory
     {
-        return User::query()
-            ->with(['branch'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('first_name', 'like', '%' . $this->search . '%')
-                      ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhere('phone', 'like', '%' . $this->search . '%')
-                      ->orWhere('role', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('branch', function ($branchQuery) {
-                          $branchQuery->where('name', 'like', '%' . $this->search . '%');
-                      });
-                });
-            });
+        return DataTableFactory::make()
+            ->model(User::class)
+            ->headers([
+                ['key' => 'id', 'label' => 'ID', 'sortable' => true],
+                ['key' => 'full_name', 'label' => 'Full Name', 'sortable' => true, 'accessor' => true, 'search_columns' => ['first_name', 'last_name'], 'sort_columns' => ['first_name', 'last_name']],
+                ['key' => 'email', 'label' => 'Email', 'sortable' => true],
+                ['key' => 'role', 'label' => 'Role', 'sortable' => true, 'type' => 'badge'],
+                ['key' => 'created_at', 'label' => 'Created', 'sortable' => true, 'type' => 'datetime'],
+            ])
+            ->deleteAction('deleteUser')
+            ->searchPlaceholder('Search users...')
+            ->emptyMessage('No users found')
+            ->searchQuery($this->search)
+            ->sortColumn($this->sortColumn)
+            ->sortDirection($this->sortDirection)
+            ->showBulkActions(true)
+            ->showCreate(true)
+            ->createRoute('users.create')
+            ->editRoute('users.edit')
+            ->bulkDeleteAction('bulkDelete');
+    }
+
+    public function rowsQuery()
+    {
+        $query = User::query();
+        $dataTable = $this->getDataTableConfig();
+
+        return $this->applySearchAndSort($query, ['first_name', 'last_name', 'email', 'role'], $dataTable);
     }
 
     public function getRowsProperty()
     {
-        return $this->applySearchAndSort(
-            $this->rowsQuery,
-            $this->dataTableFactory->getSearchableColumns(),
-            $this->dataTableFactory
-        )->paginate($this->perPage);
-    }
-
-    public function deleteUser($userId)
-    {
-        $user = User::find($userId);
-        
-        if (!$user) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'message' => 'User not found.'
-            ]);
-            return;
-        }
-
-        if (!$this->canDeleteRow($user)) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'message' => 'You do not have permission to delete this user.'
-            ]);
-            return;
-        }
-
-        try {
-            $user->delete();
-            
-            $this->dispatch('toast', [
-                'type' => 'success',
-                'message' => 'User deleted successfully.'
-            ]);
-            
-            // Reset selection if the deleted user was selected
-            $this->selectedRows = array_filter($this->selectedRows, function($id) use ($userId) {
-                return $id != $userId;
-            });
-            
-        } catch (\Exception $e) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'message' => 'Failed to delete user. Please try again.'
-            ]);
-        }
-    }
-
-    public function bulkDeleteUsers()
-    {
-        if (empty($this->selectedRows)) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'message' => 'No users selected.'
-            ]);
-            return;
-        }
-
-        if (!$this->canBulkDelete()) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'message' => 'You do not have permission to delete users.'
-            ]);
-            return;
-        }
-
-        try {
-            $query = User::whereIn('id', $this->selectedRows);
-            
-            if ($this->selectAll) {
-                $query = $this->rowsQuery;
-            }
-            
-            $deletedCount = $query->count();
-            $query->delete();
-            
-            $this->dispatch('toast', [
-                'type' => 'success',
-                'message' => "Successfully deleted {$deletedCount} user(s)."
-            ]);
-            
-            $this->clearSelection();
-            
-        } catch (\Exception $e) {
-            $this->dispatch('toast', [
-                'type' => 'error',
-                'message' => 'Failed to delete users. Please try again.'
-            ]);
-        }
+        return $this->rowsQuery()->paginate($this->perPage);
     }
 
     public function render()
     {
+        // $this->authorize('viewAny', User::class);
+        $dataTable = $this->getDataTableConfig()->toArray();
+        $selectedRowsCount = $this->getSelectedRowsCountProperty();
+
         return view('livewire.users.table', [
-            'users' => $this->rows,
+            'dataTable' => $dataTable,
+            'selectedRowsCount' => $selectedRowsCount,
+        ]);
+    }
+
+    public function bulkDelete()
+    {
+        $query = User::query();
+        if ($this->selectAll) {
+            $query = $this->rowsQuery();
+        } else {
+            $query->whereIn('id', $this->selectedRows);
+        }
+        $query->delete();
+        $this->clearSelection();
+        $this->dispatch('show-message', [
+            'message' => 'Users deleted successfully.',
+            'type' => 'success'
+        ]);
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        $this->authorize('delete', $user);
+        $user->delete();
+
+        $this->dispatch('show-message', [
+            'message' => 'User deleted successfully.',
+            'type' => 'success'
         ]);
     }
 }
