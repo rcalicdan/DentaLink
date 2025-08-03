@@ -4,8 +4,6 @@
             <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">Create New User</h1>
             <p class="text-slate-600 dark:text-slate-400 mt-1">Add a new user to the system</p>
         </div>
-        <x-utils.link-button href="{{ route('users.index') }}" buttonText="Back to Users" bgColor="bg-slate-600"
-            hoverColor="hover:bg-slate-700" focusRing="focus:ring-slate-500" />
     </div>
 
     @if (session()->has('message'))

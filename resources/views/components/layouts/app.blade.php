@@ -76,11 +76,7 @@
                     this.sidebarOpen = !this.sidebarOpen;
                 },
 
-                init() {
-                    this.$nextTick(() => {
-                        document.body.classList.remove('no-transitions');
-                    });
-                }
+                init() {}
             }
         }
     </script>
