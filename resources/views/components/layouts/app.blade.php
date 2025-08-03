@@ -13,7 +13,6 @@
     <meta name="description" content="Responsive admin dashboard for Nice Smile Dental Clinic.">
     <meta name="theme-color" content="#3b82f6">
     <title>{{ $title }}</title>
-    {{-- <script src="https://cdn.tailwindcss.com"></script> --}}
     @vite(['resources/js/app.js', 'resources/css/app.css'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
@@ -66,10 +65,11 @@
         function adminLayout() {
             return {
                 sidebarOpen: false,
-                sidebarCollapsed: false,
+                sidebarCollapsed: JSON.parse(localStorage.getItem('sidebarCollapsed')) || false,
 
                 toggleSidebarDesktop() {
                     this.sidebarCollapsed = !this.sidebarCollapsed;
+                    localStorage.setItem('sidebarCollapsed', JSON.stringify(this.sidebarCollapsed));
                 },
 
                 toggleSidebarMobile() {
@@ -77,7 +77,9 @@
                 },
 
                 init() {
-                    // Initialize any setup here
+                    this.$nextTick(() => {
+                        document.body.classList.remove('no-transitions');
+                    });
                 }
             }
         }

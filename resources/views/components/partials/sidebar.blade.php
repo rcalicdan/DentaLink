@@ -1,7 +1,7 @@
-<aside class="sidebar sidebar-gradient text-white fixed h-full z-50 transform md:transform-none flex flex-col"
+<aside class="sidebar sidebar-gradient text-white fixed h-full z-50 transform -translate-x-full md:translate-x-0 flex flex-col"
     :class="{
         'collapsed': sidebarCollapsed,
-        '-translate-x-full': !sidebarOpen
+        '-translate-x-full md:translate-x-0': !sidebarOpen
     }">
     <!-- Sidebar Header -->
     <div class="p-4 flex items-center justify-between border-b border-blue-800/50 h-16 shrink-0">

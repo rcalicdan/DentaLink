@@ -102,3 +102,7 @@ body {
 .dark body {
     background-color: #0f172a;
 }
+
+.no-transitions * {
+    transition: none !important;
+}
