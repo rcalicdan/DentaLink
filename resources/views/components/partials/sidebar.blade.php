@@ -1,4 +1,5 @@
-<aside class="sidebar sidebar-gradient text-white fixed h-full z-50 transform -translate-x-full md:translate-x-0 flex flex-col"
+<aside
+    class="sidebar sidebar-gradient text-white fixed h-full z-50 transform -translate-x-full md:translate-x-0 flex flex-col"
     :class="{
         'collapsed': sidebarCollapsed,
         '-translate-x-full md:translate-x-0': !sidebarOpen
@@ -17,8 +18,12 @@
     <!-- Navigation -->
     <nav class="flex-1 p-3 overflow-y-auto">
         <ul class="space-y-2">
-            <x-partials.nav-item href="#" icon="fas fa-home" :active="true">
+            <x-partials.nav-item href="#" icon="fas fa-home" :active="false">
                 Dashboard
+            </x-partials.nav-item>
+
+            <x-partials.nav-item href="{{ route('users.index') }}" icon="fas fa-users" :active="request()->routeIs('users.*')">
+                Users
             </x-partials.nav-item>
 
             <x-partials.nav-item href="#" icon="fas fa-calendar-check" :active="false">
