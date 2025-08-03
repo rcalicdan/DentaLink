@@ -102,8 +102,7 @@ class UpdatePage extends Component
     {
         $options = ['' => 'Select a branch (optional)'];
 
-        $branches = Branch::where('is_active', true)
-            ->orderBy('name')
+        $branches = Branch::orderBy('name')
             ->get();
 
         foreach ($branches as $branch) {

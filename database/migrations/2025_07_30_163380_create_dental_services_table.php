@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('dental_services', function (Blueprint $table) {
             $table->id();
-            $table->string('service_name', 100);
+            $table->string('name', 100);
             $table->foreignId('dental_service_type_id')->constrained('dental_service_types');
             $table->decimal('price', 10, 2);
             $table->timestamps();

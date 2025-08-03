@@ -10,7 +10,7 @@ class Inventory extends Model
 
     protected $fillable = [
         'branch_id',
-        'item_name',
+        'name',
         'category',
         'current_stock',
         'minimum_stock',

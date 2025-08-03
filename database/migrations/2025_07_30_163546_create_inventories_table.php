@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('inventory_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->constrained('branches');
-            $table->string('item_name', 100);
+            $table->string('name', 100);
             $table->enum('category', ['Consumables', 'Instruments', 'Materials', 'Equipment']);
             $table->integer('current_stock')->default(0);
             $table->integer('minimum_stock')->default(10);
