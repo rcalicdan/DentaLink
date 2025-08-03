@@ -60,6 +60,8 @@
         </div>
     </div>
 
+    <livewire:placeholder />
+
     <!-- Livewire Scripts - Move before Alpine.js -->
     @livewireScripts
 
