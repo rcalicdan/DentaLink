@@ -60,6 +60,9 @@
         </div>
     </div>
 
+    <!-- Livewire Scripts - Move before Alpine.js -->
+    @livewireScripts
+
     <!-- Alpine.js Base Script -->
     <script>
         function adminLayout() {
@@ -76,13 +79,20 @@
                     this.sidebarOpen = !this.sidebarOpen;
                 },
 
-                init() {}
+                init() {
+                    this.initLivewireNavigation();
+                },
+
+                initLivewireNavigation() {
+                    document.addEventListener('livewire:navigated', () => {
+                        console.log('Page navigated');
+                    });
+                }
             }
         }
     </script>
 
     @stack('scripts')
-    @livewireScripts
 </body>
 
 </html>
