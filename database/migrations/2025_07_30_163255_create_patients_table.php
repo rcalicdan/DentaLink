@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('email', 100)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->text('address')->nullable();
-            $table->foreignId('registration_branch_id')->constrained('branches');
+            $table->foreignId('registration_branch_id')->constrained('branches', 'id');
               $table->timestamps();
         });
     }

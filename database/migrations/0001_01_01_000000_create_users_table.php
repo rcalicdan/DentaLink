@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('last_name', 50);
             $table->string('phone', 20)->nullable();
             $table->enum('role', UserRoles::getAllRoles());
-            $table->foreignId('branch_id')->nullable()->constrained('branches');
+            $table->foreignId('branch_id')->nullable()->constrained('branches', 'id');
             $table->timestamps();
         });
 
