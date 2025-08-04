@@ -25,9 +25,9 @@ $mysqlConfig = DatabaseConfigFactory::mysql([
     'port'     => 3306,
 ]);
 
-const POOL_SIZE = 10; // Set the desired pool size for the test
-const QUERY_COUNT = 100;
-const LATENCY_SECONDS = 0.01; // 10ms
+const POOL_SIZE = 50; // Set the desired pool size for the test
+const QUERY_COUNT = 1000;
+const LATENCY_SECONDS = 0.005; // 10ms
 
 // --- Helper Functions ---
 function build_dsn_from_config(array $config): string
