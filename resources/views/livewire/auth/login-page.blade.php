@@ -9,4 +9,4 @@
      </x-slot>
 
      <x-form.auth.login-form />
- </div>
+</div>
