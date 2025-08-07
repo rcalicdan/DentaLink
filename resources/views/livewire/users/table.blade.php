@@ -1,5 +1,6 @@
 <div>
     <x-flash-session/>
+    <x-partials.table-header title="Users" />
     <x-data-table 
         :data="$this->rows" 
         :headers="$dataTable['headers']"

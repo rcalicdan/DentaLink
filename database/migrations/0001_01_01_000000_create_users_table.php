@@ -46,7 +46,7 @@ return new class extends Migration
             'first_name' => 'Admin',
             'last_name' => 'User',
             'phone' => '09123456789',
-            'role' => UserRoles::ADMIN,
+            'role' => UserRoles::SUPER_ADMIN,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

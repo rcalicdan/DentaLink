@@ -1,4 +1,4 @@
-<div class="container mx-auto px-6 py-8">
+<div class="container mx-auto px-2 py-0">
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">Create New User</h1>
