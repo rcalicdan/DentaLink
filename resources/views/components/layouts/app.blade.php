@@ -1,6 +1,17 @@
+@php
+    $pageTitle = '';
+    if (auth()->user()->isAdmin()) {
+        $pageTitle = 'Admin Dashboard';
+    } elseif (auth()->user()->isEmployee()) {
+        $pageTitle = 'Employee Dashboard';
+    } elseif (auth()->user()->isSuperadmin()) {
+        $pageTitle = 'Superadmin Dashboard';
+    }
+@endphp
+
 @props([
     'title' => 'Nice Smile Dental Clinic',
-    'pageTitle' => 'Dashboard',
+    'pageTitle' => $pageTitle,
     'showBranchFilter' => true,
 ])
 
@@ -82,7 +93,7 @@
                 },
 
                 init() {
-                   //
+                    //
                 },
             }
         }

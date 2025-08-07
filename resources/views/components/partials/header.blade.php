@@ -1,15 +1,5 @@
-@php
-    if(auth()->user()->isAdmin()) {
-        $pageTitle = 'Admin Dashboard';
-    } elseif(auth()->user()->isEmployee()) {
-        $pageTitle = 'Employee Dashboard';
-    } else {
-        $pageTitle = 'Superadmin Dashboard';
-    }
-@endphp
-
 @props([
-    'pageTitle' => $pageTitle,
+    'pageTitle' => 'Dashboard',
     'showBranchFilter' => true,
 ])
 

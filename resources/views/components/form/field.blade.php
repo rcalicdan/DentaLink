@@ -68,7 +68,7 @@ focus:border-blue-500',
         @elseif($type === 'select')
             <select id="{{ $inputId }}" name="{{ $multiple ? $name . '[]' : $name }}"
                 @if ($wireAttribute) {{ $wireAttribute }}="{{ $name }}" @endif
-                @if ($required) required @endif @if ($disabled) disabled @endif
+                @if ($required) required @endif @if ($disabled || $readonly) disabled @endif
                 @if ($multiple) multiple @endif
                 {{ $attributes->merge(['class' => implode(' ', $inputClasses)]) }}>
                 @foreach ($options as $optionValue => $optionLabel)
