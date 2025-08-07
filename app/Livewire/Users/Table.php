@@ -27,11 +27,36 @@ class Table extends Component
         return DataTableFactory::make()
             ->model(User::class)
             ->headers([
-                ['key' => 'id', 'label' => 'ID', 'sortable' => true],
-                ['key' => 'full_name', 'label' => 'Full Name', 'sortable' => true, 'accessor' => true, 'search_columns' => ['first_name', 'last_name'], 'sort_columns' => ['first_name', 'last_name']],
-                ['key' => 'email', 'label' => 'Email', 'sortable' => true],
-                ['key' => 'role', 'label' => 'Role', 'sortable' => true, 'type' => 'badge'],
-                ['key' => 'created_at', 'label' => 'Created', 'sortable' => true, 'type' => 'datetime'],
+                [
+                    'key' => 'id',
+                    'label' => 'ID',
+                    'sortable' => true
+                ],
+                [
+                    'key' => 'full_name',
+                    'label' => 'Full Name',
+                    'sortable' => true,
+                    'accessor' => true,
+                    'search_columns' => ['first_name', 'last_name'],
+                    'sort_columns' => ['first_name', 'last_name']
+                ],
+                [
+                    'key' => 'email',
+                    'label' => 'Email',
+                    'sortable' => true
+                ],
+                [
+                    'key' => 'role',
+                    'label' => 'Role',
+                    'sortable' => true,
+                    'type' => 'badge'
+                ],
+                [
+                    'key' => 'created_at',
+                    'label' => 'Created',
+                    'sortable' => true,
+                    'type' => 'datetime'
+                ],
             ])
             ->deleteAction('deleteUser')
             ->searchPlaceholder('Search users...')

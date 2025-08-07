@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Enums\UserRoles;
 use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class CreatePage extends Component
@@ -22,17 +23,31 @@ class CreatePage extends Component
     public $branch_id = '';
     public $showPassword = false;
 
+    public function mount()
+    {
+        if (Auth::user()->isAdmin()) {
+            $this->role = UserRoles::EMPLOYEE->value;
+            $this->branch_id = Auth::user()->branch_id;
+        }
+    }
+
     public function rules()
     {
-        return [
+        $rules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', Rule::in(UserRoles::getAllRoles())],
+            'role' => ['required', Rule::in($this->getAvailableRoles())],
             'branch_id' => 'nullable|exists:branches,id',
         ];
+
+        if (Auth::user()->isAdmin()) {
+            $rules['branch_id'] = 'required|exists:branches,id|in:' . Auth::user()->branch_id;
+        }
+
+        return $rules;
     }
 
     public function togglePasswordVisibility()
@@ -63,12 +78,28 @@ class CreatePage extends Component
     {
         return view('livewire.users.create-page', [
             'roleOptions' => $this->getRoleOptions(),
-            'branchOptions' => $this->getBranchOptions()
+            'branchOptions' => $this->getBranchOptions(),
+            'isAdmin' => Auth::user()->isAdmin()
         ]);
+    }
+
+    private function getAvailableRoles()
+    {
+        if (Auth::user()->isAdmin()) {
+            return [UserRoles::EMPLOYEE->value];
+        }
+
+        return UserRoles::getAllRoles();
     }
 
     private function getRoleOptions()
     {
+        $currentUser = Auth::user();
+        
+        if ($currentUser->isAdmin()) {
+            return [UserRoles::EMPLOYEE->value => 'Employee'];
+        }
+
         $options = ['' => 'Select a role'];
 
         foreach (UserRoles::cases() as $role) {
@@ -84,10 +115,16 @@ class CreatePage extends Component
 
     private function getBranchOptions()
     {
+        $currentUser = Auth::user();
+        
+        if ($currentUser->isAdmin()) {
+            $adminBranch = $currentUser->branch;
+            return $adminBranch ? [$adminBranch->id => $adminBranch->name] : [];
+        }
+
         $options = ['' => 'Select a branch (optional)'];
 
-        $branches = Branch::orderBy('name')
-            ->get();
+        $branches = Branch::orderBy('name')->get();
 
         foreach ($branches as $branch) {
             $options[$branch->id] = $branch->name;

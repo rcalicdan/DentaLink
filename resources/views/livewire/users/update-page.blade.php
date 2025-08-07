@@ -55,10 +55,14 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <x-form.field label="User Role" name="role" type="select" wire:model="role" :options="$roleOptions" required
-                icon="fas fa-user-tag" help="Select the appropriate role for this user" />
+                icon="fas fa-user-tag"
+                help="{{ $isAdmin ? 'As an admin, you can only assign employee role' : 'Select the appropriate role for this user' }}"
+                :readonly="$isAdmin" />
 
             <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" :options="$branchOptions"
-                icon="fas fa-building" help="Optional: Assign user to a specific branch" />
+                icon="fas fa-building"
+                help="{{ $isAdmin ? 'Users must be in your branch' : 'Optional: Assign user to a specific branch' }}"
+                :readonly="$isAdmin" :required="$isAdmin" />
         </div>
 
         <div class="flex justify-end space-x-3 pt-6">
