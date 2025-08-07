@@ -34,17 +34,19 @@
                 </x-partials.nav-item>
             @endcan
 
+            @can('viewAny', App\Models\Patient::class)
+                <x-partials.nav-item href="#" icon="fas fa-users" :active="false">
+                    Patients
+                </x-partials.nav-item>
+            @endcan
+            
             @can('viewAny', App\Models\Appointment::class)
                 <x-partials.nav-item href="#" icon="fas fa-calendar-check" :active="false">
                     Appointments
                 </x-partials.nav-item>
             @endcan
 
-            @can('viewAny', App\Models\Patient::class)
-                <x-partials.nav-item href="#" icon="fas fa-users" :active="false">
-                    Patients
-                </x-partials.nav-item>
-            @endcan
+
 
             {{-- @can('viewAny', App\Models\Report::class)
                 <x-partials.nav-item href="#" icon="fas fa-chart-line" :active="false">
