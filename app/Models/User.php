@@ -42,17 +42,17 @@ class User extends Authenticatable
 
     public function isSuperadmin(): bool
     {
-        return $this->role === UserRoles::SUPER_ADMIN;
+        return $this->role === UserRoles::SUPER_ADMIN->value;
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRoles::ADMIN;
+        return $this->role === UserRoles::ADMIN->value;
     }
 
     public function isEmployee(): bool
     {
-        return $this->role === UserRoles::EMPLOYEE;
+        return $this->role === UserRoles::EMPLOYEE->value;
     }
 
     public function branch()
