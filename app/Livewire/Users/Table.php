@@ -52,6 +52,12 @@ class Table extends Component
                     'type' => 'badge'
                 ],
                 [
+                    'key' => 'branch_name',
+                    'label' => 'Branch',
+                    'sortable' => true,
+                    'accessor' => true,
+                ],
+                [
                     'key' => 'created_at',
                     'label' => 'Created',
                     'sortable' => true,

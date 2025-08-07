@@ -18,29 +18,39 @@
     <!-- Navigation -->
     <nav class="flex-1 p-3 overflow-y-auto">
         <ul class="space-y-2">
-            <x-partials.nav-item href="#" icon="fas fa-home" :active="false">
+            <x-partials.nav-item href="{{ route('dashboard.index') }}" icon="fas fa-home" :active="request()->routeIs('dashboard.index')">
                 Dashboard
             </x-partials.nav-item>
 
-            <x-partials.nav-item href="{{ route('users.index') }}" icon="fas fa-users" :active="request()->routeIs('users.*')">
-                Users
-            </x-partials.nav-item>
+            @can('viewAny', App\Models\Branch::class)
+                <x-partials.nav-item href="#" icon="fas fa-building" :active="false">
+                    Branches
+                </x-partials.nav-item>
+            @endcan
 
-            <x-partials.nav-item href="#" icon="fas fa-calendar-check" :active="false">
-                Appointments
-            </x-partials.nav-item>
+            @can('viewAny', App\Models\User::class)
+                <x-partials.nav-item href="{{ route('users.index') }}" icon="fas fa-users" :active="request()->routeIs('users.*')">
+                    Users
+                </x-partials.nav-item>
+            @endcan
 
-            <x-partials.nav-item href="#" icon="fas fa-users" :active="false">
-                Patients
-            </x-partials.nav-item>
+            @can('viewAny', App\Models\Appointment::class)
+                <x-partials.nav-item href="#" icon="fas fa-calendar-check" :active="false">
+                    Appointments
+                </x-partials.nav-item>
+            @endcan
 
-            <x-partials.nav-item href="#" icon="fas fa-building" :active="false">
-                Branches
-            </x-partials.nav-item>
+            @can('viewAny', App\Models\Patient::class)
+                <x-partials.nav-item href="#" icon="fas fa-users" :active="false">
+                    Patients
+                </x-partials.nav-item>
+            @endcan
 
-            <x-partials.nav-item href="#" icon="fas fa-chart-line" :active="false">
-                Reports
-            </x-partials.nav-item>
+            {{-- @can('viewAny', App\Models\Report::class)
+                <x-partials.nav-item href="#" icon="fas fa-chart-line" :active="false">
+                    Reports
+                </x-partials.nav-item>
+            @endcan --}}
         </ul>
     </nav>
 

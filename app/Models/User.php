@@ -40,6 +40,15 @@ class User extends Authenticatable
         return "{$this->first_name} {$this->last_name}";
     }
 
+    public function getBranchNameAttribute(): string
+    {
+        if($this->isSuperadmin()) {
+            return 'Super Admin';
+        }
+        
+        return $this->branch->name ?? 'Not yet Assigned';
+    }
+
     public function isSuperadmin(): bool
     {
         return $this->role === UserRoles::SUPER_ADMIN->value;

@@ -17,6 +17,7 @@ class Logout extends Component
             return redirect()->route('login');
         }
 
+        session()->flash('success', 'Logout Succesfully');
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
