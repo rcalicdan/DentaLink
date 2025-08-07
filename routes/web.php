@@ -12,4 +12,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', App\Livewire\Users\CreatePage::class)->name('create');
         Route::get('/{user}/edit', App\Livewire\Users\UpdatePage::class)->name('edit');
     });
+
+    Route::prefix('branches')->name('branches.')->group(function () {
+        Route::get('', App\Livewire\Branches\Table::class)->name('index');
+        Route::get('/create', App\Livewire\Branches\CreatePage::class)->name('create');
+        Route::get('/{branch}/edit', App\Livewire\Branches\UpdatePage::class)->name('edit');
+    });
 });

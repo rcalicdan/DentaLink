@@ -29,7 +29,6 @@
         integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <!-- Theme Script -->
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
                 '(prefers-color-scheme: dark)').matches)) {
@@ -42,60 +41,48 @@
     @stack('styles')
 </head>
 
-<body class="font-sans text-slate-800 dark:text-slate-200" x-data="adminLayout()">
+<body class="font-sans text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-900" x-data="adminLayout()">
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
         <x-partials.sidebar />
 
-        <!-- Sidebar Overlay -->
         <div class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" x-show="sidebarOpen"
             @click="toggleSidebarMobile()" x-transition:enter="transition-opacity ease-out duration-300"
             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
             x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"></div>
 
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col main-content"
+        <div class="flex-1 flex flex-col main-content overflow-y-auto"
             :class="{
                 'md:ml-64': !sidebarCollapsed,
                 'md:ml-20': sidebarCollapsed
             }">
 
-            <!-- Header -->
             <x-partials.header :page-title="$pageTitle" :show-branch-filter="$showBranchFilter" />
 
-            <!-- Main Content Area -->
-            <main class="p-4 sm:p-6 lg:p-8 flex-1 overflow-y-auto">
+            <main class="p-4 sm:p-6 lg:p-8 flex-grow">
                 {{ $slot }}
             </main>
         </div>
     </div>
-    
+
     <livewire:auth.logout />
     <livewire:placeholder />
 
-    <!-- Livewire Scripts - Move before Alpine.js -->
     @livewireScripts
 
-    <!-- Alpine.js Base Script -->
     <script>
         function adminLayout() {
             return {
                 sidebarOpen: false,
                 sidebarCollapsed: JSON.parse(localStorage.getItem('sidebarCollapsed')) || false,
-
                 toggleSidebarDesktop() {
                     this.sidebarCollapsed = !this.sidebarCollapsed;
                     localStorage.setItem('sidebarCollapsed', JSON.stringify(this.sidebarCollapsed));
                 },
-
                 toggleSidebarMobile() {
                     this.sidebarOpen = !this.sidebarOpen;
                 },
-
-                init() {
-                    //
-                },
+                init() {},
             }
         }
     </script>

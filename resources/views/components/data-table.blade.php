@@ -4,9 +4,8 @@
     sortColumn: '{{ $sortColumn }}',
     sortDirection: '{{ $sortDirection }}'
 })">
-    <!-- Header Section -->
+
     <div class="mb-4 sm:mb-6">
-        <!-- Bulk Actions Bar -->
         @if ($showBulkActions && $selectedRowsCount > 0)
             <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-r-lg">
                 <div class="flex items-center justify-between">
@@ -38,10 +37,9 @@
                 </div>
             </div>
         @endif
-        <!-- Mobile Layout -->
+
         <div class="flex flex-col gap-3 sm:hidden">
             @if ($showSearch)
-                <!-- Search Input -->
                 <div class="relative">
                     <input type="text" wire:model.live.debounce.300ms="search"
                         placeholder="{{ __($searchPlaceholder) }}" value="{{ $searchQuery }}"
@@ -53,9 +51,8 @@
                     </svg>
                 </div>
             @endif
-            <!-- Per Page and Create Button Row -->
+
             <div class="flex items-center justify-between">
-                <!-- Per Page Selector -->
                 <div class="flex items-center gap-2">
                     <label class="text-sm text-gray-600 whitespace-nowrap">{{ __('Show:') }}</label>
                     <select wire:model.live="perPage"
@@ -71,11 +68,10 @@
                 @endif
             </div>
         </div>
-        <!-- Desktop Layout -->
+
         <div class="hidden sm:flex sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-4">
                 @if ($showSearch)
-                    <!-- Search Input -->
                     <div class="relative">
                         <input type="text" wire:model.live.debounce.300ms="search"
                             placeholder="{{ __($searchPlaceholder) }}" value="{{ $searchQuery }}"
@@ -87,7 +83,6 @@
                         </svg>
                     </div>
                 @endif
-                <!-- Per Page Selector -->
                 <div class="flex items-center gap-2">
                     <label class="text-sm text-gray-600">{{ __('Show:') }}</label>
                     <select wire:model.live="perPage"
@@ -105,9 +100,8 @@
             @endif
         </div>
     </div>
-    <!-- Table Container -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <!-- Mobile Card View -->
+
+    <div class="bg-white rounded-lg shadow">
         <div class="sm:hidden">
             @forelse($data as $row)
                 <div
@@ -119,13 +113,14 @@
                                     class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1">
                             </div>
                         @endif
-                        <div class="flex-grow">
+                        <div class="flex-grow min-w-0">
                             @foreach ($headers as $header)
                                 @if ($this->shouldShowOnMobile($header))
-                                    <div class="flex justify-between items-start py-1">
+                                    {{-- V V V THIS ENTIRE BLOCK IS THE FIX V V V --}}
+                                    <div class="flex items-start py-1 gap-4">
                                         <span
                                             class="text-sm font-medium text-gray-500">{{ __($header['label']) }}:</span>
-                                        <span class="text-sm text-gray-900 ml-2 text-right">
+                                        <span class="flex-1 min-w-0 text-sm text-gray-900 text-right break-words">
                                             @php $value = $this->getHeaderValue($header, $row) @endphp
                                             @include('components.partials.data-table.cell', [
                                                 'header' => $header,
@@ -133,6 +128,7 @@
                                             ])
                                         </span>
                                     </div>
+                                    {{-- ^ ^ ^ THIS ENTIRE BLOCK IS THE FIX ^ ^ ^ --}}
                                 @endif
                             @endforeach
                         </div>
@@ -155,10 +151,10 @@
                 @include('components.partials.data-table.empty')
             @endforelse
         </div>
-        <!-- Desktop Table View -->
+
         <div class="hidden sm:block overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
                     <tr>
                         @if ($showBulkActions)
                             <th scope="col" class="px-3 lg:px-6 py-3">
@@ -168,11 +164,11 @@
                         @endif
                         @foreach ($headers as $header)
                             <th scope="col"
-                                class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                class="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                                 @if (isset($header['sortable']) && $header['sortable']) style="cursor: pointer;"
                             wire:click="sortBy('{{ $header['key'] }}')" @endif>
                                 <div class="flex items-center gap-2 hover:text-gray-700 transition-colors">
-                                    <span class="truncate">{{ __($header['label']) }}</span>
+                                    <span>{{ __($header['label']) }}</span>
                                     @if (isset($header['sortable']) && $header['sortable'])
                                         @include('components.partials.data-table.sort-icon', [
                                             'header' => $header,
@@ -200,18 +196,15 @@
                                 </td>
                             @endif
                             @foreach ($headers as $header)
-                                <td class="px-3 lg:px-6 py-4 text-sm text-gray-900">
-                                    @php $value = $this->getHeaderValue($header, $row) @endphp
-                                    <div class="max-w-xs truncate">
-                                        @include('components.partials.data-table.cell', [
-                                            'header' => $header,
-                                            'value' => $value,
-                                        ])
-                                    </div>
+                                <td class="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @include('components.partials.data-table.cell', [
+                                        'header' => $header,
+                                        'value' => $this->getHeaderValue($header, $row),
+                                    ])
                                 </td>
                             @endforeach
                             @if ($showActions)
-                                <td class="px-3 lg:px-6 py-4 text-sm text-gray-900 align-middle">
+                                <td class="px-3 lg:px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center justify-center gap-2">
                                         @if ($viewRoute && $this->canViewRow($row))
                                             <x-utils.view-button :route="$this->getViewRoute($row)" />
@@ -237,9 +230,10 @@
                 </tbody>
             </table>
         </div>
-        <!-- Pagination -->
         @if ($data instanceof \Illuminate\Pagination\LengthAwarePaginator && $data->hasPages())
-            @include('components.partials.data-table.pagination')
+            <div class="p-4 border-t border-gray-200 rounded-b-lg">
+                {{ $data->links() }}
+            </div>
         @endif
     </div>
 </div>
@@ -250,9 +244,7 @@
             searchQuery: config.searchQuery,
             sortColumn: config.sortColumn,
             sortDirection: config.sortDirection,
-            init() {
-                // Initialize any needed functionality
-            }
+            init() {}
         }
     }
 </script>

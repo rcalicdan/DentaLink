@@ -23,7 +23,7 @@
             </x-partials.nav-item>
 
             @can('viewAny', App\Models\Branch::class)
-                <x-partials.nav-item href="#" icon="fas fa-building" :active="false">
+                <x-partials.nav-item href="{{ route('branches.index') }}" icon="fas fa-building" :active="request()->routeIs('branches.*')">
                     Branches
                 </x-partials.nav-item>
             @endcan
