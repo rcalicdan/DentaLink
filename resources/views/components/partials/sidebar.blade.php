@@ -35,7 +35,7 @@
             @endcan
 
             @can('viewAny', App\Models\Patient::class)
-                <x-partials.nav-item href="#" icon="fas fa-users" :active="false">
+                <x-partials.nav-item href="{{ route('patients.index') }}" icon="fas fa-users" :active="request()->routeIs('patients.*')">
                     Patients
                 </x-partials.nav-item>
             @endcan

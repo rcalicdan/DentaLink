@@ -23,31 +23,33 @@ class PatientPolicy
 
     public function view(User $user, Patient $patient): bool
     {
-        return true; 
+        if ($user->isAdmin()) {
+            return $patient->registration_branch_id === $user->branch_id;
+        }
+        
+        return true;
     }
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isEmployee();
+        return true; 
     }
 
     public function update(User $user, Patient $patient): bool
     {
-        return $user->isAdmin() || $user->isEmployee();
+        if ($user->isAdmin()) {
+            return $patient->registration_branch_id === $user->branch_id;
+        }
+        
+        return true;
     }
 
     public function delete(User $user, Patient $patient): bool
     {
-        return false; 
-    }
-
-    public function restore(User $user, Patient $patient): bool
-    {
-        return false; 
-    }
-
-    public function forceDelete(User $user, Patient $patient): bool
-    {
-        return false; 
+        if ($user->isAdmin()) {
+            return $patient->registration_branch_id === $user->branch_id;
+        }
+        
+        return true;
     }
 }

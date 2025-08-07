@@ -13,7 +13,7 @@
     <div x-data="{
         show: true,
         progress: 0,
-        duration: 5000,
+        duration: 2500,
         interval: null,
         startTimer() {
             this.progress = 0;

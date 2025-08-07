@@ -23,6 +23,11 @@ class Patient extends Model
         ];
     }
 
+    public function getRegistrationBranchNameAttribute(): string
+    {
+        return $this->registrationBranch->name;
+    }
+
     // Relationships
     public function registrationBranch()
     {
