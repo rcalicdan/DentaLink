@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Auth;
 
-use App\Traits\DispatchFlashMessage;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -16,8 +15,6 @@ use Livewire\Component;
 #[Layout('components.layouts.auth')]
 class LoginPage extends Component
 {
-    use DispatchFlashMessage;
-
     #[Validate('required|string|email')]
     public string $email = '';
 
@@ -35,19 +32,18 @@ class LoginPage extends Component
 
         $this->ensureIsNotRateLimited();
 
-        if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
-            $this->dispatch('show-message', [
-                'type' => 'error',
-                'message' => 'Invalid Credentials',
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended(default: '/', navigate: true);
+        $this->redirectIntended('/', navigate: true);
     }
 
     /**

@@ -52,18 +52,28 @@
             </div>
 
             <!-- Flash Message Box -->
-            <div x-data="{ show: false, message: '', type: 'info' }"
-                @show-message.window="show = true; message = $event.detail.message; type = $event.detail.type; setTimeout(() => show = false, 4000)"
-                x-show="show" x-transition
-                :class="{
-                    'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/20 dark:border-red-600 dark:text-red-300': type === 'error',
-                    'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/20 dark:border-green-600 dark:text-green-300': type === 'success',
-                    'bg-blue-100 border-blue-400 text-blue-700 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-300': type === 'info'
-                }"
-                class="border px-4 py-3 rounded-lg text-center" style="display: none;">
-                <span x-text="message"></span>
-                <button @click="show = false" class="float-right font-bold ml-2">&times;</button>
-            </div>
+            @if (session('flash_message'))
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-90" @class([
+                        'border px-4 py-3 rounded-lg text-center relative',
+                        'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/20 dark:border-red-600 dark:text-red-300' =>
+                            session('flash_type') === 'error',
+                        'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/20 dark:border-green-600 dark:text-green-300' =>
+                            session('flash_type') === 'success',
+                        'bg-blue-100 border-blue-400 text-blue-700 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-300' =>
+                            session('flash_type') === 'info' || !session('flash_type'),
+                    ])>
+
+                    {{ session('flash_message') }}
+                    <button @click="show = false"
+                        class="absolute top-2 right-3 text-xl leading-none hover:opacity-75">&times;</button>
+                </div>
+            @endif
 
             <!-- Main Content -->
             <div class="card-dental rounded-2xl p-8 shadow-2xl animate-fade-in border">
