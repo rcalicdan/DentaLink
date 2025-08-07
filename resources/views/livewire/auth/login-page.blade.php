@@ -1,4 +1,5 @@
  <div>
+    <x-flash-session />
      <x-slot name="header">
          <h2 class="mt-6 text-3xl font-bold text-slate-900 dark:text-white">
              Welcome Back

@@ -38,7 +38,10 @@ class LoginPage extends Component
         if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
-            $this->dispatchFlashMessage('error', 'Invalid Credentials');
+            $this->dispatch('show-message', [
+                'type' => 'error',
+                'message' => 'Invalid Credentials',
+            ]);
         }
 
         RateLimiter::clear($this->throttleKey());
