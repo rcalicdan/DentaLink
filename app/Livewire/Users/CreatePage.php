@@ -57,6 +57,7 @@ class CreatePage extends Component
 
     public function save()
     {
+        $this->authorize('create', User::class);
         $this->validate();
 
         User::create([
@@ -76,6 +77,7 @@ class CreatePage extends Component
 
     public function render()
     {
+        $this->authorize('create', User::class);
         return view('livewire.users.create-page', [
             'roleOptions' => $this->getRoleOptions(),
             'branchOptions' => $this->getBranchOptions(),

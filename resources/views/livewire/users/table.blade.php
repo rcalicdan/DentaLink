@@ -1,5 +1,6 @@
 <div>
     <x-flash-session/>
+    <x-flash-message/>
     <x-partials.table-header title="Users" />
     <x-data-table 
         :data="$this->rows" 

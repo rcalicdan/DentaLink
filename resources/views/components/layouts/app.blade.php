@@ -70,7 +70,8 @@
             </main>
         </div>
     </div>
-
+    
+    <livewire:auth.logout />
     <livewire:placeholder />
 
     <!-- Livewire Scripts - Move before Alpine.js -->

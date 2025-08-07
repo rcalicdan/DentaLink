@@ -64,6 +64,7 @@ class UpdatePage extends Component
 
     public function update()
     {
+        $this->authorize('update', $this->user);
         $this->validate();
 
         $updateData = [
@@ -81,13 +82,14 @@ class UpdatePage extends Component
 
         $this->user->update($updateData);
 
-        session()->flash('message', 'User updated successfully!');
+        session()->flash('success', 'User updated successfully!');
 
         return $this->redirect(route('users.index'), navigate: true);
     }
 
     public function render()
     {
+          $this->authorize('update', $this->user);
         return view('livewire.users.update-page', [
             'roleOptions' => $this->getRoleOptions(),
             'branchOptions' => $this->getBranchOptions(),

@@ -86,7 +86,7 @@ class Table extends Component
 
     public function render()
     {
-        // $this->authorize('viewAny', User::class);
+        $this->authorize('viewAny', User::class);
         $dataTable = $this->getDataTableConfig()->toArray();
         $selectedRowsCount = $this->getSelectedRowsCountProperty();
 
