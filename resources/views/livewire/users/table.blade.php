@@ -1,4 +1,5 @@
 <div>
+    <x-flash-session/>
     <x-data-table 
         :data="$this->rows" 
         :headers="$dataTable['headers']"

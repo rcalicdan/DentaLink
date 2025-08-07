@@ -54,7 +54,7 @@ class CreatePage extends Component
             'branch_id' => $this->branch_id ?: null,
         ]);
 
-        session()->flash('message', 'User created successfully!');
+        session()->flash('success', 'User created successfully!');
 
         return $this->redirect(route('users.index'), navigate: true);
     }

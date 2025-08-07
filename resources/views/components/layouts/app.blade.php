@@ -82,14 +82,8 @@
                 },
 
                 init() {
-                    this.initLivewireNavigation();
+                   //
                 },
-
-                initLivewireNavigation() {
-                    document.addEventListener('livewire:navigated', () => {
-                        console.log('Page navigated');
-                    });
-                }
             }
         }
     </script>

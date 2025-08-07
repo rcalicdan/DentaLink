@@ -3,6 +3,7 @@
 use App\Enums\UserRoles;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -38,6 +39,17 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        DB::table('users')->insert([
+            'email' => 'admin@example.com',
+            'password' => bcrypt('12345678'),
+            'first_name' => 'Admin',
+            'last_name' => 'User',
+            'phone' => '09123456789',
+            'role' => UserRoles::ADMIN,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**
