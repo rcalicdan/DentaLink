@@ -1,5 +1,4 @@
 <div x-data="dataTable({
-    {{-- Component x-data-table --}}
     headers: @js($headers),
     searchQuery: '{{ $searchQuery }}',
     sortColumn: '{{ $sortColumn }}',

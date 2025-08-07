@@ -72,6 +72,33 @@
                 opacity: 0.8;
             }
         }
+
+        .flash-message-container {
+            position: fixed !important;
+            top: 1rem !important;
+            right: 1rem !important;
+            z-index: 99999 !important;
+            pointer-events: none !important;
+            width: auto !important;
+            max-width: 24rem !important;
+        }
+
+        .flash-message-container>div {
+            pointer-events: auto !important;
+            position: relative !important;
+        }
+
+        /* Override any parent container constraints */
+        .flash-message-container {
+            isolation: isolate;
+            transform: none !important;
+        }
+
+        /* Ensure it's not affected by parent transforms */
+        body .flash-message-container {
+            position: fixed !important;
+            inset: auto 1rem 1rem auto !important;
+        }
     </style>
 
     <!-- Theme Script -->
@@ -88,6 +115,7 @@
 </head>
 
 <body class="font-sans bg-slate-50 dark:bg-slate-900 min-h-screen dental-pattern" x-data="authLayout()">
+    <x-flash-session />
     <!-- Background Elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
         <div class="absolute top-20 left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-xl animate-pulse-soft"></div>
