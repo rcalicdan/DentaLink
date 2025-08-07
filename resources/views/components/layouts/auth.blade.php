@@ -17,90 +17,6 @@
         integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <!-- Custom Styles -->
-    <style>
-        .dental-gradient {
-            background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-        }
-
-        .dental-pattern {
-            background-image:
-                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(99, 102, 241, 0.05) 0%, transparent 50%);
-        }
-
-        .card-dental {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .dark .card-dental {
-            background: rgba(30, 41, 59, 0.95);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-        }
-
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        .animate-pulse-soft {
-            animation: pulse-soft 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse-soft {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.8;
-            }
-        }
-
-        .flash-message-container {
-            position: fixed !important;
-            top: 1rem !important;
-            right: 1rem !important;
-            z-index: 99999 !important;
-            pointer-events: none !important;
-            width: auto !important;
-            max-width: 24rem !important;
-        }
-
-        .flash-message-container>div {
-            pointer-events: auto !important;
-            position: relative !important;
-        }
-
-        /* Override any parent container constraints */
-        .flash-message-container {
-            isolation: isolate;
-            transform: none !important;
-        }
-
-        /* Ensure it's not affected by parent transforms */
-        body .flash-message-container {
-            position: fixed !important;
-            inset: auto 1rem 1rem auto !important;
-        }
-    </style>
-
     <!-- Theme Script -->
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
@@ -115,7 +31,6 @@
 </head>
 
 <body class="font-sans bg-slate-50 dark:bg-slate-900 min-h-screen dental-pattern" x-data="authLayout()">
-    <x-flash-session />
     <!-- Background Elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
         <div class="absolute top-20 left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-xl animate-pulse-soft"></div>
@@ -136,19 +51,24 @@
                 {{ $header ?? '' }}
             </div>
 
+            <!-- Flash Message Box -->
+            <div x-data="{ show: false, message: '', type: 'info' }"
+                @show-message.window="show = true; message = $event.detail.message; type = $event.detail.type; setTimeout(() => show = false, 4000)"
+                x-show="show" x-transition
+                :class="{
+                    'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/20 dark:border-red-600 dark:text-red-300': type === 'error',
+                    'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/20 dark:border-green-600 dark:text-green-300': type === 'success',
+                    'bg-blue-100 border-blue-400 text-blue-700 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-300': type === 'info'
+                }"
+                class="border px-4 py-3 rounded-lg text-center" style="display: none;">
+                <span x-text="message"></span>
+                <button @click="show = false" class="float-right font-bold ml-2">&times;</button>
+            </div>
+
             <!-- Main Content -->
             <div class="card-dental rounded-2xl p-8 shadow-2xl animate-fade-in border">
                 {{ $slot }}
             </div>
-
-            {{-- <!-- Theme Toggle -->
-            <div class="text-center">
-                <button @click="toggleTheme()"
-                    class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all duration-200 backdrop-blur-sm">
-                    <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'" class="mr-2"></i>
-                    <span x-text="isDark ? 'Light Mode' : 'Dark Mode'"></span>
-                </button>
-            </div> --}}
 
             <!-- Footer Content -->
             {{ $footer ?? '' }}
