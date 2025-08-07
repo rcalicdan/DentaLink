@@ -2,54 +2,87 @@
     <form class="space-y-6" wire:submit.prevent="login">
         <!-- Email Field -->
         <div>
-            <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label for="email" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
                 Email Address
             </label>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-envelope text-slate-400"></i>
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                    <i
+                        class="fas fa-envelope text-slate-400 group-focus-within:text-blue-500 transition-colors duration-200"></i>
                 </div>
                 <input id="email" name="email" type="email" autocomplete="email" wire:model="email" required
                     value="{{ old('email') }}"
-                    class="block w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="Enter your email">
+                    class="block w-full pl-12 pr-4 py-4 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                    placeholder="your.email@example.com">
+                <div
+                    class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/5 to-cyan-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity duration-200 pointer-events-none">
+                </div>
             </div>
             @error('email')
-                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                <div class="mt-2 flex items-center text-sm text-red-500 dark:text-red-400">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {{ $message }}
+                </div>
             @enderror
         </div>
 
         <!-- Password Field -->
         <div>
-            <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label for="password" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
                 Password
             </label>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-lock text-slate-400"></i>
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                    <i
+                        class="fas fa-lock text-slate-400 group-focus-within:text-blue-500 transition-colors duration-200"></i>
                 </div>
                 <input id="password" name="password" wire:model="password" :type="showPassword ? 'text' : 'password'"
                     autocomplete="current-password" required
-                    class="block w-full pl-10 pr-12 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    class="block w-full pl-12 pr-14 py-4 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                     placeholder="Enter your password">
                 <button type="button" @click="togglePassword()"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-500 transition-colors duration-200 z-10">
                     <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                 </button>
+                <div
+                    class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/5 to-cyan-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity duration-200 pointer-events-none">
+                </div>
             </div>
             @error('password')
-                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                <div class="mt-2 flex items-center text-sm text-red-500 dark:text-red-400">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {{ $message }}
+                </div>
             @enderror
         </div>
 
         <!-- Submit Button -->
-        <div>
-            <button type="submit"
-                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white sidebar-gradient hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.02]">
-                <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                    <i class="fas fa-sign-in-alt text-blue-300 group-hover:text-blue-200"></i>
+        <div class="pt-2">
+            <button type="submit" :disabled="loading"
+                class="group relative w-full flex justify-center items-center py-4 px-6 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                x-bind:class="{ 'opacity-70 cursor-not-allowed': loading }">
+
+                <div
+                    class="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                </div>
+
+                <span class="flex items-center relative z-10">
+                    <div x-show="!loading" class="flex items-center">
+                        <i class="fas fa-sign-in-alt mr-3 text-blue-200"></i>
+                        Sign in to Dashboard
+                    </div>
+                    <div x-show="loading" class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        Signing in...
+                    </div>
                 </span>
-                Sign in
             </button>
         </div>
     </form>
@@ -60,9 +93,20 @@
         function loginForm() {
             return {
                 showPassword: false,
+                loading: false,
 
                 togglePassword() {
                     this.showPassword = !this.showPassword;
+                },
+
+                init() {
+                    this.$wire.on('loginStarted', () => {
+                        this.loading = true;
+                    });
+
+                    this.$wire.on('loginCompleted', () => {
+                        this.loading = false;
+                    });
                 }
             }
         }
