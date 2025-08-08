@@ -52,32 +52,7 @@
                 </div>
             </div>
 
-            <!-- Flash Messages with Modern Design -->
-            @if (session()->has('success'))
-                <div class="mb-8 relative">
-                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 p-1 rounded-xl shadow-lg">
-                        <div class="bg-white dark:bg-slate-900 p-4 rounded-lg flex items-center">
-                            <div class="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg mr-3">
-                                <i class="fas fa-check-circle text-green-600 dark:text-green-400"></i>
-                            </div>
-                            <p class="text-green-800 dark:text-green-200 font-medium">{{ session('success') }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            @if (session()->has('error'))
-                <div class="mb-8 relative">
-                    <div class="bg-gradient-to-r from-red-500 to-rose-500 p-1 rounded-xl shadow-lg">
-                        <div class="bg-white dark:bg-slate-900 p-4 rounded-lg flex items-center">
-                            <div class="bg-red-100 dark:bg-red-900/50 p-2 rounded-lg mr-3">
-                                <i class="fas fa-exclamation-circle text-red-600 dark:text-red-400"></i>
-                            </div>
-                            <p class="text-red-800 dark:text-red-200 font-medium">{{ session('error') }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
+            <x-flash-message/>
         </div>
     </div>
 

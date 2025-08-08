@@ -6,17 +6,7 @@
         </div>
     </div>
 
-    @if (session()->has('message'))
-        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p class="text-green-800">{{ session('message') }}</p>
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-red-800">{{ session('error') }}</p>
-        </div>
-    @endif
+    <x-flash-message/>
 
     <x-form.container title="Appointment Information" subtitle="Fill in the details below to create a new appointment"
         wire:submit="save">

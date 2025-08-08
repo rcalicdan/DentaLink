@@ -9,9 +9,12 @@ use App\Enums\AppointmentStatuses;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\DispatchFlashMessage;
 
 class UpdatePage extends Component
 {
+    use DispatchFlashMessage;
+    
     public Appointment $appointment;
     public $patient_id;
     public $appointment_date;
@@ -19,8 +22,6 @@ class UpdatePage extends Component
     public $notes;
     public $status;
     public $branch_id;
-
-    // Searchable dropdown properties
     public $patientSearch = '';
     public $showPatientDropdown = false;
     public $selectedPatient = null;
@@ -129,7 +130,6 @@ class UpdatePage extends Component
     {
         $this->authorize('update', $this->appointment);
         
-        // Ensure non-superadmin users can only use their assigned branch
         if (!Auth::user()->isSuperadmin()) {
             $this->branch_id = Auth::user()->branch_id;
         }
@@ -171,7 +171,7 @@ class UpdatePage extends Component
             return $this->redirect(route('appointments.index'), navigate: true);
 
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            $this->dispatchErrorMessage($e->getMessage());
         }
     }
 

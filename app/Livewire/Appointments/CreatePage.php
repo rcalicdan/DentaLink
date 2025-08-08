@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Branch;
 use App\Enums\AppointmentStatuses;
+use App\Traits\DispatchFlashMessage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,8 @@ use Carbon\Carbon;
 
 class CreatePage extends Component
 {
+    use DispatchFlashMessage;
+    
     public $patient_id = '';
     public $appointment_date = '';
     public $reason = '';
@@ -40,15 +43,13 @@ class CreatePage extends Component
             'notes' => 'nullable|string|max:500',
         ];
 
-        // Branch validation
         if ($user->isSuperadmin()) {
             $rules['branch_id'] = 'required|exists:branches,id';
         } else {
-            // For non-superadmin users, branch must be their assigned branch
             $rules['branch_id'] = [
                 'required',
                 'exists:branches,id',
-                Rule::in([$user->branch_id]) // Only allow their assigned branch
+                Rule::in([$user->branch_id])
             ];
         }
 
@@ -106,7 +107,6 @@ class CreatePage extends Component
     {
         $this->authorize('create', Appointment::class);
 
-        // Ensure non-superadmin users can only use their assigned branch
         if (!Auth::user()->isSuperadmin()) {
             $this->branch_id = Auth::user()->branch_id;
         }
@@ -133,7 +133,7 @@ class CreatePage extends Component
 
             return $this->redirect(route('appointments.index'), navigate: true);
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            $this->dispatchErrorMessage($e->getMessage());
         }
     }
 

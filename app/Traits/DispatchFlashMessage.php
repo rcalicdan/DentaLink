@@ -11,4 +11,14 @@ trait DispatchFlashMessage
             'message' => __($message),
         ]);
     }
+
+    public function dispatchSuccessMessage(string $message)
+    {
+        $this->dispatchFlashMessage('success', $message);
+    }
+
+    public function dispatchErrorMessage(string $message)
+    {
+        $this->dispatchFlashMessage('error', $message);
+    }
 }
