@@ -1,4 +1,5 @@
 @if (isset($header['type']) && $header['type'] === 'enum_badge')
+    {{-- New enum badge handling --}}
     @php
         $badgeClass = $this->getEnumBadgeClass($value);
         $displayText = $this->getEnumDisplayName($value);
@@ -9,16 +10,29 @@
         {{ __($displayText) }}
     </span>
 @elseif (isset($header['type']) && $header['type'] === 'badge')
+    {{-- Existing badge handling with enum compatibility --}}
     @php
         if (is_array($value)) {
-            $displayText = $value['text'] ?? '';
+            // Array format: ['text' => 'Display Text', 'class' => 'css-classes']
+            $displayText = $value['text'] ?? ($value['label'] ?? '');
             $badgeClass = $value['class'] ?? $this->getBadgeClass($value);
+            $showIcon = isset($value['icon']) ? $value['icon'] : null;
+        } elseif (is_object($value) && method_exists($value, 'getDisplayName')) {
+            // Enum object - use enum methods but in regular badge style (no icon)
+            $displayText = $value->getDisplayName();
+            $badgeClass = $value->getBadgeClass();
+            $showIcon = null;
         } else {
-            $displayText = $this->formatValue($header, $value);
+            // Regular string/value
+            $displayText = $this->getBadgeDisplayText($value);
             $badgeClass = $this->getBadgeClass($value);
+            $showIcon = null;
         }
     @endphp
-    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+        @if ($showIcon)
+            <i class="fas fa-{{ $showIcon }} mr-1"></i>
+        @endif
         {{ __($displayText) }}
     </span>
 @elseif(isset($header['type']) && $header['type'] === 'boolean')
