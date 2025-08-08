@@ -27,7 +27,7 @@ class Table extends Component
         $this->deleteAction = 'deleteAppointment';
         $this->routeIdColumn = 'id';
         $this->setDataTableFactory($this->getDataTableConfig());
-    
+
         if (empty($this->searchDate)) {
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
@@ -65,7 +65,7 @@ class Table extends Component
                     'key' => 'status',
                     'label' => 'Status',
                     'sortable' => true,
-                    'type' => 'badge'
+                    'type' => 'enum_badge'
                 ],
                 [
                     'key' => 'reason',

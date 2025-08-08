@@ -4,6 +4,8 @@ namespace App\Traits\Livewire;
 
 use App\DataTable\DataTableFactory;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Livewire\WithPagination;
 
 trait WithDataTable
@@ -111,7 +113,7 @@ trait WithDataTable
 
         $id = $this->getIdValue($row);
 
-        if (\Route::has($viewRoute)) {
+        if (Route::has($viewRoute)) {
             try {
                 return route($viewRoute, $id);
             } catch (\Exception $e) {
@@ -141,7 +143,7 @@ trait WithDataTable
 
         $id = $this->getIdValue($row);
 
-        if (\Route::has($editRoute)) {
+        if (Route::has($editRoute)) {
             try {
                 return route($editRoute, $id);
             } catch (\Exception $e) {
@@ -169,7 +171,7 @@ trait WithDataTable
             return '#';
         }
 
-        if (\Route::has($createRoute)) {
+        if (Route::has($createRoute)) {
             return route($createRoute);
         }
 
@@ -284,6 +286,8 @@ trait WithDataTable
             'datetime' => $this->formatDateTimeValue($value),
             'currency' => 'P' . number_format((float) ($value ?? 0), 2, '.', ' '),
             'boolean' => $value ? 'Yes' : 'No',
+            'badge' => $this->getBadgeClass($value),
+            'enum_badge' => $this->getEnumBadgeClass($value),
             default => $value
         };
     }
@@ -354,18 +358,98 @@ trait WithDataTable
 
     public function getBadgeClass($value): string
     {
+        if (is_object($value) && method_exists($value, 'getBadgeClass')) {
+            return $value->getBadgeClass();
+        }
+
         if (is_array($value)) {
             return $value['class'] ?? 'bg-gray-100 text-gray-800';
         }
 
-        return match (strtolower((string) $value)) {
-            'active', 'published', 'approved', 'completed' => 'bg-green-100 text-green-800',
+        if ($value instanceof \BackedEnum) {
+            $stringValue = $value->value;
+        } else {
+            $stringValue = (string) $value;
+        }
+
+        return match (strtolower($stringValue)) {
+            // Appointment status enum values
+            'waiting' => 'bg-blue-100 text-blue-800',
+            'in_progress' => 'bg-purple-100 text-purple-800',
+            'completed' => 'bg-green-100 text-green-800',
+            'missed' => 'bg-yellow-100 text-yellow-800',
+            'cancelled' => 'bg-red-100 text-red-800',
+
+            // Existing generic values (backward compatibility)
+            'active', 'published', 'approved' => 'bg-green-100 text-green-800',
             'inactive', 'draft', 'pending' => 'bg-yellow-100 text-yellow-800',
-            'deleted', 'rejected', 'cancelled' => 'bg-red-100 text-red-800',
+            'deleted', 'rejected' => 'bg-red-100 text-red-800',
+
             default => 'bg-gray-100 text-gray-800'
         };
     }
 
+    public function getEnumBadgeClass($value): string
+    {
+        if (is_object($value) && method_exists($value, 'getBadgeClass')) {
+            return $value->getBadgeClass();
+        }
+
+        return $this->getBadgeClass($value);
+    }
+
+    public function getEnumIcon($value): string
+    {
+        if (is_object($value) && method_exists($value, 'getIcon')) {
+            return $value->getIcon();
+        }
+
+        if ($value instanceof \BackedEnum) {
+            $stringValue = $value->value;
+        } else {
+            $stringValue = (string) $value;
+        }
+
+        return match (strtolower($stringValue)) {
+            'waiting', 'pending' => 'clock',
+            'in_progress' => 'play-circle',
+            'completed', 'active', 'approved' => 'check-circle',
+            'missed' => 'x-circle',
+            'cancelled', 'rejected' => 'ban',
+            'draft' => 'edit',
+            'published' => 'eye',
+            'deleted' => 'trash',
+            default => 'circle'
+        };
+    }
+
+    public function getEnumDisplayName($value): string
+    {
+        if (is_object($value) && method_exists($value, 'getDisplayName')) {
+            return $value->getDisplayName();
+        }
+
+        if ($value instanceof \BackedEnum) {
+            return $this->formatDisplayName($value->value);
+        }
+
+        return $this->formatDisplayName((string) $value);
+    }
+
+    private function formatDisplayName(string $value): string
+    {
+        return ucwords(str_replace(['_', '-'], ' ', $value));
+    }
+
+
+    public function getBadgeDisplayText($value): string
+    {
+        if (is_array($value)) {
+            return $value['text'] ?? $value['label'] ?? '';
+        }
+
+        return $this->getEnumDisplayName($value);
+    }
     public function getBooleanBadgeClass($value): string
     {
         return $value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
@@ -650,7 +734,7 @@ trait WithDataTable
 
             return $subquery;
         } catch (\Exception $e) {
-            \Log::error('Subquery build error: ' . $e->getMessage());
+            Log::error('Subquery build error: ' . $e->getMessage());
             return null;
         }
     }

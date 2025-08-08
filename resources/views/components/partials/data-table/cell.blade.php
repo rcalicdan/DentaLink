@@ -1,4 +1,14 @@
-@if (isset($header['type']) && $header['type'] === 'badge')
+@if (isset($header['type']) && $header['type'] === 'enum_badge')
+    @php
+        $badgeClass = $this->getEnumBadgeClass($value);
+        $displayText = $this->getEnumDisplayName($value);
+        $icon = $this->getEnumIcon($value);
+    @endphp
+    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+        <i class="fas fa-{{ $icon }} mr-1"></i>
+        {{ __($displayText) }}
+    </span>
+@elseif (isset($header['type']) && $header['type'] === 'badge')
     @php
         if (is_array($value)) {
             $displayText = $value['text'] ?? '';

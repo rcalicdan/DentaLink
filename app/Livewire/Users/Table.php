@@ -49,7 +49,7 @@ class Table extends Component
                     'key' => 'role',
                     'label' => 'Role',
                     'sortable' => true,
-                    'type' => 'badge'
+                    'type' => 'enum_badge'
                 ],
                 [
                     'key' => 'branch_name',

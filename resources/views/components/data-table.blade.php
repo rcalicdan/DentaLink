@@ -116,7 +116,6 @@
                         <div class="flex-grow min-w-0">
                             @foreach ($headers as $header)
                                 @if ($this->shouldShowOnMobile($header))
-                                    {{-- V V V THIS ENTIRE BLOCK IS THE FIX V V V --}}
                                     <div class="flex items-start py-1 gap-4">
                                         <span
                                             class="text-sm font-medium text-gray-500">{{ __($header['label']) }}:</span>
@@ -128,7 +127,6 @@
                                             ])
                                         </span>
                                     </div>
-                                    {{-- ^ ^ ^ THIS ENTIRE BLOCK IS THE FIX ^ ^ ^ --}}
                                 @endif
                             @endforeach
                         </div>

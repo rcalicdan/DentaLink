@@ -30,6 +30,11 @@ class Appointment extends Model
         ];
     }
 
+    public function getPatientNameAttribute(): string
+    {
+        return "{$this->patient->first_name} {$this->patient->last_name}";
+    }
+
     public function patient()
     {
         return $this->belongsTo(Patient::class);
