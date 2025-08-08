@@ -90,10 +90,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <x-form.field label="Appointment Date" name="appointment_date" type="date" wire:model="appointment_date"
                 required icon="fas fa-calendar" :readonly="!$canUpdateDate"
-                help="{{ !$canUpdateDate ? 'Date can only be changed for waiting appointments' : '' }}" />
+                help="{{ !$canUpdateDate ? 'Date can only be changed for waiting appointments or by superadmin/admin' : '' }}" />
 
             <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
-                icon="fas fa-building" :readonly="auth()->user()->isAdmin()">
+                icon="fas fa-building" :readonly="!auth()->user()->isSuperadmin()">
                 <option value="">Select a branch</option>
                 @foreach ($branches as $branch)
                     <option value="{{ $branch->id }}">{{ $branch->name }}</option>

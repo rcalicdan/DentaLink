@@ -27,8 +27,7 @@ class Table extends Component
         $this->deleteAction = 'deleteAppointment';
         $this->routeIdColumn = 'id';
         $this->setDataTableFactory($this->getDataTableConfig());
-        
-        // Set default date to today
+    
         if (empty($this->searchDate)) {
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
@@ -185,7 +184,7 @@ class Table extends Component
         $appointment = Appointment::findOrFail($id);
         $this->authorize('delete', $appointment);
 
-        if (!$appointment->canBeModified()) {
+        if (!Auth::user()->isSuperadmin() && !$appointment->canBeModified()) {
             $this->dispatch('show-message', [
                 'message' => 'Cannot delete appointment with current status.',
                 'type' => 'error'

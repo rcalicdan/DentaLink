@@ -51,11 +51,11 @@ class UpdatePage extends Component
             'branch_id' => 'required|exists:branches,id',
         ];
 
-        if (Auth::user()->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING) {
+        if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING) {
             $rules['appointment_date'] = 'required|date|after_or_equal:today';
         }
 
-        if (Auth::user()->isAdmin()) {
+        if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin()) {
             $rules['status'] = ['required', Rule::in(array_map(fn($s) => $s->value, AppointmentStatuses::cases()))];
         } else {
             $allowedStatuses = $this->appointment->status->getAllowedTransitions(Auth::user());
@@ -160,21 +160,36 @@ class UpdatePage extends Component
 
     public function canUpdateDate()
     {
-        return Auth::user()->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING;
+        return Auth::user()->isSuperadmin() || Auth::user()->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING;
     }
 
     public function canUpdateStatus()
     {
-        return Auth::user()->isAdmin() || !empty($this->appointment->status->getAllowedTransitions(Auth::user()));
+        return Auth::user()->isSuperadmin() || Auth::user()->isAdmin() || !empty($this->appointment->status->getAllowedTransitions(Auth::user()));
     }
 
     public function getAvailableStatuses()
     {
-        if (Auth::user()->isAdmin()) {
+        if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin()) {
             return AppointmentStatuses::cases();
         }
 
         return $this->appointment->status->getAllowedTransitions(Auth::user());
+    }
+
+    private function getBranchesForUser()
+    {
+        $user = Auth::user();
+        
+        if ($user->isSuperadmin()) {
+            return Branch::orderBy('name')->get();
+        }
+        
+        if ($user->isAdmin()) {
+            return $user->branch ? [$user->branch] : [];
+        }
+        
+        return $user->branch ? [$user->branch] : [];
     }
 
     public function render()
@@ -186,9 +201,7 @@ class UpdatePage extends Component
             'availableStatuses' => $availableStatuses,
             'canUpdateDate' => $this->canUpdateDate(),
             'canUpdateStatus' => $this->canUpdateStatus(),
-            'branches' => Auth::user()->isAdmin() 
-                ? [Auth::user()->branch] 
-                : Branch::orderBy('name')->get()
+            'branches' => $this->getBranchesForUser()
         ]);
     }
 }

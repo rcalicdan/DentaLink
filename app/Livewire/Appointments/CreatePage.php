@@ -116,15 +116,28 @@ class CreatePage extends Component
         }
     }
 
+    private function getBranchesForUser()
+    {
+        $user = Auth::user();
+        
+        if ($user->isSuperadmin()) {
+            return Branch::orderBy('name')->get();
+        }
+        
+        if ($user->isAdmin()) {
+            return $user->branch ? [$user->branch] : [];
+        }
+        
+        return $user->branch ? [$user->branch] : [];
+    }
+
     public function render()
     {
         $this->authorize('create', Appointment::class);
         
         return view('livewire.appointments.create-page', [
             'searchedPatients' => $this->searchedPatients,
-            'branches' => Auth::user()->isAdmin() 
-                ? [Auth::user()->branch] 
-                : Branch::orderBy('name')->get()
+            'branches' => $this->getBranchesForUser()
         ]);
     }
 }

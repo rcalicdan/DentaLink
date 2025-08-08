@@ -53,7 +53,7 @@
             @endcan
 
             @can('viewAny', App\Models\Appointment::class)
-                <x-partials.nav-item href="#" icon="fas fa-calendar-check" :active="false">
+                <x-partials.nav-item href="{{ route('appointments.index') }}" icon="fas fa-calendar-check" :active="request()->routeIs('appointments.*')">
                     Appointments
                 </x-partials.nav-item>
             @endcan

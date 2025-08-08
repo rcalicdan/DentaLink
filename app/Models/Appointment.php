@@ -64,7 +64,6 @@ class Appointment extends Model
         });
     }
 
-
     public static function getNextQueueNumber($date)
     {
         $lastAppointment = static::whereDate('appointment_date', $date)
@@ -94,6 +93,11 @@ class Appointment extends Model
 
     public function updateStatus(AppointmentStatuses $newStatus, $user = null)
     {
+        if ($user && $user->isSuperadmin()) {
+            $this->update(['status' => $newStatus]);
+            return true;
+        }
+
         if (!$this->status->canTransitionTo($newStatus, $user)) {
             return false;
         }
@@ -104,6 +108,10 @@ class Appointment extends Model
 
     public function canBeModified()
     {
+        if (Auth::user() && Auth::user()->isSuperadmin()) {
+            return true;
+        }
+
         return !$this->status->isFinalState(Auth::user());
     }
 

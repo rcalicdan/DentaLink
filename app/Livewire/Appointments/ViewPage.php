@@ -34,6 +34,10 @@ class ViewPage extends Component
 
     public function getAvailableTransitions()
     {
+        if (Auth::user()->isSuperadmin()) {
+            return AppointmentStatuses::cases();
+        }
+
         return $this->appointment->status->getAllowedTransitions(Auth::user());
     }
 

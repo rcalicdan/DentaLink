@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/appointments/create-page.blade.php --}}
 <div class="container mx-auto px-2 py-0">
     <div class="flex justify-between items-center mb-6">
         <div>
@@ -74,7 +73,7 @@
                 required icon="fas fa-calendar" />
 
             <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
-                icon="fas fa-building" :readonly="auth()->user()->isAdmin()">
+                icon="fas fa-building" :readonly="!auth()->user()->isSuperadmin()">
                 <option value="">Select a branch</option>
                 @foreach ($branches as $branch)
                     <option value="{{ $branch->id }}">{{ $branch->name }}</option>
