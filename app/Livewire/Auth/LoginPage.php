@@ -43,7 +43,7 @@ class LoginPage extends Component
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended('/', navigate: true);
+        $this->redirectIntended('/dashboard', navigate: true);
     }
 
     /**

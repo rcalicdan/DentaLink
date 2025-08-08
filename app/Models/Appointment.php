@@ -10,7 +10,6 @@ class Appointment extends Model
         'patient_id',
         'branch_id',
         'appointment_date',
-        'appointment_time',
         'queue_number',
         'status',
         'notes',
@@ -22,7 +21,6 @@ class Appointment extends Model
     {
         return [
             'appointment_date' => 'date',
-            'appointment_time' => 'datetime:H:i',
             'has_visit' => 'boolean',
         ];
     }
