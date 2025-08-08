@@ -14,7 +14,9 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->date('appointment_date');
             $table->integer('queue_number')->nullable();
-            $table->enum('status', ['Scheduled', 'In Progress', 'Completed', 'Cancelled', 'No Show'])->default('Scheduled');
+            $table->enum('status', ['waiting', 'in_progress', 'completed', 'missed', 'cancelled'])
+                  ->default('waiting');
+            $table->string('reason');
             $table->text('notes')->nullable();
             $table->boolean('has_visit')->default(false);
             $table->foreignId('created_by')->constrained('users')->nullOnDelete();

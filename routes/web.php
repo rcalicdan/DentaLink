@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', App\Livewire\Auth\LoginPage::class)->middleware('guest')->name('login');
-
+Route::get('/', fn() => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return view('contents.dashboard.index');
@@ -37,5 +37,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('', App\Livewire\DentalServices\Table::class)->name('index');
         Route::get('/create', App\Livewire\DentalServices\CreatePage::class)->name('create');
         Route::get('/{dentalService}/edit', App\Livewire\DentalServices\UpdatePage::class)->name('edit');
+    });
+
+    Route::prefix('appointments')->name('appointments.')->group(function () {
+        Route::get('', App\Livewire\Appointments\Table::class)->name('index');
+        Route::get('/create', App\Livewire\Appointments\CreatePage::class)->name('create');
+        Route::get('/{appointment}/edit', App\Livewire\Appointments\UpdatePage::class)->name('edit');
+        Route::get('/{appointment}/view', App\Livewire\Appointments\ViewPage::class)->name('view');
     });
 });
