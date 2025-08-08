@@ -44,21 +44,32 @@ class UpdatePage extends Component
 
     public function rules()
     {
+        $user = Auth::user();
+        
         $rules = [
             'patient_id' => 'required|exists:patients,id',
             'reason' => 'required|string|min:5|max:255',
             'notes' => 'nullable|string|max:500',
-            'branch_id' => 'required|exists:branches,id',
         ];
 
-        if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING) {
+        if ($user->isSuperadmin()) {
+            $rules['branch_id'] = 'required|exists:branches,id';
+        } else {
+            $rules['branch_id'] = [
+                'required',
+                'exists:branches,id',
+                Rule::in([$user->branch_id]) 
+            ];
+        }
+
+        if ($user->isSuperadmin() || $user->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING) {
             $rules['appointment_date'] = 'required|date|after_or_equal:today';
         }
 
-        if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin()) {
+        if ($user->isSuperadmin() || $user->isAdmin()) {
             $rules['status'] = ['required', Rule::in(array_map(fn($s) => $s->value, AppointmentStatuses::cases()))];
         } else {
-            $allowedStatuses = $this->appointment->status->getAllowedTransitions(Auth::user());
+            $allowedStatuses = $this->appointment->status->getAllowedTransitions($user);
             if (!empty($allowedStatuses)) {
                 $rules['status'] = ['required', Rule::in(array_map(fn($s) => $s->value, $allowedStatuses))];
             }
@@ -117,6 +128,12 @@ class UpdatePage extends Component
     public function update()
     {
         $this->authorize('update', $this->appointment);
+        
+        // Ensure non-superadmin users can only use their assigned branch
+        if (!Auth::user()->isSuperadmin()) {
+            $this->branch_id = Auth::user()->branch_id;
+        }
+        
         $validatedData = $this->validate();
 
         try {
@@ -168,6 +185,11 @@ class UpdatePage extends Component
         return Auth::user()->isSuperadmin() || Auth::user()->isAdmin() || !empty($this->appointment->status->getAllowedTransitions(Auth::user()));
     }
 
+    public function canUpdateBranch()
+    {
+        return Auth::user()->isSuperadmin();
+    }
+
     public function getAvailableStatuses()
     {
         if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin()) {
@@ -201,6 +223,7 @@ class UpdatePage extends Component
             'availableStatuses' => $availableStatuses,
             'canUpdateDate' => $this->canUpdateDate(),
             'canUpdateStatus' => $this->canUpdateStatus(),
+            'canUpdateBranch' => $this->canUpdateBranch(),
             'branches' => $this->getBranchesForUser()
         ]);
     }

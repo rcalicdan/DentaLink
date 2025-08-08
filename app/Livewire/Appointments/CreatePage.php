@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Branch;
 use App\Enums\AppointmentStatuses;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -30,13 +31,28 @@ class CreatePage extends Component
 
     public function rules()
     {
-        return [
+        $user = Auth::user();
+
+        $rules = [
             'patient_id' => 'required|exists:patients,id',
             'appointment_date' => 'required|date|after_or_equal:today',
             'reason' => 'required|string|min:5|max:255',
             'notes' => 'nullable|string|max:500',
-            'branch_id' => 'required|exists:branches,id',
         ];
+
+        // Branch validation
+        if ($user->isSuperadmin()) {
+            $rules['branch_id'] = 'required|exists:branches,id';
+        } else {
+            // For non-superadmin users, branch must be their assigned branch
+            $rules['branch_id'] = [
+                'required',
+                'exists:branches,id',
+                Rule::in([$user->branch_id]) // Only allow their assigned branch
+            ];
+        }
+
+        return $rules;
     }
 
     public function updatedPatientSearch()
@@ -81,14 +97,20 @@ class CreatePage extends Component
                 ->orWhere('id', 'like', '%' . $this->patientSearch . '%')
                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $this->patientSearch . '%']);
         })
-        ->orderBy('first_name')
-        ->limit(15)
-        ->get();
+            ->orderBy('first_name')
+            ->limit(15)
+            ->get();
     }
 
     public function save()
     {
         $this->authorize('create', Appointment::class);
+
+        // Ensure non-superadmin users can only use their assigned branch
+        if (!Auth::user()->isSuperadmin()) {
+            $this->branch_id = Auth::user()->branch_id;
+        }
+
         $this->validate();
 
         try {
@@ -110,34 +132,39 @@ class CreatePage extends Component
             session()->flash('success', 'Appointment created successfully!');
 
             return $this->redirect(route('appointments.index'), navigate: true);
-
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
     }
 
+    public function canUpdateBranch()
+    {
+        return Auth::user()->isSuperadmin();
+    }
+
     private function getBranchesForUser()
     {
         $user = Auth::user();
-        
+
         if ($user->isSuperadmin()) {
             return Branch::orderBy('name')->get();
         }
-        
+
         if ($user->isAdmin()) {
             return $user->branch ? [$user->branch] : [];
         }
-        
+
         return $user->branch ? [$user->branch] : [];
     }
 
     public function render()
     {
         $this->authorize('create', Appointment::class);
-        
+
         return view('livewire.appointments.create-page', [
             'searchedPatients' => $this->searchedPatients,
-            'branches' => $this->getBranchesForUser()
+            'branches' => $this->getBranchesForUser(),
+            'canUpdateBranch' => $this->canUpdateBranch()
         ]);
     }
 }

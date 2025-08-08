@@ -39,11 +39,6 @@ class Table extends Component
             ->model(Appointment::class)
             ->headers([
                 [
-                    'key' => 'id',
-                    'label' => 'ID',
-                    'sortable' => true
-                ],
-                [
                     'key' => 'queue_number',
                     'label' => 'Queue #',
                     'sortable' => true

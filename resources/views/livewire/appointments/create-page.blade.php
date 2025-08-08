@@ -72,13 +72,27 @@
             <x-form.field label="Appointment Date" name="appointment_date" type="date" wire:model="appointment_date"
                 required icon="fas fa-calendar" />
 
-            <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
-                icon="fas fa-building" :readonly="!auth()->user()->isSuperadmin()">
-                <option value="">Select a branch</option>
-                @foreach ($branches as $branch)
-                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                @endforeach
-            </x-form.field>
+            {{--  --}}
+            @if ($canUpdateBranch)
+                <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
+                    icon="fas fa-building">
+                    <option value="">Select a branch</option>
+                    @foreach ($branches as $branch)
+                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                    @endforeach
+                </x-form.field>
+            @else
+                {{-- Hidden field for non-superadmin users --}}
+                <input type="hidden" wire:model="branch_id" />
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-building text-blue-500 mr-2"></i>
+                        <span class="text-sm text-blue-700 dark:text-blue-300">
+                            <strong>Branch:</strong> {{ auth()->user()->branch->name ?? 'Not Assigned' }}
+                        </span>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <x-form.field label="Reason for Visit" name="reason" type="text" placeholder="Enter reason for appointment"

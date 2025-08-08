@@ -24,8 +24,7 @@
     $hasError = $errors->has($name);
 
     $inputClasses = [
-        'w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50
-focus:border-blue-500',
+        'w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500',
         'bg-white dark:bg-slate-700',
         'border-slate-300 dark:border-slate-600',
         'text-slate-900 dark:text-slate-100',
@@ -71,12 +70,17 @@ focus:border-blue-500',
                 @if ($required) required @endif @if ($disabled || $readonly) disabled @endif
                 @if ($multiple) multiple @endif
                 {{ $attributes->merge(['class' => implode(' ', $inputClasses)]) }}>
-                @foreach ($options as $optionValue => $optionLabel)
-                    <option value="{{ $optionValue }}"
-                        @if ($wire) @selected($optionValue == $value) @else @selected(old($name, $value) == $optionValue) @endif>
-                        {{ $optionLabel }}
-                    </option>
-                @endforeach
+
+                @if ($slot->isNotEmpty())
+                    {{ $slot }}
+                @else
+                    @foreach ($options as $optionValue => $optionLabel)
+                        <option value="{{ $optionValue }}"
+                            @if ($wire) @selected($optionValue == $value) @else @selected(old($name, $value) == $optionValue) @endif>
+                            {{ $optionLabel }}
+                        </option>
+                    @endforeach
+                @endif
             </select>
         @elseif($type === 'file')
             <input type="file" id="{{ $inputId }}" name="{{ $multiple ? $name . '[]' : $name }}"
