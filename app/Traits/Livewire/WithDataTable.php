@@ -282,7 +282,7 @@ trait WithDataTable
         return match ($header['type']) {
             'date' => $this->formatDateValue($value),
             'datetime' => $this->formatDateTimeValue($value),
-            'currency' => number_format((float) ($value ?? 0), 2, ',', ' ') . ' zł',
+            'currency' => 'P' . number_format((float) ($value ?? 0), 2, '.', ' '),
             'boolean' => $value ? 'Yes' : 'No',
             default => $value
         };

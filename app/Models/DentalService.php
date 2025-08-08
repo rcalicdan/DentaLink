@@ -19,6 +19,11 @@ class DentalService extends Model
         ];
     }
 
+    public function getServiceTypeNameAttribute()
+    {
+        return $this->dentalServiceType?->name ?? 'N/A';
+    }
+
     // Relationships
     public function dentalServiceType()
     {

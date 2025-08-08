@@ -8,7 +8,7 @@
     message: '',
     type: null,
     progress: 0,
-    duration: 5000,
+    duration: 2000,
     interval: null,
 
     init() {
@@ -114,7 +114,6 @@
     </div>
 </div>
 
-{{-- Keep the session-based flash message as fallback --}}
 @php
     $message = session('success') ?: session('error');
     $type = session('success') ? 'success' : (session('error') ? 'error' : null);
@@ -130,7 +129,7 @@
     <div x-data="{
         show: true,
         progress: 0,
-        duration: 2500,
+        duration: 2800,
         interval: null,
         startTimer() {
             this.progress = 0;

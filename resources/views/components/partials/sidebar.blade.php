@@ -34,12 +34,24 @@
                 </x-partials.nav-item>
             @endcan
 
+            @can('viewAny', App\Models\DentalServiceType::class)
+                <x-partials.nav-item href="{{ route('dental-service-types.index') }}" icon="fas fa-tooth" :active="request()->routeIs('dental-service-types.*')">
+                    Service Types
+                </x-partials.nav-item>
+            @endcan
+
+            @can('viewAny', App\Models\DentalService::class)
+                <x-partials.nav-item href="{{ route('dental-services.index') }}" icon="fas fa-procedures" :active="request()->routeIs('dental-services.*')">
+                    Dental Services
+                </x-partials.nav-item>
+            @endcan
+
             @can('viewAny', App\Models\Patient::class)
                 <x-partials.nav-item href="{{ route('patients.index') }}" icon="fas fa-users" :active="request()->routeIs('patients.*')">
                     Patients
                 </x-partials.nav-item>
             @endcan
-            
+
             @can('viewAny', App\Models\Appointment::class)
                 <x-partials.nav-item href="#" icon="fas fa-calendar-check" :active="false">
                     Appointments

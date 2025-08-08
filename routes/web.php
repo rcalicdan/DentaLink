@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::get('login', App\Livewire\Auth\LoginPage::class)->middleware('guest')->name('login');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return view('contents.dashboard.index');
@@ -23,5 +25,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('', App\Livewire\Patients\Table::class)->name('index');
         Route::get('/create', App\Livewire\Patients\CreatePage::class)->name('create');
         Route::get('/{patient}/edit', App\Livewire\Patients\UpdatePage::class)->name('edit');
+    });
+
+    Route::prefix('dental-service-types')->name('dental-service-types.')->group(function () {
+        Route::get('', App\Livewire\DentalServiceTypes\Table::class)->name('index');
+        Route::get('/create', App\Livewire\DentalServiceTypes\CreatePage::class)->name('create');
+        Route::get('/{dentalServiceType}/edit', App\Livewire\DentalServiceTypes\UpdatePage::class)->name('edit');
+    });
+
+    Route::prefix('dental-services')->name('dental-services.')->group(function () {
+        Route::get('', App\Livewire\DentalServices\Table::class)->name('index');
+        Route::get('/create', App\Livewire\DentalServices\CreatePage::class)->name('create');
+        Route::get('/{dentalService}/edit', App\Livewire\DentalServices\UpdatePage::class)->name('edit');
     });
 });
