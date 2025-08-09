@@ -140,147 +140,235 @@
         @endif
 
         {{-- Dental Services Section --}}
-        <div class="border-t border-slate-200 dark:border-slate-600 pt-6 mt-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100">
-                    <i class="fas fa-tooth text-blue-500 mr-2"></i>
-                    Dental Services
-                </h3>
-                <button type="button" wire:click="addService"
-                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-plus mr-1"></i>
-                    Add Service
-                </button>
-            </div>
-
-            @foreach ($services as $index => $service)
-                <div
-                    class="mb-4 p-4 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                    <div class="flex justify-between items-start mb-3">
-                        <h4 class="font-medium text-slate-900 dark:text-slate-100">Service #{{ $index + 1 }}</h4>
-                        @if (count($services) > 1)
-                            <button type="button" wire:click="removeService({{ $index }})"
-                                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        @endif
+        <div class="border-t border-slate-200 dark:border-slate-600 pt-8 mt-8">
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                            <i class="fas fa-tooth text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                                Dental Services
+                            </h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">
+                                Add the services provided during this visit
+                            </p>
+                        </div>
                     </div>
+                    <button type="button" wire:click="addService"
+                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800">
+                        <i class="fas fa-plus w-4 h-4 mr-2"></i>
+                        Add Service
+                    </button>
+                </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {{-- Service Search --}}
-                        <div class="relative">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Service <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" wire:model.live="serviceSearch"
-                                    placeholder="Search for a service..."
-                                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white sm:text-sm">
-
-                                @if ($showServiceDropdown)
-                                    <div
-                                        class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg max-h-48 overflow-auto">
-                                        @forelse($searchedServices as $searchService)
-                                            <button type="button"
-                                                wire:click="selectService({{ $searchService->id }}, {{ $index }})"
-                                                class="w-full px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-200 dark:border-slate-600 last:border-b-0">
-                                                <div class="font-medium text-slate-900 dark:text-slate-100">
-                                                    {{ $searchService->name }}
-                                                </div>
-                                                <div class="text-sm text-slate-500 dark:text-slate-400">
-                                                    {{ $searchService->serviceTypeName }} -
-                                                    ₱{{ number_format($searchService->price, 2) }}
-                                                </div>
-                                            </button>
-                                        @empty
-                                            <div class="px-4 py-2 text-slate-500 dark:text-slate-400">
-                                                No services found
-                                            </div>
-                                        @endforelse
+                {{-- Services List --}}
+                <div class="space-y-6">
+                    @foreach ($services as $index => $service)
+                        <div class="group relative">
+                            {{-- Service Card --}}
+                            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all duration-200">
+                                {{-- Service Header --}}
+                                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+                                    <div class="flex items-center">
+                                        <div class="flex items-center justify-center w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-full mr-3">
+                                            <span class="text-sm font-medium text-slate-600 dark:text-slate-300">{{ $index + 1 }}</span>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-slate-900 dark:text-slate-100">Service #{{ $index + 1 }}</h4>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">Configure service details</p>
+                                        </div>
                                     </div>
-                                @endif
-                            </div>
+                                    
+                                    {{-- Remove Button --}}
+                                    @if (count($services) > 1)
+                                        <button type="button" wire:click="removeService({{ $index }})"
+                                            class="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all duration-200">
+                                            <i class="fas fa-trash-alt w-4 h-4"></i>
+                                        </button>
+                                    @endif
+                                </div>
 
-                            {{-- Selected Service Display --}}
-                            @if (!empty($service['dental_service_id']))
-                                @php
-                                    $selectedService = \App\Models\DentalService::with('dentalServiceType')->find(
-                                        $service['dental_service_id'],
-                                    );
-                                @endphp
-                                @if ($selectedService)
-                                    <div
-                                        class="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                                        <div class="text-sm">
-                                            <div class="font-medium text-green-800 dark:text-green-200">
-                                                {{ $selectedService->name }}
+                                {{-- Service Content --}}
+                                <div class="p-6">
+                                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                        {{-- Service Selection (Left Column) --}}
+                                        <div class="lg:col-span-7">
+                                            <div class="relative">
+                                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    <i class="fas fa-search w-3 h-3 mr-1 text-slate-400"></i>
+                                                    Service <span class="text-red-500">*</span>
+                                                </label>
+                                                
+                                                <div class="relative">
+                                                    <input type="text" wire:model.live="serviceSearch"
+                                                        placeholder="Search dental services..."
+                                                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 transition-colors duration-200 text-sm">
+                                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                                        <i class="fas fa-search text-slate-400 w-4 h-4"></i>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Service Dropdown --}}
+                                                @if ($showServiceDropdown)
+                                                    <div class="absolute z-50 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-64 overflow-auto">
+                                                        @forelse($searchedServices as $searchService)
+                                                            <button type="button"
+                                                                wire:click="selectService({{ $searchService->id }}, {{ $index }})"
+                                                                class="w-full px-4 py-3 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-slate-100 dark:border-slate-700 last:border-b-0 transition-colors duration-150">
+                                                                <div class="flex items-center justify-between">
+                                                                    <div class="flex-1 min-w-0">
+                                                                        <div class="font-medium text-slate-900 dark:text-slate-100 truncate">
+                                                                            {{ $searchService->name }}
+                                                                        </div>
+                                                                        <div class="text-sm text-slate-500 dark:text-slate-400 truncate">
+                                                                            {{ $searchService->serviceTypeName }}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="ml-4 flex-shrink-0">
+                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                                            ₱{{ number_format($searchService->price, 2) }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        @empty
+                                                            <div class="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                                                                <i class="fas fa-search mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                                <p>No services found</p>
+                                                            </div>
+                                                        @endforelse
+                                                    </div>
+                                                @endif
+
+                                                {{-- Selected Service Display --}}
+                                                @if (!empty($service['dental_service_id']))
+                                                    @php
+                                                        $selectedService = \App\Models\DentalService::with('dentalServiceType')->find(
+                                                            $service['dental_service_id'],
+                                                        );
+                                                    @endphp
+                                                    @if ($selectedService)
+                                                        <div class="mt-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                                                            <div class="flex items-center justify-between">
+                                                                <div class="flex items-center min-w-0 flex-1">
+                                                                    <div class="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full mr-3 flex-shrink-0">
+                                                                        <i class="fas fa-check text-green-600 dark:text-green-300 w-3 h-3"></i>
+                                                                    </div>
+                                                                    <div class="min-w-0 flex-1">
+                                                                        <div class="font-medium text-green-900 dark:text-green-100 truncate">
+                                                                            {{ $selectedService->name }}
+                                                                        </div>
+                                                                        <div class="text-sm text-green-700 dark:text-green-300 truncate">
+                                                                            {{ $selectedService->serviceTypeName }}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="ml-4 flex-shrink-0">
+                                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
+                                                                        ₱{{ number_format($selectedService->price, 2) }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                @endif
+
+                                                <input type="hidden" wire:model="services.{{ $index }}.dental_service_id">
+                                                <input type="hidden" wire:model="services.{{ $index }}.service_price">
+                                                @error("services.{$index}.dental_service_id")
+                                                    <p class="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                                                        <i class="fas fa-exclamation-circle w-3 h-3 mr-1"></i>
+                                                        {{ $message }}
+                                                    </p>
+                                                @enderror
                                             </div>
-                                            <div class="text-green-600 dark:text-green-300">
-                                                {{ $selectedService->serviceTypeName }} -
-                                                ₱{{ number_format($selectedService->price, 2) }}
+                                        </div>
+
+                                        {{-- Quantity and Subtotal (Right Column) --}}
+                                        <div class="lg:col-span-5">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                {{-- Quantity --}}
+                                                <div>
+                                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                        <i class="fas fa-hashtag w-3 h-3 mr-1 text-slate-400"></i>
+                                                        Quantity <span class="text-red-500">*</span>
+                                                    </label>
+                                                    <div class="relative">
+                                                        <input type="number" wire:model.live="services.{{ $index }}.quantity"
+                                                            min="1" 
+                                                            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 transition-colors duration-200 text-sm text-center font-medium">
+                                                    </div>
+                                                    @error("services.{$index}.quantity")
+                                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+
+                                                {{-- Subtotal --}}
+                                                <div>
+                                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                        <i class="fas fa-calculator w-3 h-3 mr-1 text-slate-400"></i>
+                                                        Subtotal
+                                                    </label>
+                                                    <div class="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                                        <div class="text-lg font-bold text-blue-900 dark:text-blue-100 text-center">
+                                                            ₱{{ number_format(($service['service_price'] ?? 0) * ($service['quantity'] ?? 1), 2) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                @endif
-                            @endif
 
-                            <input type="hidden" wire:model="services.{{ $index }}.dental_service_id">
-                            <input type="hidden" wire:model="services.{{ $index }}.service_price">
-                            @error("services.{$index}.dental_service_id")
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
+                                    {{-- Service Notes --}}
+                                    <div class="mt-6">
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            <i class="fas fa-sticky-note w-3 h-3 mr-1 text-slate-400"></i>
+                                            Service Notes
+                                            <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">(Optional)</span>
+                                        </label>
+                                        <textarea wire:model="services.{{ $index }}.service_notes" rows="3"
+                                            placeholder="Add any specific notes or instructions for this service..."
+                                            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 transition-colors duration-200 text-sm resize-none"></textarea>
+                                        @error("services.{$index}.service_notes")
+                                            <p class="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                                                <i class="fas fa-exclamation-circle w-3 h-3 mr-1"></i>
+                                                {{ $message }}
+                                            </p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    @endforeach
+                </div>
 
-                        {{-- Quantity --}}
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Quantity <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number" wire:model.live="services.{{ $index }}.quantity"
-                                min="1"
-                                class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white sm:text-sm">
-                            @error("services.{$index}.quantity")
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
+                {{-- Total Amount Display --}}
+                <div class="mt-8 p-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/20 dark:via-teal-900/20 dark:to-cyan-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex items-center justify-center w-12 h-12 bg-emerald-100 dark:bg-emerald-800 rounded-full mr-4">
+                                <i class="fas fa-calculator text-emerald-600 dark:text-emerald-300"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-emerald-900 dark:text-emerald-100">
+                                    Total Amount
+                                </h4>
+                                <p class="text-sm text-emerald-700 dark:text-emerald-300">
+                                    Sum of all selected services
+                                </p>
+                            </div>
                         </div>
-
-                        {{-- Subtotal Display --}}
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Subtotal
-                            </label>
-                            <div
-                                class="mt-1 px-3 py-2 bg-slate-100 dark:bg-slate-600 border border-slate-300 dark:border-slate-500 rounded-md text-slate-900 dark:text-slate-100">
-                                ₱{{ number_format(($service['service_price'] ?? 0) * ($service['quantity'] ?? 1), 2) }}
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+                                ₱{{ $this->totalAmount }}
+                            </div>
+                            <div class="text-sm text-emerald-700 dark:text-emerald-300">
+                                {{ count($services) }} {{ Str::plural('service', count($services)) }}
                             </div>
                         </div>
                     </div>
-
-                    {{-- Service Notes --}}
-                    <div class="mt-4">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Service Notes
-                        </label>
-                        <textarea wire:model="services.{{ $index }}.service_notes" rows="2"
-                            placeholder="Additional notes for this service (optional)"
-                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white sm:text-sm"></textarea>
-                        @error("services.{$index}.service_notes")
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-            @endforeach
-
-            {{-- Total Amount Display --}}
-            <div
-                class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div class="flex justify-between items-center">
-                    <span class="text-lg font-medium text-blue-800 dark:text-blue-200">
-                        Total Amount:
-                    </span>
-                    <span class="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                        ₱{{ $this->totalAmount }}
-                    </span>
                 </div>
             </div>
         </div>
