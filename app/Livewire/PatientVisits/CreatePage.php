@@ -6,22 +6,24 @@ use App\Models\PatientVisit;
 use App\Models\Patient;
 use App\Models\Branch;
 use App\Models\Appointment;
+use App\Models\DentalService;
+use App\Models\PatientVisitService;
 use App\Traits\DispatchFlashMessage;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class CreatePage extends Component
 {
     use DispatchFlashMessage;
-    
+
     public $patient_id = '';
     public $appointment_id = '';
     public $visit_date = '';
     public $notes = '';
-    public $total_amount_paid = 0;
     public $branch_id = '';
-    public $visit_type = 'walk-in'; 
+    public $visit_type = 'walk-in';
 
     public $patientSearch = '';
     public $showPatientDropdown = false;
@@ -31,10 +33,20 @@ class CreatePage extends Component
     public $showAppointmentDropdown = false;
     public $selectedAppointment = null;
 
+    // Dental Services
+    public $services = [];
+    public $serviceSearch = '';
+    public $showServiceDropdown = false;
+
     public function mount()
     {
         $this->visit_date = Carbon::now()->format('Y-m-d\TH:i');
         $this->branch_id = Auth::user()->branch_id;
+
+        // Initialize with one empty service row
+        $this->services = [
+            ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0]
+        ];
     }
 
     public function rules()
@@ -45,8 +57,11 @@ class CreatePage extends Component
             'patient_id' => 'required|exists:patients,id',
             'visit_date' => 'required|date|before_or_equal:now',
             'notes' => 'nullable|string|max:1000',
-            'total_amount_paid' => 'required|numeric|min:0',
             'visit_type' => 'required|in:walk-in,appointment',
+            'services' => 'required|array|min:1',
+            'services.*.dental_service_id' => 'required|exists:dental_services,id',
+            'services.*.quantity' => 'required|integer|min:1',
+            'services.*.service_notes' => 'nullable|string|max:500',
         ];
 
         if ($this->visit_type === 'appointment') {
@@ -90,6 +105,11 @@ class CreatePage extends Component
         }
     }
 
+    public function updatedServiceSearch()
+    {
+        $this->showServiceDropdown = !empty($this->serviceSearch);
+    }
+
     public function selectPatient($patientId)
     {
         $patient = Patient::find($patientId);
@@ -110,7 +130,7 @@ class CreatePage extends Component
             $this->selectedAppointment = $appointment;
             $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
             $this->showAppointmentDropdown = false;
-            
+
             // Auto-fill patient if not selected
             if (!$this->selectedPatient) {
                 $this->selectPatient($appointment->patient_id);
@@ -135,6 +155,58 @@ class CreatePage extends Component
         $this->showAppointmentDropdown = false;
     }
 
+    // Add new service row
+    public function addService()
+    {
+        $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
+    }
+
+    // Remove service row
+    public function removeService($index)
+    {
+        if (count($this->services) > 1) {
+            unset($this->services[$index]);
+            $this->services = array_values($this->services);
+        }
+    }
+
+    // Select dental service
+    public function selectService($serviceId, $index)
+    {
+        $service = DentalService::find($serviceId);
+        if ($service) {
+            $this->services[$index]['dental_service_id'] = $service->id;
+            $this->services[$index]['service_price'] = $service->price;
+            $this->showServiceDropdown = false;
+            $this->serviceSearch = '';
+        }
+    }
+
+    // Update service quantity and recalculate
+    public function updatedServices()
+    {
+        foreach ($this->services as $index => $service) {
+            if (!empty($service['dental_service_id'])) {
+                $dentalService = DentalService::find($service['dental_service_id']);
+                if ($dentalService) {
+                    $this->services[$index]['service_price'] = $dentalService->price;
+                }
+            }
+        }
+    }
+
+    // Calculate total amount
+    public function getTotalAmountProperty()
+    {
+        $total = 0;
+        foreach ($this->services as $service) {
+            if (!empty($service['dental_service_id']) && !empty($service['service_price'])) {
+                $total += $service['service_price'] * $service['quantity'];
+            }
+        }
+        return number_format($total, 2);
+    }
+
     public function getSearchedPatientsProperty()
     {
         if (empty($this->patientSearch)) {
@@ -147,9 +219,9 @@ class CreatePage extends Component
                 ->orWhere('id', 'like', '%' . $this->patientSearch . '%')
                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $this->patientSearch . '%']);
         })
-        ->orderBy('first_name')
-        ->limit(15)
-        ->get();
+            ->orderBy('first_name')
+            ->limit(15)
+            ->get();
     }
 
     public function getSearchedAppointmentsProperty()
@@ -170,6 +242,21 @@ class CreatePage extends Component
             ->get();
     }
 
+    public function getSearchedServicesProperty()
+    {
+        if (empty($this->serviceSearch)) {
+            return DentalService::with('dentalServiceType')->orderBy('name')->limit(10)->get();
+        }
+
+        return DentalService::with('dentalServiceType')
+            ->where(function ($query) {
+                $query->where('name', 'like', '%' . $this->serviceSearch . '%');
+            })
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+    }
+
     public function save()
     {
         $this->authorize('create', PatientVisit::class);
@@ -181,23 +268,45 @@ class CreatePage extends Component
         $validatedData = $this->validate();
 
         try {
-            $visitData = [
-                'patient_id' => $this->patient_id,
-                'branch_id' => $this->branch_id,
-                'visit_date' => $this->visit_date,
-                'notes' => $this->notes,
-                'total_amount_paid' => $this->total_amount_paid,
-                'created_by' => Auth::id(),
-            ];
+            DB::transaction(function () {
+                // Calculate total amount
+                $totalAmount = 0;
+                foreach ($this->services as $service) {
+                    if (!empty($service['dental_service_id'])) {
+                        $totalAmount += $service['service_price'] * $service['quantity'];
+                    }
+                }
 
-            if ($this->visit_type === 'appointment' && $this->appointment_id) {
-                $visitData['appointment_id'] = $this->appointment_id;
-            }
+                $visitData = [
+                    'patient_id' => $this->patient_id,
+                    'branch_id' => $this->branch_id,
+                    'visit_date' => $this->visit_date,
+                    'notes' => $this->notes,
+                    'total_amount_paid' => $totalAmount,
+                    'created_by' => Auth::id(),
+                ];
 
-            PatientVisit::create($visitData);
+                if ($this->visit_type === 'appointment' && $this->appointment_id) {
+                    $visitData['appointment_id'] = $this->appointment_id;
+                }
+
+                $patientVisit = PatientVisit::create($visitData);
+
+                // Create patient visit services
+                foreach ($this->services as $service) {
+                    if (!empty($service['dental_service_id'])) {
+                        PatientVisitService::create([
+                            'patient_visit_id' => $patientVisit->id,
+                            'dental_service_id' => $service['dental_service_id'],
+                            'service_price' => $service['service_price'],
+                            'quantity' => $service['quantity'],
+                            'service_notes' => $service['service_notes'],
+                        ]);
+                    }
+                }
+            });
 
             session()->flash('success', 'Patient visit created successfully!');
-
             return $this->redirect(route('patient-visits.index'), navigate: true);
         } catch (\Exception $e) {
             $this->dispatchErrorMessage($e->getMessage());
@@ -227,6 +336,7 @@ class CreatePage extends Component
         return view('livewire.patient-visits.create-page', [
             'searchedPatients' => $this->searchedPatients,
             'searchedAppointments' => $this->searchedAppointments,
+            'searchedServices' => $this->searchedServices,
             'branches' => $this->getBranchesForUser(),
             'canUpdateBranch' => $this->canUpdateBranch()
         ]);
