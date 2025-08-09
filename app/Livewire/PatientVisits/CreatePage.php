@@ -20,7 +20,6 @@ class CreatePage extends Component
 
     public $patient_id = '';
     public $appointment_id = '';
-    public $visit_date = '';
     public $notes = '';
     public $branch_id = '';
     public $visit_type = 'walk-in';
@@ -33,17 +32,14 @@ class CreatePage extends Component
     public $showAppointmentDropdown = false;
     public $selectedAppointment = null;
 
-    // Dental Services
     public $services = [];
     public $serviceSearch = '';
     public $showServiceDropdown = false;
 
     public function mount()
     {
-        $this->visit_date = Carbon::now()->format('Y-m-d\TH:i');
         $this->branch_id = Auth::user()->branch_id;
 
-        // Initialize with one empty service row
         $this->services = [
             ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0]
         ];
@@ -55,7 +51,6 @@ class CreatePage extends Component
 
         $rules = [
             'patient_id' => 'required|exists:patients,id',
-            'visit_date' => 'required|date|before_or_equal:now',
             'notes' => 'nullable|string|max:1000',
             'visit_type' => 'required|in:walk-in,appointment',
             'services' => 'required|array|min:1',
@@ -92,7 +87,6 @@ class CreatePage extends Component
             $this->selectedPatient = null;
             $this->patient_id = '';
         }
-        // Clear appointment when patient changes
         $this->clearAppointmentSelection();
     }
 
@@ -118,7 +112,7 @@ class CreatePage extends Component
             $this->selectedPatient = $patient;
             $this->patientSearch = $patient->full_name . ' (ID: ' . $patient->id . ')';
             $this->showPatientDropdown = false;
-            $this->clearAppointmentSelection(); // Clear appointment when patient changes
+            $this->clearAppointmentSelection();
         }
     }
 
@@ -131,7 +125,6 @@ class CreatePage extends Component
             $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
             $this->showAppointmentDropdown = false;
 
-            // Auto-fill patient if not selected
             if (!$this->selectedPatient) {
                 $this->selectPatient($appointment->patient_id);
             }
@@ -155,13 +148,11 @@ class CreatePage extends Component
         $this->showAppointmentDropdown = false;
     }
 
-    // Add new service row
     public function addService()
     {
         $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
     }
 
-    // Remove service row
     public function removeService($index)
     {
         if (count($this->services) > 1) {
@@ -170,7 +161,6 @@ class CreatePage extends Component
         }
     }
 
-    // Select dental service
     public function selectService($serviceId, $index)
     {
         $service = DentalService::find($serviceId);
@@ -182,7 +172,6 @@ class CreatePage extends Component
         }
     }
 
-    // Update service quantity and recalculate
     public function updatedServices()
     {
         foreach ($this->services as $index => $service) {
@@ -195,7 +184,6 @@ class CreatePage extends Component
         }
     }
 
-    // Calculate total amount
     public function getTotalAmountProperty()
     {
         $total = 0;
@@ -269,7 +257,6 @@ class CreatePage extends Component
 
         try {
             DB::transaction(function () {
-                // Calculate total amount
                 $totalAmount = 0;
                 foreach ($this->services as $service) {
                     if (!empty($service['dental_service_id'])) {
@@ -280,7 +267,7 @@ class CreatePage extends Component
                 $visitData = [
                     'patient_id' => $this->patient_id,
                     'branch_id' => $this->branch_id,
-                    'visit_date' => $this->visit_date,
+                    'visit_date' => Carbon::now(),
                     'notes' => $this->notes,
                     'total_amount_paid' => $totalAmount,
                     'created_by' => Auth::id(),
@@ -292,7 +279,6 @@ class CreatePage extends Component
 
                 $patientVisit = PatientVisit::create($visitData);
 
-                // Create patient visit services
                 foreach ($this->services as $service) {
                     if (!empty($service['dental_service_id'])) {
                         PatientVisitService::create([

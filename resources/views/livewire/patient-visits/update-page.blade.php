@@ -311,11 +311,6 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
-            <x-form.field label="Visit Date & Time" name="visit_date" type="datetime-local" wire:model="visit_date"
-                required icon="fas fa-calendar-alt" />
-        </div>
-
         {{-- Branch Selection (only for superadmin) --}}
         @if ($canUpdateBranch)
             <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required

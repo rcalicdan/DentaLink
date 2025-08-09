@@ -12,15 +12,15 @@ use App\Traits\DispatchFlashMessage;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class UpdatePage extends Component
 {
     use DispatchFlashMessage;
-    
+
     public PatientVisit $patientVisit;
     public $patient_id;
     public $appointment_id;
-    public $visit_date;
     public $notes;
     public $branch_id;
     public $visit_type;
@@ -33,7 +33,6 @@ class UpdatePage extends Component
     public $showAppointmentDropdown = false;
     public $selectedAppointment = null;
 
-    // Dental Services
     public $services = [];
     public $serviceSearch = '';
     public $showServiceDropdown = false;
@@ -41,11 +40,10 @@ class UpdatePage extends Component
     public function mount(PatientVisit $patientVisit)
     {
         $this->authorize('update', $patientVisit);
-        
+
         $this->patientVisit = $patientVisit;
         $this->patient_id = $patientVisit->patient_id;
         $this->appointment_id = $patientVisit->appointment_id;
-        $this->visit_date = $patientVisit->visit_date->format('Y-m-d\TH:i');
         $this->notes = $patientVisit->notes;
         $this->branch_id = $patientVisit->branch_id;
         $this->visit_type = $patientVisit->appointment_id ? 'appointment' : 'walk-in';
@@ -79,7 +77,6 @@ class UpdatePage extends Component
 
         $rules = [
             'patient_id' => 'required|exists:patients,id',
-            'visit_date' => 'required|date|before_or_equal:now',
             'notes' => 'nullable|string|max:1000',
             'visit_type' => 'required|in:walk-in,appointment',
             'services' => 'required|array|min:1',
@@ -173,13 +170,11 @@ class UpdatePage extends Component
         $this->showAppointmentDropdown = false;
     }
 
-    // Add new service row
     public function addService()
     {
         $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
     }
 
-    // Remove service row
     public function removeService($index)
     {
         if (count($this->services) > 1) {
@@ -188,7 +183,6 @@ class UpdatePage extends Component
         }
     }
 
-    // Select dental service
     public function selectService($serviceId, $index)
     {
         $service = DentalService::find($serviceId);
@@ -200,7 +194,6 @@ class UpdatePage extends Component
         }
     }
 
-    // Update service quantity and recalculate
     public function updatedServices()
     {
         foreach ($this->services as $index => $service) {
@@ -213,7 +206,6 @@ class UpdatePage extends Component
         }
     }
 
-    // Calculate total amount
     public function getTotalAmountProperty()
     {
         $total = 0;
@@ -237,9 +229,9 @@ class UpdatePage extends Component
                 ->orWhere('id', 'like', '%' . $this->patientSearch . '%')
                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $this->patientSearch . '%']);
         })
-        ->orderBy('first_name')
-        ->limit(15)
-        ->get();
+            ->orderBy('first_name')
+            ->limit(15)
+            ->get();
     }
 
     public function getSearchedAppointmentsProperty()
@@ -278,16 +270,15 @@ class UpdatePage extends Component
     public function update()
     {
         $this->authorize('update', $this->patientVisit);
-        
+
         if (!Auth::user()->isSuperadmin()) {
             $this->branch_id = Auth::user()->branch_id;
         }
-        
+
         $validatedData = $this->validate();
 
         try {
             DB::transaction(function () {
-                // Calculate total amount
                 $totalAmount = 0;
                 foreach ($this->services as $service) {
                     if (!empty($service['dental_service_id'])) {
@@ -298,7 +289,6 @@ class UpdatePage extends Component
                 $updateData = [
                     'patient_id' => $this->patient_id,
                     'branch_id' => $this->branch_id,
-                    'visit_date' => $this->visit_date,
                     'notes' => $this->notes,
                     'total_amount_paid' => $totalAmount,
                 ];
@@ -311,10 +301,8 @@ class UpdatePage extends Component
 
                 $this->patientVisit->update($updateData);
 
-                // Delete existing services
                 $this->patientVisit->patientVisitServices()->delete();
 
-                // Create new services
                 foreach ($this->services as $service) {
                     if (!empty($service['dental_service_id'])) {
                         PatientVisitService::create([
@@ -330,7 +318,6 @@ class UpdatePage extends Component
 
             session()->flash('success', 'Patient visit updated successfully!');
             return $this->redirect(route('patient-visits.index'), navigate: true);
-
         } catch (\Exception $e) {
             $this->dispatchErrorMessage($e->getMessage());
         }
@@ -344,11 +331,11 @@ class UpdatePage extends Component
     private function getBranchesForUser()
     {
         $user = Auth::user();
-        
+
         if ($user->isSuperadmin()) {
             return Branch::orderBy('name')->get();
         }
-        
+
         return $user->branch ? [$user->branch] : [];
     }
 
