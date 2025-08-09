@@ -45,4 +45,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{appointment}/edit', App\Livewire\Appointments\UpdatePage::class)->name('edit');
         Route::get('/{appointment}/view', App\Livewire\Appointments\ViewPage::class)->name('view');
     });
+
+    Route::prefix('patient-visits')->name('patient-visits.')->group(function () {
+        Route::get('', App\Livewire\PatientVisits\Table::class)->name('index');
+        Route::get('/create', App\Livewire\PatientVisits\CreatePage::class)->name('create');
+        Route::get('/{patientVisit}/edit', App\Livewire\PatientVisits\UpdatePage::class)->name('edit');
+        // Route::get('/{patientVisit}/view', App\Livewire\PatientVisits\ViewPage::class)->name('view');
+    });
 });

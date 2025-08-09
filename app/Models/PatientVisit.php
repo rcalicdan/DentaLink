@@ -24,6 +24,16 @@ class PatientVisit extends Model
         ];
     }
 
+    public function getPatientNameAttribute(): string
+    {
+        return "{$this->patient->first_name} {$this->patient->last_name}";
+    }
+
+    public function getBranchNameAttribute(): string
+    {
+        return $this->branch->name ?? 'N/A';
+    }
+
     // Relationships
     public function patient()
     {

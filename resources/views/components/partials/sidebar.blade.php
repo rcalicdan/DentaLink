@@ -58,7 +58,11 @@
                 </x-partials.nav-item>
             @endcan
 
-
+            @can('viewAny', App\Models\PatientVisit::class)
+                <x-partials.nav-item href="{{ route('patient-visits.index') }}" icon="fas fa-calendar-check" :active="request()->routeIs('patient-visits.*')">
+                    Patient Visits
+                </x-partials.nav-item>
+            @endcan
 
             {{-- @can('viewAny', App\Models\Report::class)
                 <x-partials.nav-item href="#" icon="fas fa-chart-line" :active="false">
