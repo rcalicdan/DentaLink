@@ -43,8 +43,32 @@ class CreatePage extends Component
         $this->services = [
             ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0]
         ];
-    }
 
+        if (request()->has('appointment_id') && request()->has('patient_id')) {
+            $appointmentId = request()->get('appointment_id');
+            $patientId = request()->get('patient_id');
+
+            $appointment = Appointment::with('patient')
+                ->where('id', $appointmentId)
+                ->where('patient_id', $patientId)
+                ->first();
+
+            if ($appointment) {
+                $this->visit_type = 'appointment';
+                $this->appointment_id = $appointment->id;
+                $this->patient_id = $appointment->patient_id;
+
+                // Set selected appointment and patient
+                $this->selectedAppointment = $appointment;
+                $this->selectedPatient = $appointment->patient;
+
+                // Pre-fill the search fields
+                $this->patientSearch = $appointment->patient->full_name . ' (ID: ' . $appointment->patient->id . ')';
+                $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
+            }
+        }
+    }
+    
     public function rules()
     {
         $user = Auth::user();

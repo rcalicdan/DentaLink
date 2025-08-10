@@ -32,27 +32,37 @@
                 </div>
 
                 <div class="flex flex-wrap gap-3">
+                    @if ($canCreatePatientVisit)
+                        <button wire:click="createPatientVisit"
+                            class="group px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
+                   text-white font-semibold rounded-xl shadow-lg hover:shadow-xl 
+                   transform hover:-translate-y-1 transition-all duration-200 flex items-center space-x-2">
+                            <i class="fas fa-plus-circle group-hover:scale-110 transition-transform duration-200"></i>
+                            <span>Create Visit</span>
+                        </button>
+                    @endif
+
                     @can('update', $appointment)
                         <a href="{{ route('appointments.edit', $appointment) }}"
                             class="group px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 
-                                   text-white font-semibold rounded-xl shadow-lg hover:shadow-xl 
-                                   transform hover:-translate-y-1 transition-all duration-200 flex items-center space-x-2">
+                   text-white font-semibold rounded-xl shadow-lg hover:shadow-xl 
+                   transform hover:-translate-y-1 transition-all duration-200 flex items-center space-x-2">
                             <i class="fas fa-edit group-hover:scale-110 transition-transform duration-200"></i>
                             <span>Edit Appointment</span>
                         </a>
                     @endcan
                     <a href="{{ route('appointments.index') }}"
                         class="group px-6 py-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 
-                               text-slate-700 dark:text-slate-300 font-semibold rounded-xl shadow-lg hover:shadow-xl 
-                               border border-slate-200 dark:border-slate-600 transform hover:-translate-y-1 
-                               transition-all duration-200 flex items-center space-x-2">
+                      text-slate-700 dark:text-slate-300 font-semibold rounded-xl shadow-lg hover:shadow-xl 
+                        border border-slate-200 dark:border-slate-600 transform hover:-translate-y-1 
+                         transition-all duration-200 flex items-center space-x-2">
                         <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform duration-200"></i>
                         <span>Back to List</span>
                     </a>
                 </div>
             </div>
 
-            <x-flash-message/>
+            <x-flash-message />
         </div>
     </div>
 
@@ -315,7 +325,19 @@
                                     </div>
                                     <p class="text-slate-800 dark:text-slate-200 font-semibold text-lg">Pending Visit
                                     </p>
-                                    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">No visit record yet</p>
+                                    <p class="text-slate-600 dark:text-slate-400 text-sm mt-1 mb-4">No visit record yet
+                                    </p>
+
+                                    {{-- Create Visit Button --}}
+                                    @if ($canCreatePatientVisit)
+                                        <button wire:click="createPatientVisit"
+                                            class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
+                                   text-white font-semibold rounded-xl shadow-lg hover:shadow-xl 
+                                   transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2">
+                                            <i class="fas fa-plus-circle"></i>
+                                            <span>Create Patient Visit</span>
+                                        </button>
+                                    @endif
                                 </div>
                             @endif
                         </div>
@@ -370,14 +392,25 @@
         </div>
     </div>
 
-    <!-- Floating Action Button for Mobile -->
-    <div class="fixed bottom-6 right-6 lg:hidden z-50">
+    {{-- Floating Action Buttons for Mobile --}}
+    <div class="fixed bottom-6 right-6 lg:hidden z-50 flex flex-col space-y-3">
+        @if ($canCreatePatientVisit)
+            <button wire:click="createPatientVisit"
+                class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 
+                  text-white p-4 rounded-full shadow-2xl hover:shadow-3xl 
+                  transform hover:scale-110 transition-all duration-300
+                  flex items-center justify-center group">
+                <i class="fas fa-plus text-xl group-hover:rotate-90 transition-transform duration-300"></i>
+            </button>
+        @endif
+
+        {{-- Edit Appointment FAB --}}
         @can('update', $appointment)
             <a href="{{ route('appointments.edit', $appointment) }}"
                 class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 
-                      text-white p-4 rounded-full shadow-2xl hover:shadow-3xl 
-                      transform hover:scale-110 transition-all duration-300
-                      flex items-center justify-center group">
+                  text-white p-4 rounded-full shadow-2xl hover:shadow-3xl 
+                  transform hover:scale-110 transition-all duration-300
+                  flex items-center justify-center group">
                 <i class="fas fa-edit text-xl group-hover:rotate-12 transition-transform duration-300"></i>
             </a>
         @endcan
