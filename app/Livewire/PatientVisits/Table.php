@@ -40,7 +40,8 @@ class Table extends Component
                 [
                     'key' => 'visit_type',
                     'label' => 'Type',
-                    'sortable' => false
+                    'accessor' => true,
+                    'sortable' => true
                 ],
                 [
                     'key' => 'patient_name',
@@ -54,11 +55,6 @@ class Table extends Component
                     'label' => 'Visit Date',
                     'sortable' => true,
                     'type' => 'datetime'
-                ],
-                [
-                    'key' => 'appointment_info',
-                    'label' => 'Appointment',
-                    'sortable' => false
                 ],
                 [
                     'key' => 'total_amount_paid',

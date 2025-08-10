@@ -34,6 +34,16 @@ class PatientVisit extends Model
         return $this->branch->name ?? 'N/A';
     }
 
+    public function getAppointmentDateAttribute(): string
+    {
+        return $this->appointment_id ? $this->appointment->date : 'walk-in' ?? "N/";
+    }
+
+    public function getVisitTypeAttribute(): string
+    {
+        return $this->appointment_id ? 'appointment' : 'walk-in';
+    }
+
     // Relationships
     public function patient()
     {
