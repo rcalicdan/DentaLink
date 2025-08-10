@@ -68,7 +68,7 @@ class CreatePage extends Component
             }
         }
     }
-    
+
     public function rules()
     {
         $user = Auth::user();
@@ -316,8 +316,13 @@ class CreatePage extends Component
                 }
             });
 
-            session()->flash('success', 'Patient visit created successfully!');
-            return $this->redirect(route('patient-visits.index'), navigate: true);
+            if ($this->appointment_id) {
+                session()->flash('success', 'Patient visit created successfully! You can view it from the patient visits list.');
+                return $this->redirect(route('appointments.view', $this->appointment_id), navigate: true);
+            } else {
+                session()->flash('success', 'Patient visit created successfully!');
+                return $this->redirect(route('patient-visits.index'), navigate: true);
+            }
         } catch (\Exception $e) {
             $this->dispatchErrorMessage($e->getMessage());
         }
