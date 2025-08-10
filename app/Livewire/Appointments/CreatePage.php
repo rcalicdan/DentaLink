@@ -21,6 +21,7 @@ class CreatePage extends Component
     public $reason = '';
     public $notes = '';
     public $branch_id = '';
+    public $queue_number = null;
 
     public $patientSearch = '';
     public $showPatientDropdown = false;
@@ -45,6 +46,7 @@ class CreatePage extends Component
 
         if ($user->isSuperadmin()) {
             $rules['branch_id'] = 'required|exists:branches,id';
+            $rules['queue_number'] = 'nullable|integer|min:1';
         } else {
             $rules['branch_id'] = [
                 'required',
@@ -54,6 +56,14 @@ class CreatePage extends Component
         }
 
         return $rules;
+    }
+
+    public function updatedAppointmentDate()
+    {
+        // Reset queue number when date changes
+        if (Auth::user()->isSuperadmin()) {
+            $this->queue_number = null;
+        }
     }
 
     public function updatedPatientSearch()
@@ -103,6 +113,15 @@ class CreatePage extends Component
             ->get();
     }
 
+    public function getMaxQueueNumberProperty()
+    {
+        if (!$this->appointment_date) {
+            return 0;
+        }
+
+        return Appointment::where('appointment_date', $this->appointment_date)->max('queue_number') ?? 0;
+    }
+
     public function save()
     {
         $this->authorize('create', Appointment::class);
@@ -119,6 +138,15 @@ class CreatePage extends Component
                 $this->appointment_date
             );
 
+            $queueNumber = $this->queue_number;
+            
+            if (Auth::user()->isSuperadmin() && $queueNumber) {
+                $maxQueue = $this->maxQueueNumber;
+                if ($queueNumber > $maxQueue + 1) {
+                    $queueNumber = $maxQueue + 1;
+                }
+            }
+
             $appointment = Appointment::create([
                 'patient_id' => $this->patient_id,
                 'appointment_date' => $this->appointment_date,
@@ -126,18 +154,23 @@ class CreatePage extends Component
                 'notes' => $this->notes,
                 'branch_id' => $this->branch_id,
                 'status' => AppointmentStatuses::WAITING,
-                'queue_number' => Appointment::getNextQueueNumber($this->appointment_date),
+                'queue_number' => $queueNumber,
             ]);
 
             session()->flash('success', 'Appointment created successfully!');
 
-            return $this->redirect(route('appointments.index'), navigate: true);
+            return $this->redirect(route('appointments.view', $appointment->id), navigate: true);
         } catch (\Exception $e) {
             $this->dispatchErrorMessage($e->getMessage());
         }
     }
 
     public function canUpdateBranch()
+    {
+        return Auth::user()->isSuperadmin();
+    }
+
+    public function canEditQueueNumber()
     {
         return Auth::user()->isSuperadmin();
     }
@@ -164,7 +197,9 @@ class CreatePage extends Component
         return view('livewire.appointments.create-page', [
             'searchedPatients' => $this->searchedPatients,
             'branches' => $this->getBranchesForUser(),
-            'canUpdateBranch' => $this->canUpdateBranch()
+            'canUpdateBranch' => $this->canUpdateBranch(),
+            'canEditQueueNumber' => $this->canEditQueueNumber(),
+            'maxQueueNumber' => $this->maxQueueNumber
         ]);
     }
 }

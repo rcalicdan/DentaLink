@@ -14,7 +14,7 @@ use App\Traits\DispatchFlashMessage;
 class UpdatePage extends Component
 {
     use DispatchFlashMessage;
-    
+
     public Appointment $appointment;
     public $patient_id;
     public $appointment_date;
@@ -22,6 +22,7 @@ class UpdatePage extends Component
     public $notes;
     public $status;
     public $branch_id;
+    public $queue_number;
     public $patientSearch = '';
     public $showPatientDropdown = false;
     public $selectedPatient = null;
@@ -29,7 +30,7 @@ class UpdatePage extends Component
     public function mount(Appointment $appointment)
     {
         $this->authorize('update', $appointment);
-        
+
         $this->appointment = $appointment;
         $this->patient_id = $appointment->patient_id;
         $this->appointment_date = $appointment->appointment_date->format('Y-m-d');
@@ -37,6 +38,7 @@ class UpdatePage extends Component
         $this->notes = $appointment->notes;
         $this->status = $appointment->status->value;
         $this->branch_id = $appointment->branch_id;
+        $this->queue_number = $appointment->queue_number;
 
         // Set initial patient selection
         $this->selectedPatient = $appointment->patient;
@@ -46,7 +48,7 @@ class UpdatePage extends Component
     public function rules()
     {
         $user = Auth::user();
-        
+
         $rules = [
             'patient_id' => 'required|exists:patients,id',
             'reason' => 'required|string|min:5|max:255',
@@ -55,11 +57,12 @@ class UpdatePage extends Component
 
         if ($user->isSuperadmin()) {
             $rules['branch_id'] = 'required|exists:branches,id';
+            $rules['queue_number'] = 'required|integer|min:1';
         } else {
             $rules['branch_id'] = [
                 'required',
                 'exists:branches,id',
-                Rule::in([$user->branch_id]) 
+                Rule::in([$user->branch_id])
             ];
         }
 
@@ -77,6 +80,14 @@ class UpdatePage extends Component
         }
 
         return $rules;
+    }
+
+    public function updatedAppointmentDate()
+    {
+        // Reset queue number when date changes for superadmin
+        if (Auth::user()->isSuperadmin()) {
+            $this->queue_number = 1;
+        }
     }
 
     public function updatedPatientSearch()
@@ -121,24 +132,33 @@ class UpdatePage extends Component
                 ->orWhere('id', 'like', '%' . $this->patientSearch . '%')
                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $this->patientSearch . '%']);
         })
-        ->orderBy('first_name')
-        ->limit(15)
-        ->get();
+            ->orderBy('first_name')
+            ->limit(15)
+            ->get();
+    }
+
+    public function getMaxQueueNumberProperty()
+    {
+        $date = $this->appointment_date ?: $this->appointment->appointment_date->format('Y-m-d');
+
+        return Appointment::where('appointment_date', $date)
+            ->where('id', '!=', $this->appointment->id)
+            ->max('queue_number') ?? 0;
     }
 
     public function update()
     {
         $this->authorize('update', $this->appointment);
-        
+
         if (!Auth::user()->isSuperadmin()) {
             $this->branch_id = Auth::user()->branch_id;
         }
-        
+
         $validatedData = $this->validate();
 
         try {
             $patientChanged = $validatedData['patient_id'] != $this->appointment->patient_id;
-            $dateChanged = isset($validatedData['appointment_date']) && 
+            $dateChanged = isset($validatedData['appointment_date']) &&
                 $validatedData['appointment_date'] !== $this->appointment->appointment_date->format('Y-m-d');
 
             if ($patientChanged || $dateChanged) {
@@ -152,6 +172,25 @@ class UpdatePage extends Component
                 );
             }
 
+            // Handle queue number changes for superadmin
+            if (Auth::user()->isSuperadmin() && isset($validatedData['queue_number'])) {
+                $newQueueNumber = $validatedData['queue_number'];
+                $maxQueue = $this->maxQueueNumber;
+
+                // If new queue number is greater than max, set it to max + 1
+                if ($newQueueNumber > $maxQueue + 1) {
+                    $newQueueNumber = $maxQueue + 1;
+                    $this->queue_number = $newQueueNumber;
+                }
+
+                // Handle queue number swapping
+                if ($newQueueNumber != $this->appointment->queue_number) {
+                    $this->appointment->updateQueueNumber($newQueueNumber);
+                }
+
+                unset($validatedData['queue_number']);
+            }
+
             if (isset($validatedData['status'])) {
                 $newStatus = AppointmentStatuses::from($validatedData['status']);
                 if ($this->appointment->status !== $newStatus) {
@@ -160,7 +199,7 @@ class UpdatePage extends Component
                         return;
                     }
                 }
-                unset($validatedData['status']); 
+                unset($validatedData['status']);
             }
 
             if (!empty($validatedData)) {
@@ -168,8 +207,7 @@ class UpdatePage extends Component
             }
 
             session()->flash('success', 'Appointment updated successfully!');
-            return $this->redirect(route('appointments.index'), navigate: true);
-
+            return $this->redirect(route('appointments.view', $this->appointment->id), navigate: true);
         } catch (\Exception $e) {
             $this->dispatchErrorMessage($e->getMessage());
         }
@@ -190,6 +228,11 @@ class UpdatePage extends Component
         return Auth::user()->isSuperadmin();
     }
 
+    public function canEditQueueNumber()
+    {
+        return Auth::user()->isSuperadmin();
+    }
+
     public function getAvailableStatuses()
     {
         if (Auth::user()->isSuperadmin() || Auth::user()->isAdmin()) {
@@ -202,15 +245,15 @@ class UpdatePage extends Component
     private function getBranchesForUser()
     {
         $user = Auth::user();
-        
+
         if ($user->isSuperadmin()) {
             return Branch::orderBy('name')->get();
         }
-        
+
         if ($user->isAdmin()) {
             return $user->branch ? [$user->branch] : [];
         }
-        
+
         return $user->branch ? [$user->branch] : [];
     }
 
@@ -224,7 +267,9 @@ class UpdatePage extends Component
             'canUpdateDate' => $this->canUpdateDate(),
             'canUpdateStatus' => $this->canUpdateStatus(),
             'canUpdateBranch' => $this->canUpdateBranch(),
-            'branches' => $this->getBranchesForUser()
+            'canEditQueueNumber' => $this->canEditQueueNumber(),
+            'branches' => $this->getBranchesForUser(),
+            'maxQueueNumber' => $this->maxQueueNumber
         ]);
     }
 }

@@ -6,7 +6,7 @@
         </div>
     </div>
 
-    <x-flash-message/>
+    <x-flash-message />
 
     <x-form.container title="Appointment Information" subtitle="Fill in the details below to create a new appointment"
         wire:submit="save">
@@ -62,7 +62,13 @@
             <x-form.field label="Appointment Date" name="appointment_date" type="date" wire:model="appointment_date"
                 required icon="fas fa-calendar" />
 
-            {{--  --}}
+            @if ($canEditQueueNumber)
+                <x-form.field label="Queue Number" name="queue_number" type="number" wire:model="queue_number"
+                    placeholder="Leave blank for auto-assignment" icon="fas fa-hashtag"
+                    help="Current max queue: {{ $maxQueueNumber }}" />
+            @endif
+
+            {{-- Branch field remains the same --}}
             @if ($canUpdateBranch)
                 <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
                     icon="fas fa-building">
@@ -72,7 +78,7 @@
                     @endforeach
                 </x-form.field>
             @else
-                {{-- Hidden field for non-superadmin users --}}
+                {{-- Hidden field and display for non-superadmin users --}}
                 <input type="hidden" wire:model="branch_id" />
                 <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <div class="flex items-center">

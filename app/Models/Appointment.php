@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Enums\AppointmentStatuses;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class Appointment extends Model
 {
@@ -58,15 +59,57 @@ class Appointment extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($appointment) {
             $appointment->created_by = Auth::id();
             $appointment->branch_id = Auth::user()->branch_id ?? $appointment->branch_id;
-            
+
             if (!$appointment->status) {
                 $appointment->status = AppointmentStatuses::WAITING;
             }
         });
+    }
+
+    /**
+     * Update queue number with proper queue management
+     */
+    public function updateQueueNumber(int $newQueueNumber): bool
+    {
+        $oldQueueNumber = $this->queue_number;
+        $appointmentDate = $this->appointment_date;
+
+        if ($oldQueueNumber === $newQueueNumber) {
+            return true; // No change needed
+        }
+
+        try {
+            DB::transaction(function () use ($newQueueNumber, $oldQueueNumber, $appointmentDate) {
+                if ($newQueueNumber > $oldQueueNumber) {
+                    // Moving down: shift appointments between old and new position up by 1
+                    Appointment::where('appointment_date', $appointmentDate)
+                        ->where('queue_number', '>', $oldQueueNumber)
+                        ->where('queue_number', '<=', $newQueueNumber)
+                        ->where('id', '!=', $this->id)
+                        ->decrement('queue_number');
+                } else {
+                    // Moving up: shift appointments between new and old position down by 1
+                    Appointment::where('appointment_date', $appointmentDate)
+                        ->where('queue_number', '>=', $newQueueNumber)
+                        ->where('queue_number', '<', $oldQueueNumber)
+                        ->where('id', '!=', $this->id)
+                        ->increment('queue_number');
+                }
+
+                // Update this appointment's queue number without triggering events
+                $this->withoutEvents(function () use ($newQueueNumber) {
+                    $this->update(['queue_number' => $newQueueNumber]);
+                });
+            });
+
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     public static function getNextQueueNumber($date)
