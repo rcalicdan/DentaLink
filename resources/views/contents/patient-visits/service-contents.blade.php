@@ -29,17 +29,15 @@
                         <div class="relative">
                             {{-- Updated wire:model to use array index --}}
                             <input type="text" wire:model.live="serviceSearches.{{ $index }}"
-                                placeholder="Search and select a service..."
+                                placeholder="Search and select a service..." onfocus="if(this.value) this.select()"
                                 class="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm">
                             <i class="fas fa-search text-slate-400 absolute top-1/2 right-3 -translate-y-1/2"></i>
                         </div>
 
                         {{-- Service Dropdown --}}
-                        {{-- Updated to check specific index --}}
                         @if (isset($showServiceDropdowns[$index]) && $showServiceDropdowns[$index])
                             <div
                                 class="absolute z-50 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-64 overflow-auto">
-                                {{-- Updated to get services for specific index --}}
                                 @php
                                     $searchedServices = $this->getSearchedServicesByIndex($index);
                                 @endphp

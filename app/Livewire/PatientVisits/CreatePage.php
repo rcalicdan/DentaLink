@@ -102,7 +102,12 @@ class CreatePage extends Component
         $this->showServiceDropdowns = [];
 
         foreach ($this->services as $index => $service) {
-            $this->serviceSearches[$index] = '';
+            if (!empty($service['dental_service_id'])) {
+                $dentalService = DentalService::find($service['dental_service_id']);
+                $this->serviceSearches[$index] = $dentalService ? $dentalService->name : '';
+            } else {
+                $this->serviceSearches[$index] = '';
+            }
             $this->showServiceDropdowns[$index] = false;
         }
     }
@@ -216,7 +221,7 @@ class CreatePage extends Component
             $this->services[$index]['dental_service_id'] = $service->id;
             $this->services[$index]['service_price'] = $service->price;
             $this->showServiceDropdowns[$index] = false;
-            $this->serviceSearches[$index] = '';
+            $this->serviceSearches[$index] = $service->name;
         }
     }
 
