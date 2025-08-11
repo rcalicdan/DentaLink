@@ -33,8 +33,8 @@ class CreatePage extends Component
     public $selectedAppointment = null;
 
     public $services = [];
-    public $serviceSearch = '';
-    public $showServiceDropdown = false;
+    public $serviceSearches = [];
+    public $showServiceDropdowns = [];
 
     public function mount()
     {
@@ -43,6 +43,8 @@ class CreatePage extends Component
         $this->services = [
             ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0]
         ];
+
+        $this->initializeServiceSearches();
 
         if (request()->has('appointment_id') && request()->has('patient_id')) {
             $appointmentId = request()->get('appointment_id');
@@ -94,6 +96,17 @@ class CreatePage extends Component
         return $rules;
     }
 
+    private function initializeServiceSearches()
+    {
+        $this->serviceSearches = [];
+        $this->showServiceDropdowns = [];
+
+        foreach ($this->services as $index => $service) {
+            $this->serviceSearches[$index] = '';
+            $this->showServiceDropdowns[$index] = false;
+        }
+    }
+
     public function updatedVisitType()
     {
         if ($this->visit_type === 'walk-in') {
@@ -123,11 +136,12 @@ class CreatePage extends Component
         }
     }
 
-    public function updatedServiceSearch()
+    public function updatedServiceSearches()
     {
-        $this->showServiceDropdown = !empty($this->serviceSearch);
+        foreach ($this->serviceSearches as $index => $search) {
+            $this->showServiceDropdowns[$index] = !empty($search);
+        }
     }
-
     public function selectPatient($patientId)
     {
         $patient = Patient::find($patientId);
@@ -174,14 +188,24 @@ class CreatePage extends Component
 
     public function addService()
     {
+        $newIndex = count($this->services);
         $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
+
+        $this->serviceSearches[$newIndex] = '';
+        $this->showServiceDropdowns[$newIndex] = false;
     }
+
 
     public function removeService($index)
     {
         if (count($this->services) > 1) {
             unset($this->services[$index]);
+            unset($this->serviceSearches[$index]);
+            unset($this->showServiceDropdowns[$index]);
+
             $this->services = array_values($this->services);
+            $this->serviceSearches = array_values($this->serviceSearches);
+            $this->showServiceDropdowns = array_values($this->showServiceDropdowns);
         }
     }
 
@@ -191,8 +215,8 @@ class CreatePage extends Component
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
             $this->services[$index]['service_price'] = $service->price;
-            $this->showServiceDropdown = false;
-            $this->serviceSearch = '';
+            $this->showServiceDropdowns[$index] = false;
+            $this->serviceSearches[$index] = '';
         }
     }
 
@@ -236,6 +260,23 @@ class CreatePage extends Component
             ->get();
     }
 
+    public function getSearchedServicesByIndex($index)
+    {
+        $searchTerm = $this->serviceSearches[$index] ?? '';
+
+        if (empty($searchTerm)) {
+            return DentalService::with('dentalServiceType')->orderBy('name')->limit(10)->get();
+        }
+
+        return DentalService::with('dentalServiceType')
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', '%' . $searchTerm . '%');
+            })
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+    }
+
     public function getSearchedAppointmentsProperty()
     {
         if ($this->visit_type !== 'appointment' || empty($this->appointmentSearch) || !$this->selectedPatient) {
@@ -256,17 +297,7 @@ class CreatePage extends Component
 
     public function getSearchedServicesProperty()
     {
-        if (empty($this->serviceSearch)) {
-            return DentalService::with('dentalServiceType')->orderBy('name')->limit(10)->get();
-        }
-
-        return DentalService::with('dentalServiceType')
-            ->where(function ($query) {
-                $query->where('name', 'like', '%' . $this->serviceSearch . '%');
-            })
-            ->orderBy('name')
-            ->limit(10)
-            ->get();
+        return collect();
     }
 
     public function save()

@@ -34,8 +34,8 @@ class UpdatePage extends Component
     public $selectedAppointment = null;
 
     public $services = [];
-    public $serviceSearch = '';
-    public $showServiceDropdown = false;
+    public $serviceSearches = [];
+    public $showServiceDropdowns = [];
 
     public function mount(PatientVisit $patientVisit)
     {
@@ -69,6 +69,8 @@ class UpdatePage extends Component
                 ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0]
             ];
         }
+
+        $this->initializeServiceSearches();
     }
 
     public function rules()
@@ -94,6 +96,17 @@ class UpdatePage extends Component
         }
 
         return $rules;
+    }
+
+    private function initializeServiceSearches()
+    {
+        $this->serviceSearches = [];
+        $this->showServiceDropdowns = [];
+
+        foreach ($this->services as $index => $service) {
+            $this->serviceSearches[$index] = '';
+            $this->showServiceDropdowns[$index] = false;
+        }
     }
 
     public function updatedVisitType()
@@ -125,9 +138,11 @@ class UpdatePage extends Component
         }
     }
 
-    public function updatedServiceSearch()
+    public function updatedServiceSearches()
     {
-        $this->showServiceDropdown = !empty($this->serviceSearch);
+        foreach ($this->serviceSearches as $index => $search) {
+            $this->showServiceDropdowns[$index] = !empty($search);
+        }
     }
 
     public function selectPatient($patientId)
@@ -172,14 +187,23 @@ class UpdatePage extends Component
 
     public function addService()
     {
+        $newIndex = count($this->services);
         $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
+
+        $this->serviceSearches[$newIndex] = '';
+        $this->showServiceDropdowns[$newIndex] = false;
     }
 
     public function removeService($index)
     {
         if (count($this->services) > 1) {
             unset($this->services[$index]);
+            unset($this->serviceSearches[$index]);
+            unset($this->showServiceDropdowns[$index]);
+
             $this->services = array_values($this->services);
+            $this->serviceSearches = array_values($this->serviceSearches);
+            $this->showServiceDropdowns = array_values($this->showServiceDropdowns);
         }
     }
 
@@ -189,8 +213,8 @@ class UpdatePage extends Component
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
             $this->services[$index]['service_price'] = $service->price;
-            $this->showServiceDropdown = false;
-            $this->serviceSearch = '';
+            $this->showServiceDropdowns[$index] = false;
+            $this->serviceSearches[$index] = '';
         }
     }
 
@@ -252,15 +276,17 @@ class UpdatePage extends Component
             ->get();
     }
 
-    public function getSearchedServicesProperty()
+    public function getSearchedServicesByIndex($index)
     {
-        if (empty($this->serviceSearch)) {
+        $searchTerm = $this->serviceSearches[$index] ?? '';
+
+        if (empty($searchTerm)) {
             return DentalService::with('dentalServiceType')->orderBy('name')->limit(10)->get();
         }
 
         return DentalService::with('dentalServiceType')
-            ->where(function ($query) {
-                $query->where('name', 'like', '%' . $this->serviceSearch . '%');
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', '%' . $searchTerm . '%');
             })
             ->orderBy('name')
             ->limit(10)
