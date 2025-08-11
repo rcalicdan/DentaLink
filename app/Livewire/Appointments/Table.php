@@ -48,7 +48,7 @@ class Table extends Component
                     'label' => 'Patient',
                     'sortable' => true,
                     'accessor' => true,
-                    'search_columns' => ['patients.first_name', 'patients.last_name'],
+                    'search_columns' => ['patient.first_name', 'patient.last_name'], 
                 ],
                 [
                     'key' => 'appointment_date',

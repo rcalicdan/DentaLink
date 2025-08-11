@@ -13,6 +13,7 @@ class UpdatePage extends Component
     public $name;
     public $dental_service_type_id;
     public $price;
+    public $is_quantifiable;
 
     public function mount(DentalService $dentalService)
     {
@@ -20,6 +21,7 @@ class UpdatePage extends Component
         $this->name = $dentalService->name;
         $this->dental_service_type_id = $dentalService->dental_service_type_id;
         $this->price = $dentalService->price;
+        $this->is_quantifiable = $dentalService->is_quantifiable;
     }
 
     public function rules()
@@ -28,6 +30,7 @@ class UpdatePage extends Component
             'name' => 'required|string|max:255',
             'dental_service_type_id' => 'required|exists:dental_service_types,id',
             'price' => 'required|numeric|min:0|max:999999.99',
+            'is_quantifiable' => 'required|boolean',
         ];
     }
 
@@ -40,6 +43,7 @@ class UpdatePage extends Component
             'name' => $this->name,
             'dental_service_type_id' => $this->dental_service_type_id,
             'price' => $this->price,
+            'is_quantifiable' => $this->is_quantifiable,
         ]);
 
         session()->flash('success', 'Dental service updated successfully!');

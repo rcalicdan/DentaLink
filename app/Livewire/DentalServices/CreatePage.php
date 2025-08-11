@@ -12,6 +12,7 @@ class CreatePage extends Component
     public $name = '';
     public $dental_service_type_id = '';
     public $price = '';
+    public $is_quantifiable = true;
 
     public function rules()
     {
@@ -19,6 +20,7 @@ class CreatePage extends Component
             'name' => 'required|string|max:255',
             'dental_service_type_id' => 'required|exists:dental_service_types,id',
             'price' => 'required|numeric|min:0|max:999999.99',
+            'is_quantifiable' => 'required|boolean',
         ];
     }
 
@@ -31,6 +33,7 @@ class CreatePage extends Component
             'name' => $this->name,
             'dental_service_type_id' => $this->dental_service_type_id,
             'price' => $this->price,
+            'is_quantifiable' => $this->is_quantifiable,
         ]);
 
         session()->flash('success', 'Dental service created successfully!');

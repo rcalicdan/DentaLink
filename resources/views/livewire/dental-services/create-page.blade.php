@@ -16,16 +16,19 @@
         wire:submit="save">
         <div class="space-y-6">
             <x-form.field label="Service Name" name="name" type="text" placeholder="Enter service name"
-                wire:model="name" required icon="fas fa-tooth" 
+                wire:model="name" required icon="fas fa-tooth"
                 help="Enter a descriptive name for this dental service" />
 
-            <x-form.field label="Service Type" name="dental_service_type_id" type="select" wire:model="dental_service_type_id" 
-                :options="$serviceTypeOptions" required icon="fas fa-tags"
+            <x-form.field label="Service Type" name="dental_service_type_id" type="select"
+                wire:model="dental_service_type_id" :options="$serviceTypeOptions" required icon="fas fa-tags"
                 help="Select the category this service belongs to" />
 
             <x-form.field label="Price" name="price" type="number" placeholder="0.00" step="0.01"
-                wire:model="price" required icon="fas fa-dollar-sign" 
+                wire:model="price" required icon="fas fa-dollar-sign"
                 help="Enter the price for this service in your local currency" />
+
+            <x-form.field type="checkbox" name="is_quantifiable" label="Allow Multiple Quantities" wire=".live"
+                help="Uncheck for services like 'Dental Cleaning' that are one-time only" />
         </div>
 
         <div class="flex justify-end space-x-3 pt-6">
