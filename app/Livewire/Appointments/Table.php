@@ -6,6 +6,7 @@ use App\DataTable\DataTableFactory;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Enums\AppointmentStatuses;
+use App\Models\Branch;
 use App\Traits\Livewire\WithDataTable;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -21,6 +22,7 @@ class Table extends Component
     public $searchDate = '';
     public $searchStatus = '';
     public $searchPatient = '';
+    public $searchBranch = '';
 
     public function boot()
     {
@@ -48,7 +50,7 @@ class Table extends Component
                     'label' => 'Patient',
                     'sortable' => true,
                     'accessor' => true,
-                    'search_columns' => ['patient.first_name', 'patient.last_name'], 
+                    'search_columns' => ['patient.first_name', 'patient.last_name'],
                 ],
                 [
                     'key' => 'appointment_date',
@@ -97,16 +99,13 @@ class Table extends Component
             ->when($this->searchStatus, function ($q) {
                 return $q->where('status', $this->searchStatus);
             })
-            ->when($this->searchPatient, function ($q) {
-                return $q->whereHas('patient', function ($query) {
-                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$this->searchPatient}%"]);
-                });
+            ->when($this->searchBranch, function ($q) {
+                return $q->where('branch_id', $this->searchBranch);
             });
 
         $dataTable = $this->getDataTableConfig();
         return $this->applySearchAndSort($query, ['reason', 'notes'], $dataTable);
     }
-
     public function getRowsProperty()
     {
         return $this->rowsQuery()
@@ -119,7 +118,7 @@ class Table extends Component
     {
         $this->searchDate = Carbon::today()->format('Y-m-d');
         $this->searchStatus = '';
-        $this->searchPatient = '';
+        $this->searchBranch = '';
         $this->search = '';
         $this->resetPage();
     }
@@ -155,6 +154,7 @@ class Table extends Component
             'dataTable' => $dataTable,
             'selectedRowsCount' => $selectedRowsCount,
             'availableStatuses' => AppointmentStatuses::cases(),
+            'branches' => Branch::orderBy('name')->get(), 
         ]);
     }
 

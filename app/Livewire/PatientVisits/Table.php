@@ -3,6 +3,7 @@
 namespace App\Livewire\PatientVisits;
 
 use App\DataTable\DataTableFactory;
+use App\Models\Branch;
 use App\Models\PatientVisit;
 use App\Models\Patient;
 use App\Traits\Livewire\WithDataTable;
@@ -18,7 +19,7 @@ class Table extends Component
     use WithDataTable, WithPagination;
 
     public $searchDate = '';
-    public $searchPatient = '';
+    public $searchBranch = '';
     public $searchVisitType = '';
 
     public function boot()
@@ -95,14 +96,9 @@ class Table extends Component
             ->when($this->searchDate, function ($q) {
                 return $q->whereDate('visit_date', $this->searchDate);
             })
-            ->when($this->searchPatient, function ($q) {
-                return $q->whereHas('patient', function ($query) {
-                    $query->where(function ($subQuery) {
-                        $subQuery->where('first_name', 'like', "%{$this->searchPatient}%")
-                            ->orWhere('last_name', 'like', "%{$this->searchPatient}%")
-                            ->orWhere('id', 'like', "%{$this->searchPatient}%")
-                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$this->searchPatient}%"]);
-                    });
+            ->when($this->searchBranch, function ($q) {
+                return $q->whereHas('branch', function ($query) {
+                    $query->where('name', 'like', "%{$this->searchBranch}%");
                 });
             })
             ->when($this->searchVisitType, function ($q) {
@@ -128,7 +124,7 @@ class Table extends Component
     public function clearFilters()
     {
         $this->searchDate = Carbon::today()->format('Y-m-d');
-        $this->searchPatient = '';
+        $this->searchBranch = '';
         $this->searchVisitType = '';
         $this->search = '';
         $this->resetPage();
@@ -147,6 +143,7 @@ class Table extends Component
                 'walk-in' => 'Walk-in',
                 'appointment' => 'Appointment'
             ],
+            'branches' => Branch::orderBy('name')->get(),
         ]);
     }
 
