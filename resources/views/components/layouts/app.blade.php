@@ -12,7 +12,7 @@
 @props([
     'title' => 'Nice Smile Dental Clinic',
     'pageTitle' => $pageTitle,
-    'showBranchFilter' => true,
+    'showBranchFilter' => false,
 ])
 
 <!DOCTYPE html>

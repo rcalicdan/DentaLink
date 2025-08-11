@@ -22,10 +22,7 @@
 
         <!-- Compact Filter Controls -->
         <div class="p-4">
-            <div
-                class="grid grid-cols-1 sm:grid-cols-2 
-                        lg:grid-cols-4
-                        gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <!-- Date Filter -->
                 <div class="group">
@@ -39,10 +36,10 @@
                     <div class="relative">
                         <input type="date" wire:model.live="searchDate"
                             class="w-full pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 
-                                   bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-300
-                                   focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 
-                                   hover:border-slate-400 dark:hover:border-slate-500
-                                   transition-all duration-150 shadow-sm">
+                       bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-300
+                       focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 
+                       hover:border-slate-400 dark:hover:border-slate-500
+                       transition-all duration-150 shadow-sm">
                         <div class="absolute right-2.5 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <i class="fas fa-calendar text-slate-400 text-xs"></i>
                         </div>
@@ -61,10 +58,10 @@
                     <div class="relative">
                         <select wire:model.live="searchStatus"
                             class="w-full pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 
-                                   bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-300
-                                   focus:border-green-500 focus:ring-2 focus:ring-green-500/20 
-                                   hover:border-slate-400 dark:hover:border-slate-500
-                                   transition-all duration-150 shadow-sm appearance-none cursor-pointer">
+                       bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-300
+                       focus:border-green-500 focus:ring-2 focus:ring-green-500/20 
+                       hover:border-slate-400 dark:hover:border-slate-500
+                       transition-all duration-150 shadow-sm appearance-none cursor-pointer">
                             <option value="">All Statuses</option>
                             @foreach ($availableStatuses as $status)
                                 <option value="{{ $status->value }}">{{ $status->getDisplayName() }}</option>
@@ -76,7 +73,7 @@
                     </div>
                 </div>
 
-                <!-- Branch Filter -->
+                <!-- Branch Filter - Now available for all users -->
                 <div class="group">
                     <label class="flex items-center text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
                         <div
@@ -88,10 +85,10 @@
                     <div class="relative">
                         <select wire:model.live="searchBranch"
                             class="w-full pl-3 pr-8 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 
-                                   bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-300
-                                   focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 
-                                   hover:border-slate-400 dark:hover:border-slate-500
-                                   transition-all duration-150 shadow-sm appearance-none cursor-pointer">
+                       bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-300
+                       focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 
+                       hover:border-slate-400 dark:hover:border-slate-500
+                       transition-all duration-150 shadow-sm appearance-none cursor-pointer">
                             <option value="">All Branches</option>
                             @foreach ($branches as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -102,15 +99,14 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- Clear Filters -->
-                <div
-                    class="flex items-end 
-                    @if (!auth()->user()->isSuperadmin()) sm:col-span-2 lg:col-span-1 @endif">
+                <div class="flex items-end">
                     <button wire:click="clearFilters" type="button"
                         class="w-full px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 
-                               text-white font-medium text-sm rounded-lg shadow-md hover:shadow-lg 
-                               transform hover:-translate-y-0.5 transition-all duration-150
-                               flex items-center justify-center space-x-1.5 group">
+                   text-white font-medium text-sm rounded-lg shadow-md hover:shadow-lg 
+                   transform hover:-translate-y-0.5 transition-all duration-150
+                   flex items-center justify-center space-x-1.5 group">
                         <i
                             class="fas fa-times-circle text-xs group-hover:rotate-90 transition-transform duration-150"></i>
                         <span>Clear</span>

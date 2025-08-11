@@ -31,6 +31,10 @@ class Table extends Component
         if (empty($this->searchDate)) {
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
+
+        if (!Auth::user()->isSuperadmin() && empty($this->searchBranch)) {
+            $this->searchBranch = Auth::user()->branch_id;
+        }
     }
 
     private function getDataTableConfig(): DataTableFactory
@@ -94,14 +98,10 @@ class Table extends Component
     {
         $query = PatientVisit::with(['patient', 'branch', 'appointment']);
 
-        if (!Auth::user()->isSuperadmin()) {
-            $query->where('branch_id', Auth::user()->branch_id);
-        }
-
         $query->when($this->searchDate, function ($q) {
             return $q->whereDate('visit_date', $this->searchDate);
         })
-            ->when($this->searchBranch && Auth::user()->isSuperadmin(), function ($q) {
+            ->when($this->searchBranch, function ($q) {
                 return $q->where('branch_id', $this->searchBranch);
             })
             ->when($this->searchVisitType, function ($q) {
@@ -127,10 +127,14 @@ class Table extends Component
     public function clearFilters()
     {
         $this->searchDate = Carbon::today()->format('Y-m-d');
+        $this->searchVisitType = '';
+
         if (Auth::user()->isSuperadmin()) {
             $this->searchBranch = '';
+        } else {
+            $this->searchBranch = Auth::user()->branch_id;
         }
-        $this->searchVisitType = '';
+
         $this->search = '';
         $this->resetPage();
     }

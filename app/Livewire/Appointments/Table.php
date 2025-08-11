@@ -34,7 +34,7 @@ class Table extends Component
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
 
-        if (!Auth::user()->isSuperadmin()) {
+        if (!Auth::user()->isSuperadmin() && empty($this->searchBranch)) {
             $this->searchBranch = Auth::user()->branch_id;
         }
     }
@@ -98,17 +98,13 @@ class Table extends Component
     {
         $query = Appointment::with(['patient', 'branch']);
 
-        if (!Auth::user()->isSuperadmin()) {
-            $query->where('branch_id', Auth::user()->branch_id);
-        }
-
         $query->when($this->searchDate, function ($q) {
             return $q->whereDate('appointment_date', $this->searchDate);
         })
             ->when($this->searchStatus, function ($q) {
                 return $q->where('status', $this->searchStatus);
             })
-            ->when($this->searchBranch && Auth::user()->isSuperadmin(), function ($q) {
+            ->when($this->searchBranch, function ($q) {
                 return $q->where('branch_id', $this->searchBranch);
             });
 
@@ -128,7 +124,13 @@ class Table extends Component
     {
         $this->searchDate = Carbon::today()->format('Y-m-d');
         $this->searchStatus = '';
-        $this->searchBranch = '';
+
+        if (Auth::user()->isSuperadmin()) {
+            $this->searchBranch = '';
+        } else {
+            $this->searchBranch = Auth::user()->branch_id;
+        }
+
         $this->search = '';
         $this->resetPage();
     }
