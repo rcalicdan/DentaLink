@@ -64,12 +64,6 @@ class Table extends Component
                     'type' => 'currency'
                 ],
                 [
-                    'key' => 'branch_name',
-                    'label' => 'Branch',
-                    'sortable' => true,
-                    'accessor' => true
-                ],
-                [
                     'key' => 'created_at',
                     'label' => 'Created',
                     'sortable' => true,
@@ -92,14 +86,17 @@ class Table extends Component
 
     public function rowsQuery()
     {
-        $query = PatientVisit::with(['patient', 'branch', 'appointment'])
-            ->when($this->searchDate, function ($q) {
-                return $q->whereDate('visit_date', $this->searchDate);
-            })
-            ->when($this->searchBranch, function ($q) {
-                return $q->whereHas('branch', function ($query) {
-                    $query->where('name', 'like', "%{$this->searchBranch}%");
-                });
+        $query = PatientVisit::with(['patient', 'branch', 'appointment']);
+
+        if (!Auth::user()->isSuperadmin()) {
+            $query->where('branch_id', Auth::user()->branch_id);
+        }
+
+        $query->when($this->searchDate, function ($q) {
+            return $q->whereDate('visit_date', $this->searchDate);
+        })
+            ->when($this->searchBranch && Auth::user()->isSuperadmin(), function ($q) {
+                return $q->where('branch_id', $this->searchBranch);
             })
             ->when($this->searchVisitType, function ($q) {
                 if ($this->searchVisitType === 'walk-in') {
@@ -124,7 +121,9 @@ class Table extends Component
     public function clearFilters()
     {
         $this->searchDate = Carbon::today()->format('Y-m-d');
-        $this->searchBranch = '';
+        if (Auth::user()->isSuperadmin()) {
+            $this->searchBranch = '';
+        }
         $this->searchVisitType = '';
         $this->search = '';
         $this->resetPage();
@@ -143,13 +142,18 @@ class Table extends Component
                 'walk-in' => 'Walk-in',
                 'appointment' => 'Appointment'
             ],
-            'branches' => Branch::orderBy('name')->get(),
+            'branches' => Auth::user()->isSuperadmin() ? Branch::orderBy('name')->get() : collect(),
         ]);
     }
 
     public function bulkDelete()
     {
         $query = PatientVisit::query();
+
+        if (!Auth::user()->isSuperadmin()) {
+            $query->where('branch_id', Auth::user()->branch_id);
+        }
+
         if ($this->selectAll) {
             $query = $this->rowsQuery();
         } else {

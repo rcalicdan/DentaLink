@@ -92,20 +92,26 @@ class Table extends Component
 
     public function rowsQuery()
     {
-        $query = Appointment::with(['patient', 'branch'])
-            ->when($this->searchDate, function ($q) {
-                return $q->whereDate('appointment_date', $this->searchDate);
-            })
+        $query = Appointment::with(['patient', 'branch']);
+
+        if (!Auth::user()->isSuperadmin()) {
+            $query->where('branch_id', Auth::user()->branch_id);
+        }
+
+        $query->when($this->searchDate, function ($q) {
+            return $q->whereDate('appointment_date', $this->searchDate);
+        })
             ->when($this->searchStatus, function ($q) {
                 return $q->where('status', $this->searchStatus);
             })
-            ->when($this->searchBranch, function ($q) {
+            ->when($this->searchBranch && Auth::user()->isSuperadmin(), function ($q) {
                 return $q->where('branch_id', $this->searchBranch);
             });
 
         $dataTable = $this->getDataTableConfig();
         return $this->applySearchAndSort($query, ['reason', 'notes'], $dataTable);
     }
+
     public function getRowsProperty()
     {
         return $this->rowsQuery()
@@ -154,13 +160,14 @@ class Table extends Component
             'dataTable' => $dataTable,
             'selectedRowsCount' => $selectedRowsCount,
             'availableStatuses' => AppointmentStatuses::cases(),
-            'branches' => Branch::orderBy('name')->get(), 
+            'branches' => Auth::user()->isSuperadmin() ? Branch::orderBy('name')->get() : collect(),
         ]);
     }
 
     public function bulkDelete()
     {
         $query = Appointment::query();
+
         if ($this->selectAll) {
             $query = $this->rowsQuery();
         } else {
