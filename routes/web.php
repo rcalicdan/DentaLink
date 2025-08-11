@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('login', App\Livewire\Auth\LoginPage::class)->middleware('guest')->name('login');
+Route::get('login', App\Livewire\Auth\LoginPage::class)->name('login');
 Route::get('/', fn() => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {

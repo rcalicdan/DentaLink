@@ -213,7 +213,7 @@ class CreatePage extends Component
         $total = 0;
         foreach ($this->services as $service) {
             if (!empty($service['dental_service_id']) && !empty($service['service_price'])) {
-                $total += $service['service_price'] * $service['quantity'];
+                $total += (float)$service['service_price'] * (int)$service['quantity'];
             }
         }
         return number_format($total, 2);
