@@ -98,10 +98,6 @@ class Table extends Component
     {
         $query = Appointment::with(['patient', 'branch']);
 
-        if (!Auth::user()->isSuperadmin()) {
-            $query->where('branch_id', Auth::user()->branch_id);
-        }
-
         $query->when($this->searchDate, function ($q) {
             return $q->whereDate('appointment_date', $this->searchDate);
         })
