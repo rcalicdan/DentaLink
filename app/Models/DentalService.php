@@ -10,12 +10,14 @@ class DentalService extends Model
         'name',
         'dental_service_type_id',
         'price',
+        'is_quantifiable', 
     ];
 
     protected function casts(): array
     {
         return [
             'price' => 'decimal:2',
+            'is_quantifiable' => 'boolean', 
         ];
     }
 

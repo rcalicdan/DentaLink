@@ -218,6 +218,11 @@ class UpdatePage extends Component
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
             $this->services[$index]['service_price'] = $service->price;
+
+            if (!$service->is_quantifiable) {
+                $this->services[$index]['quantity'] = 1;
+            }
+
             $this->showServiceDropdowns[$index] = false;
             $this->serviceSearches[$index] = $service->name;
         }
