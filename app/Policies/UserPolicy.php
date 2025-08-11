@@ -32,6 +32,10 @@ class UserPolicy
 
     public function update(User $user, User $model): bool
     {
+        if ($user->isAdmin() && $model->isSuperadmin()) {
+            return false;
+        }
+
         return $user->isAdmin() || $user->isSuperadmin();
     }
 
@@ -43,6 +47,10 @@ class UserPolicy
 
         if ($user->isSuperadmin()) {
             return true;
+        }
+
+        if ($user->isAdmin() && $model->isSuperadmin()) {
+            return false;
         }
 
         if ($user->isAdmin()) {

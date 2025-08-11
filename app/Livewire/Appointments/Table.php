@@ -33,6 +33,10 @@ class Table extends Component
         if (empty($this->searchDate)) {
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
+
+        if (!Auth::user()->isSuperadmin()) {
+            $this->searchBranch = Auth::user()->branch_id;
+        }
     }
 
     private function getDataTableConfig(): DataTableFactory
@@ -160,7 +164,7 @@ class Table extends Component
             'dataTable' => $dataTable,
             'selectedRowsCount' => $selectedRowsCount,
             'availableStatuses' => AppointmentStatuses::cases(),
-            'branches' => Auth::user()->isSuperadmin() ? Branch::orderBy('name')->get() : collect(),
+            'branches' => Branch::orderBy('name')->get()
         ]);
     }
 

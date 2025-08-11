@@ -58,6 +58,12 @@ class Table extends Component
                     'type' => 'datetime'
                 ],
                 [
+                    'key' => 'branch_name',
+                    'label' => 'Branch',
+                    'sortable' => true,
+                    'accessor' => true
+                ],
+                [
                     'key' => 'total_amount_paid',
                     'label' => 'Amount Paid',
                     'sortable' => true,
