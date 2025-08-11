@@ -148,7 +148,7 @@ class Table extends Component
                 'walk-in' => 'Walk-in',
                 'appointment' => 'Appointment'
             ],
-            'branches' => Auth::user()->isSuperadmin() ? Branch::orderBy('name')->get() : collect(),
+            'branches' => Branch::orderBy('name')->get(),
         ]);
     }
 
