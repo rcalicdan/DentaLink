@@ -13,7 +13,7 @@
     @endif
 
     <x-form.container title="Service Information" subtitle="Fill in the details below to create a new dental service"
-        wire:submit="save">
+        wire:submit.prevent="save">
         <div class="space-y-6">
             <x-form.field label="Service Name" name="name" type="text" placeholder="Enter service name"
                 wire:model="name" required icon="fas fa-tooth"

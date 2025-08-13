@@ -40,7 +40,7 @@
         {{-- Patient Search Field --}}
         <div class="relative">
             <x-form.field label="Patient" name="patient_id" type="text" placeholder="Search for a patient..."
-                wire:model.live="patientSearch" required icon="fas fa-user" />
+                wire:model.live="patientSearch" required icon="fas fa-user" autocomplete="off"/>
 
             @if ($showPatientDropdown)
                 <div
