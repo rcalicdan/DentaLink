@@ -13,6 +13,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Validation\UnauthorizedException;
 
 class UpdatePage extends Component
 {
@@ -37,9 +38,15 @@ class UpdatePage extends Component
     public $serviceSearches = [];
     public $showServiceDropdowns = [];
 
+    // Add readonly state
+    public $isReadonly = false;
+
     public function mount(PatientVisit $patientVisit)
     {
         $this->authorize('update', $patientVisit);
+
+        // Check if user is employee (readonly access)
+        $this->isReadonly = Auth::user()->isEmployee();
 
         $this->patientVisit = $patientVisit;
         $this->patient_id = $patientVisit->patient_id;
@@ -49,6 +56,7 @@ class UpdatePage extends Component
         $this->visit_type = $patientVisit->appointment_id ? 'appointment' : 'walk-in';
         $this->selectedPatient = $patientVisit->patient;
         $this->patientSearch = $patientVisit->patient->full_name . ' (ID: ' . $patientVisit->patient->id . ')';
+        
         if ($patientVisit->appointment) {
             $this->selectedAppointment = $patientVisit->appointment;
             $this->appointmentSearch = "Queue #{$patientVisit->appointment->queue_number} - {$patientVisit->appointment->appointment_date->format('M d, Y')} - {$patientVisit->appointment->reason}";
@@ -73,8 +81,21 @@ class UpdatePage extends Component
         $this->initializeServiceSearches();
     }
 
+    /**
+     * Server-side authorization check for any modification attempts
+     */
+    private function checkWritePermission()
+    {
+        if (Auth::user()->isEmployee()) {
+            throw new UnauthorizedException('Employees do not have permission to modify patient visits.');
+        }
+    }
+
     public function rules()
     {
+        // Block validation if readonly
+        $this->checkWritePermission();
+
         $user = Auth::user();
 
         $rules = [
@@ -116,6 +137,8 @@ class UpdatePage extends Component
 
     public function updatedVisitType()
     {
+        $this->checkWritePermission();
+
         if ($this->visit_type === 'walk-in') {
             $this->appointment_id = '';
             $this->selectedAppointment = null;
@@ -126,6 +149,8 @@ class UpdatePage extends Component
 
     public function updatedPatientSearch()
     {
+        $this->checkWritePermission();
+
         $this->showPatientDropdown = !empty($this->patientSearch);
         if (empty($this->patientSearch)) {
             $this->selectedPatient = null;
@@ -136,6 +161,8 @@ class UpdatePage extends Component
 
     public function updatedAppointmentSearch()
     {
+        $this->checkWritePermission();
+
         $this->showAppointmentDropdown = !empty($this->appointmentSearch) && $this->visit_type === 'appointment';
         if (empty($this->appointmentSearch)) {
             $this->selectedAppointment = null;
@@ -145,6 +172,8 @@ class UpdatePage extends Component
 
     public function updatedServiceSearches()
     {
+        $this->checkWritePermission();
+
         foreach ($this->serviceSearches as $index => $search) {
             $this->showServiceDropdowns[$index] = !empty($search);
         }
@@ -152,6 +181,8 @@ class UpdatePage extends Component
 
     public function selectPatient($patientId)
     {
+        $this->checkWritePermission();
+
         $patient = Patient::find($patientId);
         if ($patient) {
             $this->patient_id = $patient->id;
@@ -164,6 +195,8 @@ class UpdatePage extends Component
 
     public function selectAppointment($appointmentId)
     {
+        $this->checkWritePermission();
+
         $appointment = Appointment::with('patient')->find($appointmentId);
         if ($appointment && $this->visit_type === 'appointment') {
             $this->appointment_id = $appointment->id;
@@ -175,6 +208,8 @@ class UpdatePage extends Component
 
     public function clearPatientSelection()
     {
+        $this->checkWritePermission();
+
         $this->patient_id = '';
         $this->selectedPatient = null;
         $this->patientSearch = '';
@@ -184,6 +219,8 @@ class UpdatePage extends Component
 
     public function clearAppointmentSelection()
     {
+        $this->checkWritePermission();
+
         $this->appointment_id = '';
         $this->selectedAppointment = null;
         $this->appointmentSearch = '';
@@ -192,6 +229,8 @@ class UpdatePage extends Component
 
     public function addService()
     {
+        $this->checkWritePermission();
+
         $newIndex = count($this->services);
         $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
 
@@ -201,6 +240,8 @@ class UpdatePage extends Component
 
     public function removeService($index)
     {
+        $this->checkWritePermission();
+
         if (count($this->services) > 1) {
             unset($this->services[$index]);
             unset($this->serviceSearches[$index]);
@@ -214,6 +255,8 @@ class UpdatePage extends Component
 
     public function selectService($serviceId, $index)
     {
+        $this->checkWritePermission();
+
         $service = DentalService::find($serviceId);
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
@@ -230,6 +273,8 @@ class UpdatePage extends Component
 
     public function updatedServices()
     {
+        $this->checkWritePermission();
+
         foreach ($this->services as $index => $service) {
             if (!empty($service['dental_service_id'])) {
                 $dentalService = DentalService::find($service['dental_service_id']);
@@ -310,7 +355,9 @@ class UpdatePage extends Component
 
     public function update()
     {
+        // Double-check authorization
         $this->authorize('update', $this->patientVisit);
+        $this->checkWritePermission();
 
         if (!Auth::user()->isSuperadmin()) {
             $this->branch_id = Auth::user()->branch_id;
@@ -369,6 +416,11 @@ class UpdatePage extends Component
         return Auth::user()->isSuperadmin();
     }
 
+    public function isReadonlyMode()
+    {
+        return $this->isReadonly;
+    }
+
     private function getBranchesForUser()
     {
         $user = Auth::user();
@@ -387,7 +439,8 @@ class UpdatePage extends Component
             'searchedAppointments' => $this->searchedAppointments,
             'searchedServices' => $this->searchedServices,
             'canUpdateBranch' => $this->canUpdateBranch(),
-            'branches' => $this->getBranchesForUser()
+            'branches' => $this->getBranchesForUser(),
+            'isReadonly' => $this->isReadonlyMode()
         ]);
     }
 }
