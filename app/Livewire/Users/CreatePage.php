@@ -84,16 +84,6 @@ class CreatePage extends Component
             'isAdmin' => Auth::user()->isAdmin()
         ]);
     }
-
-    private function getAvailableRoles()
-    {
-        if (Auth::user()->isAdmin()) {
-            return [UserRoles::EMPLOYEE->value];
-        }
-
-        return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value];
-    }
-
     private function getRoleOptions()
     {
         $currentUser = Auth::user();
@@ -104,14 +94,28 @@ class CreatePage extends Component
 
         $options = ['' => 'Select a role'];
 
-        foreach (UserRoles::cases() as $role) {
-            $options[$role->value] = match ($role) {
-                UserRoles::ADMIN => 'Admin',
-                UserRoles::EMPLOYEE => 'Employee',
-            };
+        if ($currentUser->isSuperadmin()) {
+            $options[UserRoles::ADMIN->value] = 'Admin';
+            $options[UserRoles::EMPLOYEE->value] = 'Employee';
+            return $options;
         }
 
         return $options;
+    }
+
+    private function getAvailableRoles()
+    {
+        $currentUser = Auth::user();
+
+        if ($currentUser->isAdmin()) {
+            return [UserRoles::EMPLOYEE->value];
+        }
+
+        if ($currentUser->isSuperadmin()) {
+            return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value];
+        }
+
+        return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value];
     }
 
     private function getBranchOptions()
