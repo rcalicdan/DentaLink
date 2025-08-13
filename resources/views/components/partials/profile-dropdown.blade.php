@@ -3,7 +3,7 @@
         class="flex items-center space-x-2 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
         <div
             class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white shadow-sm ring-2 ring-white/50 dark:ring-slate-400/50 text-sm">
-            DQ
+            {{ auth()->user()->name_initials }}
         </div>
         <span
             class="text-sm font-medium text-slate-700 dark:text-slate-300 hidden sm:inline">{{ auth()->user()->full_name }}</span>
