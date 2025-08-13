@@ -89,7 +89,7 @@ class UpdatePage extends Component
 
     public function render()
     {
-          $this->authorize('update', $this->user);
+        $this->authorize('update', $this->user);
         return view('livewire.users.update-page', [
             'roleOptions' => $this->getRoleOptions(),
             'branchOptions' => $this->getBranchOptions(),
@@ -103,13 +103,13 @@ class UpdatePage extends Component
             return [UserRoles::EMPLOYEE->value];
         }
 
-        return UserRoles::getAllRoles();
+        return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value];
     }
 
     private function getRoleOptions()
     {
         $currentUser = Auth::user();
-        
+
         if ($currentUser->isAdmin()) {
             return [UserRoles::EMPLOYEE->value => 'Employee'];
         }
@@ -118,7 +118,6 @@ class UpdatePage extends Component
 
         foreach (UserRoles::cases() as $role) {
             $options[$role->value] = match ($role) {
-                UserRoles::SUPER_ADMIN => 'Super Admin',
                 UserRoles::ADMIN => 'Admin',
                 UserRoles::EMPLOYEE => 'Employee',
             };
@@ -130,7 +129,7 @@ class UpdatePage extends Component
     private function getBranchOptions()
     {
         $currentUser = Auth::user();
-        
+
         if ($currentUser->isAdmin()) {
             $adminBranch = $currentUser->branch;
             return $adminBranch ? [$adminBranch->id => $adminBranch->name] : [];
