@@ -43,7 +43,11 @@ class LoginPage extends Component
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended('/dashboard', navigate: true);
+        if (Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) {
+            $this->redirectIntended('/dashboard', navigate: true);
+        } else {
+            $this->redirectIntended('/patients', navigate: true);
+        }
     }
 
     /**
