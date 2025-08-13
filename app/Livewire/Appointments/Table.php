@@ -156,6 +156,43 @@ class Table extends Component
         ]);
     }
 
+    public function getDynamicTitleProperty()
+    {
+        $title = 'Appointments';
+        $indicators = [];
+
+        if ($this->searchDate) {
+            $date = Carbon::parse($this->searchDate);
+            if ($date->isToday()) {
+                $indicators[] = 'Today';
+            } elseif ($date->isYesterday()) {
+                $indicators[] = 'Yesterday';
+            } elseif ($date->isTomorrow()) {
+                $indicators[] = 'Tomorrow';
+            } else {
+                $indicators[] = $date->format('M j, Y');
+            }
+        }
+
+        if ($this->searchStatus) {
+            $status = AppointmentStatuses::from($this->searchStatus);
+            $indicators[] = $status->getDisplayName();
+        }
+
+        if ($this->searchBranch) {
+            $branch = Branch::find($this->searchBranch);
+            if ($branch) {
+                $indicators[] = $branch->name;
+            }
+        }
+
+        if (!empty($indicators)) {
+            $title .= ' for ' . implode(' - ', $indicators);
+        }
+
+        return $title;
+    }
+
     public function render()
     {
         $this->authorize('viewAny', Appointment::class);
@@ -166,7 +203,8 @@ class Table extends Component
             'dataTable' => $dataTable,
             'selectedRowsCount' => $selectedRowsCount,
             'availableStatuses' => AppointmentStatuses::cases(),
-            'branches' => Branch::orderBy('name')->get()
+            'branches' => Branch::orderBy('name')->get(),
+            'dynamicTitle' => $this->dynamicTitle
         ]);
     }
 

@@ -139,6 +139,46 @@ class Table extends Component
         $this->resetPage();
     }
 
+    public function getDynamicTitleProperty()
+    {
+        $title = 'Patient Visits';
+        $indicators = [];
+
+        if ($this->searchDate) {
+            $date = Carbon::parse($this->searchDate);
+            if ($date->isToday()) {
+                $indicators[] = 'Today';
+            } elseif ($date->isYesterday()) {
+                $indicators[] = 'Yesterday';
+            } elseif ($date->isTomorrow()) {
+                $indicators[] = 'Tomorrow';
+            } else {
+                $indicators[] = $date->format('M j, Y');
+            }
+        }
+
+        if ($this->searchVisitType) {
+            $visitTypes = [
+                'walk-in' => 'Walk-in',
+                'appointment' => 'Appointment'
+            ];
+            $indicators[] = $visitTypes[$this->searchVisitType] ?? $this->searchVisitType;
+        }
+
+        if ($this->searchBranch) {
+            $branch = Branch::find($this->searchBranch);
+            if ($branch) {
+                $indicators[] = $branch->name;
+            }
+        }
+
+        if (!empty($indicators)) {
+            $title .= ' for ' . implode(' - ', $indicators);
+        }
+
+        return $title;
+    }
+
     public function render()
     {
         $this->authorize('viewAny', PatientVisit::class);
@@ -153,6 +193,7 @@ class Table extends Component
                 'appointment' => 'Appointment'
             ],
             'branches' => Branch::orderBy('name')->get(),
+            'dynamicTitle' => $this->dynamicTitle
         ]);
     }
 

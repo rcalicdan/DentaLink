@@ -116,7 +116,54 @@
         </div>
     </div>
 
-    <x-partials.table-header title="Appointments" />
+    <!-- Dynamic Title with Indicators -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                    {{ $dynamicTitle }}
+                </h1>
+                <div class="flex flex-wrap gap-2">
+                    @if ($searchDate)
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            @php
+                                $date = \Carbon\Carbon::parse($searchDate);
+                                if ($date->isToday()) {
+                                    echo 'Today';
+                                } elseif ($date->isYesterday()) {
+                                    echo 'Yesterday';
+                                } elseif ($date->isTomorrow()) {
+                                    echo 'Tomorrow';
+                                } else {
+                                    echo $date->format('M j, Y');
+                                }
+                            @endphp
+                        </span>
+                    @endif
+                    @if ($searchStatus)
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            {{ \App\Enums\AppointmentStatuses::from($searchStatus)->getDisplayName() }}
+                        </span>
+                    @endif
+                    @if ($searchBranch)
+                        @php $branch = \App\Models\Branch::find($searchBranch); @endphp
+                        @if ($branch)
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                <i class="fas fa-building mr-1"></i>
+                                {{ $branch->name }}
+                            </span>
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <x-data-table :data="$this->rows" :headers="$dataTable['headers']" :showActions="$dataTable['showActions']" :showSearch="$dataTable['showSearch']" :showCreate="$dataTable['showCreate']"
         :createRoute="$dataTable['createRoute']" :createButtonName="$dataTable['createButtonName']" :editRoute="$dataTable['editRoute']" :viewRoute="$dataTable['viewRoute']" :deleteAction="$dataTable['deleteAction']" :searchPlaceholder="$dataTable['searchPlaceholder']"
         :emptyMessage="$dataTable['emptyMessage']" :searchQuery="$search" :sortColumn="$sortColumn" :sortDirection="$sortDirection" :showBulkActions="$dataTable['showBulkActions']"
