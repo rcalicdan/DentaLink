@@ -249,7 +249,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-xl font-bold text-white">AI Assistant</h3>
-                                    <p class="text-white/80 text-sm">Powered by Claude AI</p>
+                                    <p class="text-white/80 text-sm">Powered by Gemini AI</p>
                                 </div>
                             </div>
                             <button @click="toggleModal()"
