@@ -22,8 +22,6 @@
             @endif
         </div>
     </div>
-
-    @include('contents.patients.show.loading-overlay')
 </div>
 
 @push('styles')
