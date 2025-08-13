@@ -79,6 +79,7 @@ class Table extends Component
             ->showCreate(true)
             ->createRoute('patients.create')
             ->editRoute('patients.edit')
+            ->viewRoute('patients.view')
             ->bulkDeleteAction('bulkDelete');
     }
 

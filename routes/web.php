@@ -25,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('', App\Livewire\Patients\Table::class)->name('index');
         Route::get('/create', App\Livewire\Patients\CreatePage::class)->name('create');
         Route::get('/{patient}/edit', App\Livewire\Patients\UpdatePage::class)->name('edit');
+        Route::get('/{patient}/view', App\Livewire\Patients\ViewPage::class)->name('view'); // Add this line
     });
 
     Route::prefix('dental-service-types')->name('dental-service-types.')->group(function () {
