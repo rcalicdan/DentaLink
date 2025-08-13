@@ -41,10 +41,10 @@ return new class extends Migration
         });
 
         DB::table('users')->insert([
-            'email' => 'admin@example.com',
+            'email' => 'superadmin@nice-smile.com',
             'password' => bcrypt('12345678'),
-            'first_name' => 'Admin',
-            'last_name' => 'User',
+            'first_name' => 'Super',
+            'last_name' => 'Admin',
             'phone' => '09123456789',
             'role' => UserRoles::SUPER_ADMIN,
             'created_at' => now(),
