@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Libraries\Audit\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class PatientVisit extends Model
 {
+    use Auditable;
+    
     protected $fillable = [
         'patient_id',
         'branch_id',
