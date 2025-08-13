@@ -25,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-dashboard', function ($user) {
             return $user->isAdmin() || $user->isSuperadmin();
         });
+        Gate::define('view-ai-assistant', function ($user) {
+            $user->isSuperadmin();
+        });
     }
 }
