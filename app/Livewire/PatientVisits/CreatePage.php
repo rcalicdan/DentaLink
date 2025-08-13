@@ -60,13 +60,21 @@ class CreatePage extends Component
                 $this->appointment_id = $appointment->id;
                 $this->patient_id = $appointment->patient_id;
 
-                // Set selected appointment and patient
                 $this->selectedAppointment = $appointment;
                 $this->selectedPatient = $appointment->patient;
-
-                // Pre-fill the search fields
                 $this->patientSearch = $appointment->patient->full_name . ' (ID: ' . $appointment->patient->id . ')';
                 $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
+            }
+        }
+        elseif (request()->has('patient_id') && !request()->has('appointment_id')) {
+            $patientId = request()->get('patient_id');
+            $patient = Patient::find($patientId);
+
+            if ($patient) {
+                $this->visit_type = 'walk-in';
+                $this->patient_id = $patient->id;
+                $this->selectedPatient = $patient;
+                $this->patientSearch = $patient->full_name . ' (ID: ' . $patient->id . ')';
             }
         }
     }

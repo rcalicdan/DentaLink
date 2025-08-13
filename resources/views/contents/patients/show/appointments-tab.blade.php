@@ -93,7 +93,7 @@
                                 <div class="truncate font-medium">{{ $appointment->reason ?: 'Not specified' }}</div>
                             </td>
                             <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">
-                                <span class="font-medium">{{ $appointment->creator->name ?? 'Unknown' }}</span>
+                                <span class="font-medium">{{ $appointment->creator->full_name ?? 'Unknown' }}</span>
                             </td>
                             <td class="px-6 py-5 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center space-x-3">
