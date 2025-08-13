@@ -59,6 +59,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', \App\Livewire\Inventories\CreatePage::class)->name('create');
         Route::get('/{inventory}/edit', \App\Livewire\Inventories\UpdatePage::class)->name('edit');
     });
-    
+
+    Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
+        Route::get('', \App\Livewire\AuditLogs\Table::class)->name('index');
+        Route::get('/{auditLog}', \App\Livewire\AuditLogs\ViewPage::class)->name('view');
+    });
+
     Route::get('profile', \App\Livewire\Profile\ProfilePage::class)->name('profile.edit');
 });

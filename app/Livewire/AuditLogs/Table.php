@@ -2,10 +2,9 @@
 
 namespace App\Livewire\AuditLogs;
 
-use App\DataTable\DataTableFactory;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Traits\Livewire\WithDataTable;
+use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -13,88 +12,69 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.app')]
 class Table extends Component
 {
-    use WithDataTable, WithPagination;
+    use WithPagination;
 
+    public $search = '';
     public $searchEvent = '';
     public $searchUser = '';
+    public $searchDate = '';
+    public $perPage = 10;
+    public $sortColumn = 'created_at';
+    public $sortDirection = 'desc';
 
-    public function boot()
+    public function sortBy($column)
     {
-        $this->setDataTableFactory($this->getDataTableConfig());
+        if ($this->sortColumn === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortColumn = $column;
+            $this->sortDirection = 'asc';
+        }
     }
 
-    private function getDataTableConfig(): DataTableFactory
+    public function getAuditLogsProperty()
     {
-        return DataTableFactory::make()
-            ->model(AuditLog::class)
-            ->headers([
-                [
-                    'key' => 'event',
-                    'label' => 'Event',
-                    'sortable' => true,
-                    'type' => 'badge',
-                ],
-                [
-                    'key' => 'message',
-                    'label' => 'Action Description',
-                    'sortable' => true,
-                ],
-                [
-                    'key' => 'user_name',
-                    'label' => 'Performed By',
-                    'accessor' => true,
-                    'sort_columns' => ['users.first_name', 'users.last_name'],
-                ],
-                [
-                    'key' => 'ip_address',
-                    'label' => 'IP Address',
-                    'sortable' => true
-                ],
-                [
-                    'key' => 'created_at',
-                    'label' => 'Timestamp',
-                    'sortable' => true,
-                    'type' => 'datetime'
-                ],
-            ])
-            ->searchPlaceholder('Search descriptions...')
-            ->emptyMessage('No audit logs found')
-            ->searchQuery($this->search)
-            ->sortColumn($this->sortColumn)
-            ->sortDirection($this->sortDirection)
-            ->showCreate(false) 
-            ->viewRoute('audit-logs.view'); 
-    }
+        $query = AuditLog::with('user')
+            ->when($this->search, function ($q) {
+                $q->where('message', 'like', '%' . $this->search . '%')
+                  ->orWhere('auditable_type', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->searchEvent, function ($q) {
+                return $q->where('event', $this->searchEvent);
+            })
+            ->when($this->searchUser, function ($q) {
+                return $q->where('user_id', $this->searchUser);
+            })
+            ->when($this->searchDate, function ($q) {
+                return $q->whereDate('created_at', $this->searchDate);
+            });
 
-    public function rowsQuery()
-    {
-        $query = AuditLog::with('user');
-
-        $query->when($this->searchEvent, function ($q) {
-            return $q->where('event', $this->searchEvent);
-        })
-        ->when($this->searchUser, function ($q) {
-            return $q->where('user_id', $this->searchUser);
-        });
-
-        $dataTable = $this->getDataTableConfig();
-        return $this->applySearchAndSort($query, ['message', 'auditable_type'], $dataTable);
-    }
-
-    public function getRowsProperty()
-    {
-        return $this->rowsQuery()
-            ->orderBy($this->sortColumn, $this->sortDirection)
+        return $query->orderBy($this->sortColumn, $this->sortDirection)
             ->paginate($this->perPage);
+    }
+
+    public function clearFilters()
+    {
+        $this->reset('search', 'searchEvent', 'searchUser', 'searchDate');
+        $this->resetPage();
+    }
+    
+    public function getEventBadgeClass(string $event): string
+    {
+        return match ($event) {
+            'created' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            'updated' => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+            'deleted' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+            default => 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200',
+        };
     }
 
     public function render()
     {
         $this->authorize('viewAny', AuditLog::class);
-        $dataTable = $this->getDataTableConfig()->toArray();
 
         return view('livewire.audit-logs.table', [
-            'dataTable' => $dataTable,
+            'auditLogs' => $this->auditLogs,
             'eventTypes' => ['created', 'updated', 'deleted', 'login', 'logout'],
             'users' => User::orderBy('first_name')->get(),
         ]);

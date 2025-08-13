@@ -52,13 +52,15 @@
             @endcan
 
             @can('viewAny', App\Models\Appointment::class)
-                <x-partials.nav-item href="{{ route('appointments.index') }}" icon="fas fa-calendar-check" :active="request()->routeIs('appointments.*')">
+                <x-partials.nav-item href="{{ route('appointments.index') }}" icon="fas fa-calendar-check"
+                    :active="request()->routeIs('appointments.*')">
                     Appointments
                 </x-partials.nav-item>
             @endcan
 
             @can('viewAny', App\Models\PatientVisit::class)
-                <x-partials.nav-item href="{{ route('patient-visits.index') }}" icon="fas fa-calendar-check" :active="request()->routeIs('patient-visits.*')">
+                <x-partials.nav-item href="{{ route('patient-visits.index') }}" icon="fas fa-calendar-check"
+                    :active="request()->routeIs('patient-visits.*')">
                     Patient Visits
                 </x-partials.nav-item>
             @endcan
@@ -67,13 +69,13 @@
                 <x-partials.nav-item href="{{ route('inventory.index') }}" icon="fas fa-boxes" :active="request()->routeIs('inventory.*')">
                     Inventory
                 </x-partials.nav-item>
-            @endcan 
+            @endcan
 
-            {{-- @can('viewAny', App\Models\Report::class)
-                <x-partials.nav-item href="#" icon="fas fa-chart-line" :active="false">
-                    Reports
+            @can('viewAny', App\Models\AuditLog::class)
+                <x-partials.nav-item href="{{ route('audit-logs.index') }}" icon="fas fa-history" :active="request()->routeIs('audit-logs.*')">
+                    Audit Logs
                 </x-partials.nav-item>
-            @endcan --}}
+            @endcan
         </ul>
     </nav>
 
@@ -81,7 +83,8 @@
     <div class="p-3 border-t border-blue-800/50 shrink-0">
         <button @click="toggleSidebarDesktop()"
             class="w-full flex items-center justify-center p-2 rounded-md hover:bg-blue-700/50 transition-colors duration-200">
-            <i class="fas transition-transform duration-300" :class="{ 'fa-chevron-left': !sidebarCollapsed, 'fa-chevron-right': sidebarCollapsed }"></i>
+            <i class="fas transition-transform duration-300"
+                :class="{ 'fa-chevron-left': !sidebarCollapsed, 'fa-chevron-right': sidebarCollapsed }"></i>
             <span class="ml-3 font-semibold sidebar-text" x-show="!sidebarCollapsed">Collapse</span>
         </button>
     </div>
