@@ -45,11 +45,10 @@
     <div class="flex h-screen overflow-hidden">
         <x-partials.sidebar />
 
-        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" x-show="sidebarOpen"
-            @click="toggleSidebarMobile()" x-transition:enter="transition-opacity ease-out duration-300"
-            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-            x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"></div>
+        <div class="fixed inset-0 bg-transparent z-40 md:hidden" x-show="sidebarOpen" @click="toggleSidebarMobile()"
+            x-transition:enter="transition-opacity ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
 
         <div class="flex-1 flex flex-col main-content overflow-y-auto"
             :class="{

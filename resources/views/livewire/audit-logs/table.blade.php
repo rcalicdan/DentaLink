@@ -141,10 +141,76 @@
         @endif
     </div>
 
+    <!-- Mobile Card Layout (hidden on desktop) -->
+    <div class="block md:hidden space-y-4">
+        @forelse ($auditLogs as $auditLog)
+            <div
+                class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+                <!-- Header with Event Badge and Action -->
+                <div class="flex items-center justify-between mb-3">
+                    <span
+                        class="px-2 py-1 text-xs font-semibold rounded-full {{ $this->getEventBadgeClass($auditLog->event) }}">
+                        {{ ucfirst($auditLog->event) }}
+                    </span>
+                    @can('view', $auditLog)
+                        <x-utils.view-button :route="route('audit-logs.view', $auditLog->id)" />
+                    @endcan
+                </div>
 
-    <!-- Custom Data Table -->
+                <!-- Content Grid -->
+                <div class="space-y-2">
+                    <!-- Model & ID -->
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Model & ID:</span>
+                        <div class="text-right">
+                            <div class="text-sm text-slate-700 dark:text-slate-300">
+                                {{ class_basename($auditLog->auditable_type) }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">ID: {{ $auditLog->auditable_id }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User -->
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">User:</span>
+                        <span class="text-sm text-slate-700 dark:text-slate-300">
+                            @if ($auditLog->user)
+                                {{ $auditLog->user->full_name }}
+                            @else
+                                <span class="text-slate-500 italic">System</span>
+                            @endif
+                        </span>
+                    </div>
+
+                    <!-- IP Address -->
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">IP Address:</span>
+                        <span
+                            class="text-sm text-slate-700 dark:text-slate-300">{{ $auditLog->ip_address ?? 'N/A' }}</span>
+                    </div>
+
+                    <!-- Date & Time -->
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Date & Time:</span>
+                        <span
+                            class="text-sm text-slate-700 dark:text-slate-300">{{ $auditLog->created_at->format('M d, Y, h:i A') }}</span>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div
+                class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-8 text-center">
+                <div class="text-slate-500 dark:text-slate-400">
+                    <i class="fas fa-box-open text-4xl mb-3"></i>
+                    <p>No audit logs found for the selected filters.</p>
+                </div>
+            </div>
+        @endforelse
+    </div>
+
+    <!-- Desktop Table Layout (hidden on mobile) -->
     <div
-        class="overflow-x-auto bg-white dark:bg-slate-800 shadow-md rounded-lg border border-slate-200 dark:border-slate-700">
+        class="hidden md:block overflow-x-auto bg-white dark:bg-slate-800 shadow-md rounded-lg border border-slate-200 dark:border-slate-700">
         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
             <thead class="bg-slate-50 dark:bg-slate-700/50">
                 <tr>
