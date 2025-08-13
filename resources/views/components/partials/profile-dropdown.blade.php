@@ -29,7 +29,7 @@
 
         <!-- Menu Items -->
         <div class="py-1">
-            <a href="#"
+            <a wire:navigate href="{{ route('profile.edit') }}"
                 class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700/50">
                 <i class="fas fa-user-cog mr-3 w-4 text-center text-slate-500 dark:text-slate-400"></i>
                 Settings

@@ -59,4 +59,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', \App\Livewire\Inventories\CreatePage::class)->name('create');
         Route::get('/{inventory}/edit', \App\Livewire\Inventories\UpdatePage::class)->name('edit');
     });
+    
+    Route::get('profile', \App\Livewire\Profile\ProfilePage::class)->name('profile.edit');
 });
