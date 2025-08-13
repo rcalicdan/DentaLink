@@ -197,7 +197,7 @@
                 </div>
 
                 {{-- Services List --}}
-                @include('contents.patient-visits.service-contents', ['isReadonly' => $isReadonly])
+                @include('contents.patient-visits.service-contents-update', ['isReadonly' => $isReadonly])
 
                 {{-- Total Amount Display --}}
                 <div

@@ -26,7 +26,7 @@ class LoginPage extends Component
     /**
      * Handle an incoming authentication request.
      */
-    public function login(): void
+    public function login()
     {
         $this->validate();
 
@@ -43,12 +43,13 @@ class LoginPage extends Component
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        if (Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) {
-            $this->redirectIntended('/dashboard', navigate: true);
-        } else {
-            $this->redirectIntended('/patients', navigate: true);
-        }
+        $default = Auth::user()->isAdmin() || Auth::user()->isSuperadmin()
+            ? 'dashboard.index'
+            : 'patients.index';
+
+        return redirect()->route($default);
     }
+
 
     /**
      * Ensure the authentication request is not rate limited.
