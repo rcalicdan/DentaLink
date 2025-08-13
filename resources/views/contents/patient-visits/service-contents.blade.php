@@ -23,7 +23,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
 
                     {{-- Service Search & Selection (Left Column) --}}
-                    <div class="md:col-span-7">
+                    <div class="md:col-span-8">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Service
                             <span class="text-red-500">*</span></label>
                         <div class="relative">
@@ -71,7 +71,6 @@
                             </div>
                         @endif
 
-                        {{-- Rest of the template remains the same --}}
                         {{-- Selected Service Display --}}
                         @if (!empty($service['dental_service_id']))
                             @php
@@ -104,10 +103,54 @@
                             <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    {{-- Quantity Section (Right Column) --}}
+                    @if (!empty($service['dental_service_id']))
+                        @php
+                            $selectedService = \App\Models\DentalService::find($service['dental_service_id']);
+                        @endphp
+                        @if ($selectedService && $selectedService->is_quantifiable)
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Quantity <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" wire:model.live="services.{{ $index }}.quantity"
+                                        min="1"
+                                        class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fas fa-hashtag text-slate-400 text-sm"></i>
+                                    </div>
+                                </div>
+                                @error("services.{$index}.quantity")
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @else
+                            {{-- Show quantity as 1 for non-quantifiable services --}}
+                            <div class="md:col-span-4">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Quantity
+                                </label>
+                                <div class="relative">
+                                    <input type="text" value="1" disabled
+                                        class="w-full px-3 py-2.5 bg-slate-100 dark:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded-md text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fas fa-lock text-slate-400 text-sm"></i>
+                                    </div>
+                                </div>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">This service is not
+                                    quantifiable</p>
+                            </div>
+                        @endif
+                    @endif
                 </div>
 
                 {{-- Service Notes --}}
                 <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Service Notes (Optional)
+                    </label>
                     <textarea wire:model="services.{{ $index }}.service_notes" rows="2"
                         placeholder="Add optional service notes..."
                         class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm resize-none"></textarea>
@@ -115,6 +158,26 @@
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
+
+                {{-- Price Display --}}
+                @if (!empty($service['dental_service_id']) && !empty($service['service_price']))
+                    <div class="bg-sky-50 dark:bg-sky-900/20 rounded-lg p-4 border border-sky-200 dark:border-sky-700">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-sky-600 dark:text-sky-400">
+                                Service Total:
+                            </div>
+                            <div class="font-semibold text-lg text-sky-900 dark:text-sky-100">
+                                ₱{{ number_format((float) $service['service_price'] * (int) $service['quantity'], 2) }}
+                            </div>
+                        </div>
+                        @if ((int) $service['quantity'] > 1)
+                            <div class="text-xs text-sky-500 dark:text-sky-400 mt-1">
+                                ₱{{ number_format((float) $service['service_price'], 2) }} ×
+                                {{ (int) $service['quantity'] }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 <input type="hidden" wire:model="services.{{ $index }}.dental_service_id">
                 <input type="hidden" wire:model="services.{{ $index }}.service_price">
