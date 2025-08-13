@@ -1,6 +1,6 @@
 <div class="space-y-8">
     @foreach ($services as $index => $service)
-        <div class="relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-all duration-200 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600"
+        <div class="relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-all duration-200 {{ !$isReadonly ? 'hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600' : '' }}"
             wire:key="service-item-{{ $index }}">
 
             {{-- Service Number Badge --}}
@@ -9,8 +9,8 @@
                 {{ $index + 1 }}
             </div>
 
-            {{-- Remove Button (Always Visible) --}}
-            @if (count($services) > 1)
+            {{-- Remove Button (Only if not readonly and more than 1 service) --}}
+            @if (!$isReadonly && count($services) > 1)
                 <button type="button" wire:click="removeService({{ $index }})"
                     class="absolute -top-3 -right-3 w-9 h-9 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                     aria-label="Remove Service">
@@ -27,15 +27,15 @@
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Service
                             <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            {{-- Updated wire:model to use array index --}}
                             <input type="text" wire:model.live="serviceSearches.{{ $index }}"
-                                placeholder="Search and select a service..." onfocus="if(this.value) this.select()"
-                                class="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm">
+                                placeholder="{{ $isReadonly ? 'Service information is read-only' : 'Search and select a service...' }}"
+                                onfocus="if(this.value) this.select()" {{ $isReadonly ? 'readonly' : '' }}
+                                class="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm {{ $isReadonly ? 'opacity-60 cursor-not-allowed' : '' }}">
                             <i class="fas fa-search text-slate-400 absolute top-1/2 right-3 -translate-y-1/2"></i>
                         </div>
 
-                        {{-- Service Dropdown --}}
-                        @if (isset($showServiceDropdowns[$index]) && $showServiceDropdowns[$index])
+                        {{-- Service Dropdown (Only if not readonly) --}}
+                        @if (!$isReadonly && isset($showServiceDropdowns[$index]) && $showServiceDropdowns[$index])
                             <div
                                 class="absolute z-50 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-64 overflow-auto">
                                 @php
@@ -71,7 +71,6 @@
                             </div>
                         @endif
 
-                        {{-- Rest of the template remains the same --}}
                         {{-- Selected Service Display --}}
                         @if (!empty($service['dental_service_id']))
                             @php
@@ -104,13 +103,50 @@
                             <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    {{-- Quantity Field (Right Column) --}}
+                    @if (!empty($service['dental_service_id']))
+                        @php
+                            $selectedService = \App\Models\DentalService::find($service['dental_service_id']);
+                        @endphp
+                        @if ($selectedService && $selectedService->is_quantifiable)
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Quantity <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" wire:model.live="services.{{ $index }}.quantity"
+                                    min="1" {{ $isReadonly ? 'readonly' : '' }}
+                                    class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm {{ $isReadonly ? 'opacity-60 cursor-not-allowed' : '' }}">
+                                @error("services.{$index}.quantity")
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
+                    @endif
+
+                    {{-- Price Display (Right Column) --}}
+                    @if (!empty($service['service_price']))
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Service Price
+                            </label>
+                            <div
+                                class="px-3 py-2.5 bg-slate-100 dark:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded-md text-sm font-medium text-slate-900 dark:text-slate-100">
+                                ₱{{ number_format($service['service_price'], 2) }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Service Notes --}}
                 <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Service Notes
+                    </label>
                     <textarea wire:model="services.{{ $index }}.service_notes" rows="2"
-                        placeholder="Add optional service notes..."
-                        class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm resize-none"></textarea>
+                        placeholder="{{ $isReadonly ? 'No additional notes' : 'Add optional service notes...' }}"
+                        {{ $isReadonly ? 'readonly' : '' }}
+                        class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm resize-none {{ $isReadonly ? 'opacity-60 cursor-not-allowed' : '' }}"></textarea>
                     @error("services.{$index}.service_notes")
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror

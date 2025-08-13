@@ -2,24 +2,27 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                Update Patient Visit
+                {{ $isReadonly ? 'View' : 'Update' }} Patient Visit
             </h1>
             <p class="text-slate-600 dark:text-slate-400 mt-1">
-                Edit visit details for {{ $patientVisit->patient->full_name }}
+                {{ $isReadonly ? 'View visit details for' : 'Edit visit details for' }}
+                {{ $patientVisit->patient->full_name }}
             </p>
         </div>
-        <div
-            class="flex items-center px-3 py-2 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg">
-            <i class="fas fa-eye text-amber-600 dark:text-amber-400 mr-2"></i>
-            <span class="text-amber-700 dark:text-amber-300 text-sm font-medium">Read-only Mode</span>
-        </div>
+        @if ($isReadonly)
+            <div
+                class="flex items-center px-3 py-2 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg">
+                <i class="fas fa-eye text-amber-600 dark:text-amber-400 mr-2"></i>
+                <span class="text-amber-700 dark:text-amber-300 text-sm font-medium">Read-only Mode</span>
+            </div>
+        @endif
     </div>
 
     <x-flash-message />
 
     <x-form.container title="Visit Information"
-        subtitle="Update the details below to modify the patient visit"
-        wire:submit="update">
+        subtitle="{{ $isReadonly ? 'View the visit details below' : 'Update the details below to modify the patient visit' }}"
+        wire:submit="{{ $isReadonly ? '' : 'update' }}">
 
         {{-- Current Visit Info Display --}}
         <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
@@ -28,8 +31,8 @@
                     <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Visit Type:</span>
                     <span
                         class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        <i class="fas fa-calendar-check mr-1"></i>
-                        Appointment Visit
+                        <i class="fas fa-{{ $visit_type === 'appointment' ? 'calendar-check' : 'walking' }} mr-1"></i>
+                        {{ $visit_type === 'appointment' ? 'Appointment Visit' : 'Walk-in Visit' }}
                     </span>
                 </div>
                 <div class="text-sm text-slate-500 dark:text-slate-400">
@@ -46,18 +49,20 @@
             <div class="flex space-x-4">
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" wire:model.live="visit_type" value="walk-in"
-                        class="w-4 h-4 text-green-600 bg-white border-slate-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600">
+                        {{ $isReadonly ? 'disabled' : '' }}
+                        class="w-4 h-4 text-green-600 bg-white border-slate-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 {{ $isReadonly ? 'opacity-60 cursor-not-allowed' : '' }}">
                     <span
-                        class="ml-2 text-sm font-medium text-slate-900 dark:text-slate-300 flex items-center">
+                        class="ml-2 text-sm font-medium text-slate-900 dark:text-slate-300 flex items-center {{ $isReadonly ? 'opacity-60' : '' }}">
                         <i class="fas fa-walking text-green-600 mr-2"></i>
                         Walk-in Visit
                     </span>
                 </label>
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" wire:model.live="visit_type" value="appointment"
-                        class="w-4 h-4 text-blue-600 bg-white border-slate-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600">
+                        {{ $isReadonly ? 'disabled' : '' }}
+                        class="w-4 h-4 text-blue-600 bg-white border-slate-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 {{ $isReadonly ? 'opacity-60 cursor-not-allowed' : '' }}">
                     <span
-                        class="ml-2 text-sm font-medium text-slate-900 dark:text-slate-300 flex items-center">
+                        class="ml-2 text-sm font-medium text-slate-900 dark:text-slate-300 flex items-center {{ $isReadonly ? 'opacity-60' : '' }}">
                         <i class="fas fa-calendar-check text-blue-600 mr-2"></i>
                         Appointment Visit
                     </span>
@@ -67,87 +72,102 @@
 
         {{-- Patient Search Field --}}
         <div class="relative">
-            <x-form.field label="Patient" name="patient_id" type="text" placeholder="Search for a patient..."
-                wire:model.live="patientSearch" autocomplete="off" required icon="fas fa-user" />
+            <x-form.field label="Patient" name="patient_id" type="text"
+                placeholder="{{ $isReadonly ? 'Patient information is read-only' : 'Search for a patient...' }}"
+                wire:model.live="patientSearch" autocomplete="off" required icon="fas fa-user" :readonly="$isReadonly" />
 
-            <div
-                class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg max-h-60 overflow-auto">
-                <button type="button" wire:click="selectPatient(1)"
-                    class="w-full px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-200 dark:border-slate-600 last:border-b-0">
-                    <div class="font-medium text-slate-900 dark:text-slate-100">
-                        Sample Patient
-                    </div>
-                    <div class="text-sm text-slate-500 dark:text-slate-400">
-                        ID: 1 | sample@email.com
-                    </div>
-                </button>
-                <div class="px-4 py-2 text-slate-500 dark:text-slate-400">
-                    No patients found
+            @if (!$isReadonly && $showPatientDropdown && $searchedPatients->count() > 0)
+                <div
+                    class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                    @foreach ($searchedPatients as $patient)
+                        <button type="button" wire:click="selectPatient({{ $patient->id }})"
+                            class="w-full px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-200 dark:border-slate-600 last:border-b-0">
+                            <div class="font-medium text-slate-900 dark:text-slate-100">
+                                {{ $patient->full_name }}
+                            </div>
+                            <div class="text-sm text-slate-500 dark:text-slate-400">
+                                ID: {{ $patient->id }} | {{ $patient->email }}
+                            </div>
+                        </button>
+                    @endforeach
                 </div>
-            </div>
+            @endif
 
-            <div
-                class="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-medium text-green-800 dark:text-green-200">
-                            Selected: Sample Patient
-                        </p>
-                        <p class="text-sm text-green-600 dark:text-green-300">
-                            ID: 1 | sample@email.com
-                        </p>
+            @if ($selectedPatient)
+                <div
+                    class="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-medium text-green-800 dark:text-green-200">
+                                Selected: {{ $selectedPatient->full_name }}
+                            </p>
+                            <p class="text-sm text-green-600 dark:text-green-300">
+                                ID: {{ $selectedPatient->id }} | {{ $selectedPatient->email }}
+                            </p>
+                        </div>
+                        @if (!$isReadonly)
+                            <button type="button" wire:click="clearPatientSelection"
+                                class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        @endif
                     </div>
-                    <button type="button" wire:click="clearPatientSelection"
-                        class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
-            </div>
+            @endif
         </div>
 
-        {{-- Appointment Search Field --}}
-        <div class="relative">
-            <x-form.field label="Appointment" name="appointment_id" type="text"
-                placeholder="Search for an appointment..." wire:model.live="appointmentSearch" required
-                icon="fas fa-calendar-check" />
+        {{-- Appointment Search Field (only show if appointment visit) --}}
+        @if ($visit_type === 'appointment')
+            <div class="relative">
+                <x-form.field label="Appointment" name="appointment_id" type="text"
+                    placeholder="{{ $isReadonly ? 'Appointment information is read-only' : 'Search for an appointment...' }}"
+                    wire:model.live="appointmentSearch" required icon="fas fa-calendar-check" :readonly="$isReadonly" />
 
-            <div
-                class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg max-h-60 overflow-auto">
-                <button type="button" wire:click="selectAppointment(1)"
-                    class="w-full px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-200 dark:border-slate-600 last:border-b-0">
-                    <div class="font-medium text-slate-900 dark:text-slate-100">
-                        Queue #1 - Jan 1, 2025
+                @if (!$isReadonly && $showAppointmentDropdown && $searchedAppointments->count() > 0)
+                    <div
+                        class="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                        @foreach ($searchedAppointments as $appointment)
+                            <button type="button" wire:click="selectAppointment({{ $appointment->id }})"
+                                class="w-full px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-200 dark:border-slate-600 last:border-b-0">
+                                <div class="font-medium text-slate-900 dark:text-slate-100">
+                                    Queue #{{ $appointment->queue_number }} -
+                                    {{ $appointment->appointment_date->format('M d, Y') }}
+                                </div>
+                                <div class="text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $appointment->reason }}
+                                </div>
+                                <div class="text-xs text-slate-400 dark:text-slate-500">
+                                    Status: {{ ucfirst($appointment->status) }}
+                                </div>
+                            </button>
+                        @endforeach
                     </div>
-                    <div class="text-sm text-slate-500 dark:text-slate-400">
-                        Routine Checkup
-                    </div>
-                    <div class="text-xs text-slate-400 dark:text-slate-500">
-                        Status: Confirmed
-                    </div>
-                </button>
-                <div class="px-4 py-2 text-slate-500 dark:text-slate-400">
-                    No appointments found for this patient
-                </div>
-            </div>
+                @endif
 
-            <div
-                class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-medium text-blue-800 dark:text-blue-200">
-                            Queue #1
-                        </p>
-                        <p class="text-sm text-blue-600 dark:text-blue-300">
-                            Jan 1, 2025 - Routine Checkup
-                        </p>
+                @if ($selectedAppointment)
+                    <div
+                        class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-blue-800 dark:text-blue-200">
+                                    Queue #{{ $selectedAppointment->queue_number }}
+                                </p>
+                                <p class="text-sm text-blue-600 dark:text-blue-300">
+                                    {{ $selectedAppointment->appointment_date->format('M d, Y') }} -
+                                    {{ $selectedAppointment->reason }}
+                                </p>
+                            </div>
+                            @if (!$isReadonly)
+                                <button type="button" wire:click="clearAppointmentSelection"
+                                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            @endif
+                        </div>
                     </div>
-                    <button type="button" wire:click="clearAppointmentSelection"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+                @endif
             </div>
-        </div>
+        @endif
 
         {{-- Dental Services Section --}}
         <div class="border-t border-slate-200 dark:border-slate-600 pt-8 mt-8">
@@ -163,19 +183,21 @@
                                 Dental Services
                             </h3>
                             <p class="text-sm text-slate-500 dark:text-slate-400">
-                                Modify the services provided during this visit
+                                {{ $isReadonly ? 'View the services provided during this visit' : 'Modify the services provided during this visit' }}
                             </p>
                         </div>
                     </div>
-                    <button type="button" wire:click="addService"
-                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800">
-                        <i class="fas fa-plus w-4 h-4 mr-2"></i>
-                        Add Service
-                    </button>
+                    @if (!$isReadonly)
+                        <button type="button" wire:click="addService"
+                            class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800">
+                            <i class="fas fa-plus w-4 h-4 mr-2"></i>
+                            Add Service
+                        </button>
+                    @endif
                 </div>
 
                 {{-- Services List --}}
-                @include('contents.patient-visits.service-contents')
+                @include('contents.patient-visits.service-contents', ['isReadonly' => $isReadonly])
 
                 {{-- Total Amount Display --}}
                 <div
@@ -209,30 +231,37 @@
         </div>
 
         {{-- Branch Selection --}}
-        <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
-            icon="fas fa-building">
-            <option value="">Select a branch</option>
-            <option value="1">Sample Branch</option>
-        </x-form.field>
-
-        <input type="hidden" wire:model="branch_id" />
-        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div class="flex items-center">
-                <i class="fas fa-building text-blue-500 mr-2"></i>
-                <span class="text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Branch:</strong> Sample Branch
-                </span>
+        @if ($canUpdateBranch && !$isReadonly)
+            <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
+                icon="fas fa-building">
+                <option value="">Select a branch</option>
+                @foreach ($branches as $branch)
+                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                @endforeach
+            </x-form.field>
+        @else
+            <input type="hidden" wire:model="branch_id" />
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-building text-blue-500 mr-2"></i>
+                    <span class="text-sm text-blue-700 dark:text-blue-300">
+                        <strong>Branch:</strong> {{ $branches[0]->name ?? 'No branch assigned' }}
+                    </span>
+                </div>
             </div>
-        </div>
+        @endif
 
         <x-form.field label="Visit Notes" name="notes" type="textarea"
-            placeholder="Additional notes about the visit (optional)" wire:model="notes" icon="fas fa-sticky-note"
-            rows="4" />
+            placeholder="{{ $isReadonly ? 'No additional notes' : 'Additional notes about the visit (optional)' }}"
+            wire:model="notes" icon="fas fa-sticky-note" rows="4" :readonly="$isReadonly" />
 
         <div class="flex justify-end space-x-3 pt-6">
             <x-utils.link-button href="{{ route('patient-visits.index') }}"
-                buttonText="Cancel" />
-            <x-utils.submit-button buttonText="Update Visit" wireTarget="update" />
+                buttonText="{{ $isReadonly ? 'Back to List' : 'Cancel' }}" />
+
+            @if (!$isReadonly)
+                <x-utils.submit-button buttonText="Update Visit" wireTarget="update" />
+            @endif
         </div>
 
     </x-form.container>
