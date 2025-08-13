@@ -332,20 +332,32 @@
                                 </button>
                             </div>
 
-                            <!-- Quick Actions -->
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                <button
-                                    class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-xs hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors duration-200">
-                                    📊 Today's Stats
-                                </button>
-                                <button
-                                    class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200">
-                                    📅 Schedule Overview
-                                </button>
-                                <button
-                                    class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors duration-200">
-                                    💰 Revenue Report
-                                </button>
+                            <!-- Actions Footer -->
+                            <div class="flex items-center justify-between mt-3">
+                                <!-- Quick Actions -->
+                                <div class="flex flex-wrap gap-2">
+                                    <button
+                                        class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-xs hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors duration-200">
+                                        📊 Today's Stats
+                                    </button>
+                                    <button
+                                        class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200">
+                                        📅 Schedule Overview
+                                    </button>
+                                    <button
+                                        class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors duration-200">
+                                        💰 Revenue Report
+                                    </button>
+                                </div>
+
+                                <!-- Clear Chat Button -->
+                                <div>
+                                    <button
+                                        class="inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-full text-xs hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+                                        <i class="fas fa-eraser mr-1.5"></i>
+                                        Clear Chat
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
