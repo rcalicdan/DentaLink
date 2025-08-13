@@ -8,7 +8,7 @@ Route::get('/', fn() => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return view('contents.dashboard.index');
-    })->name('dashboard.index');
+    })->name('dashboard.index')->can('view-dashboard');
 
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('', \App\Livewire\Users\Table::class)->name('index');

@@ -17,9 +17,11 @@
     <!-- Navigation -->
     <nav class="flex-1 p-3 overflow-y-auto">
         <ul class="space-y-2">
+            @can('view-dashboard')
             <x-partials.nav-item href="{{ route('dashboard.index') }}" icon="fas fa-home" :active="request()->routeIs('dashboard.index')">
                 Dashboard
             </x-partials.nav-item>
+            @endcan
 
             @can('viewAny', App\Models\Branch::class)
                 <x-partials.nav-item href="{{ route('branches.index') }}" icon="fas fa-building" :active="request()->routeIs('branches.*')">
