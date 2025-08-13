@@ -108,12 +108,12 @@
                     class="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors duration-150 {{ in_array($row->id, $selectedRows) ? 'bg-blue-50' : '' }}">
                     <div class="flex">
                         @if ($showBulkActions)
-                            <div class="pr-4 flex-shrink-0">
+                            <div class="w-6 flex-shrink-0 flex items-start justify-center pt-1">
                                 <input type="checkbox" wire:model.live="selectedRows" value="{{ $row->id }}"
-                                    class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1">
+                                    class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                             </div>
                         @endif
-                        <div class="flex-grow min-w-0">
+                        <div class="flex-grow min-w-0 {{ $showBulkActions ? 'pl-3' : '' }}">
                             @foreach ($headers as $header)
                                 @if ($this->shouldShowOnMobile($header))
                                     <div class="flex items-start py-1 gap-4">
@@ -155,9 +155,11 @@
                 <thead class="bg-slate-50">
                     <tr>
                         @if ($showBulkActions)
-                            <th scope="col" class="px-3 lg:px-6 py-3">
-                                <input type="checkbox" wire:model.live="selectPage"
-                                    class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <th scope="col" class="w-12 px-6 py-3">
+                                <div class="flex items-center justify-center">
+                                    <input type="checkbox" wire:model.live="selectPage"
+                                        class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                </div>
                             </th>
                         @endif
                         @foreach ($headers as $header)
@@ -188,9 +190,12 @@
                         <tr
                             class="hover:bg-gray-50 transition-colors duration-150 {{ in_array($row->id, $selectedRows) ? 'bg-blue-50' : '' }}">
                             @if ($showBulkActions)
-                                <td class="px-3 lg:px-6 py-4">
-                                    <input type="checkbox" wire:model.live="selectedRows" value="{{ $row->id }}"
-                                        class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <td class="w-12 px-6 py-4">
+                                    <div class="flex items-center justify-center">
+                                        <input type="checkbox" wire:model.live="selectedRows"
+                                            value="{{ $row->id }}"
+                                            class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                    </div>
                                 </td>
                             @endif
                             @foreach ($headers as $header)
