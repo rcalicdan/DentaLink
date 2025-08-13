@@ -4,6 +4,7 @@ namespace App\Livewire\Patients;
 
 use App\DataTable\DataTableFactory;
 use App\Models\Patient;
+use App\Models\Branch;
 use App\Traits\Livewire\WithDataTable;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -15,11 +16,17 @@ class Table extends Component
 {
     use WithDataTable, WithPagination;
 
+    public $searchBranch = '';
+
     public function boot()
     {
         $this->deleteAction = 'deletePatient';
         $this->routeIdColumn = 'id';
         $this->setDataTableFactory($this->getDataTableConfig());
+
+        if (!Auth::user()->isSuperadmin() && empty($this->searchBranch)) {
+            $this->searchBranch = Auth::user()->branch_id;
+        }
     }
 
     private function getDataTableConfig(): DataTableFactory
@@ -87,7 +94,11 @@ class Table extends Component
     {
         $query = Patient::with('registrationBranch');
         
-        if (Auth::user()->isAdmin()) {
+        $query->when($this->searchBranch, function ($q) {
+            return $q->where('registration_branch_id', $this->searchBranch);
+        });
+
+        if (!Auth::user()->isSuperadmin() && !$this->searchBranch) {
             $query->where('registration_branch_id', Auth::user()->branch_id);
         }
         
@@ -101,6 +112,18 @@ class Table extends Component
         return $this->rowsQuery()->paginate($this->perPage);
     }
 
+    public function clearFilters()
+    {
+        if (Auth::user()->isSuperadmin()) {
+            $this->searchBranch = '';
+        } else {
+            $this->searchBranch = Auth::user()->branch_id;
+        }
+
+        $this->search = '';
+        $this->resetPage();
+    }
+
     public function render()
     {
         $this->authorize('viewAny', Patient::class);
@@ -110,6 +133,7 @@ class Table extends Component
         return view('livewire.patients.table', [
             'dataTable' => $dataTable,
             'selectedRowsCount' => $selectedRowsCount,
+            'branches' => Branch::orderBy('name')->get()
         ]);
     }
 
