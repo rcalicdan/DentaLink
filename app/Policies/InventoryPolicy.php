@@ -38,7 +38,7 @@ class InventoryPolicy
 
     public function delete(User $user, Inventory $inventory): bool
     {
-        return false; 
+        return $user->isAdmin();
     }
 
     public function restore(User $user, Inventory $inventory): bool

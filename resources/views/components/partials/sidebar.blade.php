@@ -64,6 +64,12 @@
                 </x-partials.nav-item>
             @endcan
 
+            @can('viewAny', App\Models\Inventory::class)
+                <x-partials.nav-item href="{{ route('inventory.index') }}" icon="fas fa-boxes" :active="request()->routeIs('inventory.*')">
+                    Inventory
+                </x-partials.nav-item>
+            @endcan 
+
             {{-- @can('viewAny', App\Models\Report::class)
                 <x-partials.nav-item href="#" icon="fas fa-chart-line" :active="false">
                     Reports
