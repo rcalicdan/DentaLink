@@ -1,14 +1,13 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', App\Livewire\Auth\LoginPage::class)->name('login');
 Route::get('/', fn() => redirect()->route('login'))->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('contents.dashboard.index');
-    })->name('dashboard.index')->can('view-dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->can('view-dashboard');
 
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('', \App\Livewire\Users\Table::class)->name('index');
