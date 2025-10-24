@@ -8,6 +8,10 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    private ?int $appointmentsTodayCache = null;
+    private ?float $monthlyRevenueCache = null;
+    private ?float $lastMonthRevenueCache = null;
+
     public function index()
     {
         return view('contents.dashboard.index', [
@@ -62,9 +66,17 @@ class DashboardController extends Controller
 
     private function getAppointmentsToday(): int
     {
-        return DB::table('appointments')
+        // Return cached value if available
+        if ($this->appointmentsTodayCache !== null) {
+            return $this->appointmentsTodayCache;
+        }
+
+        // Query and cache the result
+        $this->appointmentsTodayCache = DB::table('appointments')
             ->whereDate('appointment_date', Carbon::today())
             ->count();
+
+        return $this->appointmentsTodayCache;
     }
 
     private function getUpcomingAppointmentsCount(): int
@@ -81,26 +93,41 @@ class DashboardController extends Controller
 
     private function getMonthlyRevenue(): float
     {
-        return $this->getRevenueForPeriod(
+        // Return cached value if available
+        if ($this->monthlyRevenueCache !== null) {
+            return $this->monthlyRevenueCache;
+        }
+
+        // Query and cache the result
+        $this->monthlyRevenueCache = $this->getRevenueForPeriod(
             Carbon::now()->month,
             Carbon::now()->year
         );
+
+        return $this->monthlyRevenueCache;
     }
 
     private function calculateRevenueGrowth(): float
     {
-        $currentRevenue = $this->getRevenueForPeriod(
-            Carbon::now()->month,
-            Carbon::now()->year
-        );
+        $currentRevenue = $this->getMonthlyRevenue(); // Uses cached value
 
         $lastMonth = Carbon::now()->subMonth();
-        $lastRevenue = $this->getRevenueForPeriod(
-            $lastMonth->month,
-            $lastMonth->year
-        );
+        $lastRevenue = $this->getLastMonthRevenue($lastMonth->month, $lastMonth->year);
 
         return $this->calculateGrowthPercentage($currentRevenue, $lastRevenue);
+    }
+
+    private function getLastMonthRevenue(int $month, int $year): float
+    {
+        // Return cached value if available
+        if ($this->lastMonthRevenueCache !== null) {
+            return $this->lastMonthRevenueCache;
+        }
+
+        // Query and cache the result
+        $this->lastMonthRevenueCache = $this->getRevenueForPeriod($month, $year);
+
+        return $this->lastMonthRevenueCache;
     }
 
     private function getRevenueForPeriod(int $month, int $year): float
@@ -128,26 +155,35 @@ class DashboardController extends Controller
 
     private function getLastSevenDaysAppointments(): array
     {
+        $startDate = Carbon::today()->subDays(6);
+        $endDate = Carbon::today();
+
+        $appointments = DB::table('appointments')
+            ->whereBetween('appointment_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->selectRaw('DATE(appointment_date) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
         $days = [];
         $data = [];
 
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
+            $dateString = $date->toDateString();
+
             $days[] = $date->format('D');
-            $data[] = $this->getAppointmentsCountForDate($date);
+
+            $data[] = isset($appointments[$dateString])
+                ? (int)$appointments[$dateString]->count
+                : 0;
         }
 
         return [
             'labels' => $days,
             'data' => $data
         ];
-    }
-
-    private function getAppointmentsCountForDate(Carbon $date): int
-    {
-        return DB::table('appointments')
-            ->whereDate('appointment_date', $date->toDateString())
-            ->count();
     }
 
     private function getHistoricalAppointmentsData(): array
@@ -358,7 +394,7 @@ class DashboardController extends Controller
 
     private function getStatusClass(string $status): string
     {
-        return match($status) {
+        return match ($status) {
             'waiting' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
             'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
             'completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
