@@ -497,7 +497,7 @@ trait WithDataTable
         if (!empty($this->search)) {
             $query->where(function ($q) use ($searchableColumns, $dataTable) {
                 foreach ($searchableColumns as $column) {
-                    $q->orWhere($column, 'like', '%' . $this->search . '%');
+                    $q->orWhere($column, 'ilike', '%' . $this->search . '%');
                 }
                 if ($dataTable) {
                     $headers = $dataTable->getHeaders();
@@ -527,14 +527,14 @@ trait WithDataTable
         $parts = explode('.', $searchColumn);
 
         if (count($parts) === 1) {
-            $query->orWhere($searchColumn, 'like', '%' . $this->search . '%');
+            $query->orWhere($searchColumn, 'ilike', '%' . $this->search . '%');
         } else {
             $relationship = array_shift($parts);
             $column = implode('.', $parts);
 
             $query->orWhereHas($relationship, function ($q) use ($column, $parts) {
                 if (count($parts) === 1) {
-                    $q->where($parts[0], 'like', '%' . $this->search . '%');
+                    $q->where($parts[0], 'ilike', '%' . $this->search . '%');
                 } else {
                     $this->addNestedSearch($q, $column);
                 }

@@ -267,9 +267,9 @@ class CreatePage extends Component
         }
 
         return Patient::where(function ($query) {
-            $query->where('first_name', 'like', '%' . $this->patientSearch . '%')
-                ->orWhere('last_name', 'like', '%' . $this->patientSearch . '%')
-                ->orWhere('id', 'like', '%' . $this->patientSearch . '%')
+            $query->where('first_name', 'ilike', '%' . $this->patientSearch . '%')
+                ->orWhere('last_name', 'ilike', '%' . $this->patientSearch . '%')
+                ->orWhere('id', 'ilike', '%' . $this->patientSearch . '%')
                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $this->patientSearch . '%']);
         })
             ->orderBy('first_name')
@@ -287,7 +287,7 @@ class CreatePage extends Component
 
         return DentalService::with('dentalServiceType')
             ->where(function ($query) use ($searchTerm) {
-                $query->where('name', 'like', '%' . $searchTerm . '%');
+                $query->where('name', 'ilike', '%' . $searchTerm . '%');
             })
             ->orderBy('name')
             ->limit(10)
@@ -303,8 +303,8 @@ class CreatePage extends Component
         return Appointment::with('patient')
             ->where('patient_id', $this->selectedPatient->id)
             ->where(function ($query) {
-                $query->where('reason', 'like', '%' . $this->appointmentSearch . '%')
-                    ->orWhere('queue_number', 'like', '%' . $this->appointmentSearch . '%');
+                $query->where('reason', 'ilike', '%' . $this->appointmentSearch . '%')
+                    ->orWhere('queue_number', 'ilike', '%' . $this->appointmentSearch . '%');
             })
             ->whereIn('status', ['waiting', 'in_progress', 'completed'])
             ->orderBy('appointment_date', 'desc')

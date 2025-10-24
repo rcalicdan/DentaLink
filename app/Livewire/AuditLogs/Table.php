@@ -37,8 +37,8 @@ class Table extends Component
     {
         $query = AuditLog::with('user', 'branch')
             ->when($this->search, function ($q) {
-                $q->where('message', 'like', '%' . $this->search . '%')
-                    ->orWhere('auditable_type', 'like', '%' . $this->search . '%');
+                $q->where('message', 'ilike', '%' . $this->search . '%')
+                    ->orWhere('auditable_type', 'ilike', '%' . $this->search . '%');
             })
             ->when($this->searchEvent, function ($q) {
                 return $q->where('event', $this->searchEvent);

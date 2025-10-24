@@ -127,9 +127,9 @@ class UpdatePage extends Component
         }
 
         return Patient::where(function ($query) {
-            $query->where('first_name', 'like', '%' . $this->patientSearch . '%')
-                ->orWhere('last_name', 'like', '%' . $this->patientSearch . '%')
-                ->orWhere('id', 'like', '%' . $this->patientSearch . '%')
+            $query->where('first_name', 'ilike', '%' . $this->patientSearch . '%')
+                ->orWhere('last_name', 'ilike', '%' . $this->patientSearch . '%')
+                ->orWhere('id', 'ilike', '%' . $this->patientSearch . '%')
                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $this->patientSearch . '%']);
         })
             ->orderBy('first_name')
