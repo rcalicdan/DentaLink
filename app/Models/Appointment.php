@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\DB;
 class Appointment extends Model
 {
     use Auditable;
-  
+
     protected $fillable = [
         'patient_id',
         'branch_id',
         'appointment_date',
+        'start_time',
+        'end_time',
         'queue_number',
         'status',
         'reason',
@@ -29,6 +31,8 @@ class Appointment extends Model
     {
         return [
             'appointment_date' => 'date',
+            'start_time' => 'datetime:H:i',
+            'end_time' => 'datetime:H:i',
             'has_visit' => 'boolean',
             'status' => AppointmentStatuses::class,
         ];
@@ -71,6 +75,15 @@ class Appointment extends Model
                 $appointment->status = AppointmentStatuses::WAITING;
             }
         });
+    }
+
+    public function getFormattedTimeRangeAttribute(): ?string
+    {
+        if (!$this->start_time || !$this->end_time) {
+            return null;
+        }
+
+        return $this->start_time->format('g:i A') . ' - ' . $this->end_time->format('g:i A');
     }
 
     /**

@@ -1,3 +1,4 @@
+<!-- resources/views/livewire/appointments/create-page.blade.php -->
 <div class="container mx-auto px-2 py-0">
     <div class="flex justify-between items-center mb-6">
         <div>
@@ -67,8 +68,29 @@
                     placeholder="Leave blank for auto-assignment" icon="fas fa-hashtag"
                     help="Current max queue: {{ $maxQueueNumber }}" />
             @endif
+        </div>
 
-            {{-- Branch field remains the same --}}
+        <!-- Add Time Fields (Optional) -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <div class="flex items-center mb-3">
+                <i class="fas fa-clock text-blue-600 dark:text-blue-400 mr-2"></i>
+                <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-200">Appointment Time (Optional)</h3>
+            </div>
+            <p class="text-xs text-blue-600 dark:text-blue-300 mb-4">
+                Specify a time range if you want to schedule the appointment for a specific time slot
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-form.field label="Start Time" name="start_time" type="time" wire:model="start_time"
+                    icon="fas fa-clock" placeholder="--:-- --" />
+                
+                <x-form.field label="End Time" name="end_time" type="time" wire:model="end_time"
+                    icon="fas fa-clock" placeholder="--:-- --" 
+                    help="Must be after start time" />
+            </div>
+        </div>
+
+        {{-- Branch field --}}
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
             @if ($canUpdateBranch)
                 <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
                     icon="fas fa-building">

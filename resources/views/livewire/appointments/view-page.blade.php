@@ -1,3 +1,4 @@
+<!-- resources/views/livewire/appointments/view-page.blade.php -->
 <div
     class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
     <!-- Header Section with Floating Design -->
@@ -155,7 +156,7 @@
                             </div>
                         </div>
 
-                        <!-- Date and Branch -->
+                        <!-- Date, Time and Branch -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label
@@ -163,13 +164,24 @@
                                     <div class="bg-orange-100 dark:bg-orange-900/50 p-1.5 rounded-lg mr-2">
                                         <i class="fas fa-calendar-day text-orange-600 dark:text-orange-400 text-xs"></i>
                                     </div>
-                                    Appointment Date
+                                    Appointment Date & Time
                                 </label>
                                 <div
                                     class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600">
                                     <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">
                                         {{ $appointment->appointment_date->format('F d, Y') }}
                                     </p>
+                                    @if ($appointment->formatted_time_range)
+                                        <div class="mt-2 flex items-center text-sm text-blue-600 dark:text-blue-400">
+                                            <i class="fas fa-clock mr-2"></i>
+                                            <span class="font-medium">{{ $appointment->formatted_time_range }}</span>
+                                        </div>
+                                    @else
+                                        <div class="mt-2 flex items-center text-xs text-slate-500 dark:text-slate-400">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            <span>No specific time set</span>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                             <div>
@@ -344,7 +356,7 @@
                     </div>
                 </div>
 
-                <!-- Appointment Timeline (if you want to add this feature) -->
+                <!-- Appointment Timeline -->
                 <div
                     class="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden">
                     <div class="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4">

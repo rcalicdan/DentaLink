@@ -15,13 +15,16 @@ use Carbon\Carbon;
 class CreatePage extends Component
 {
     use DispatchFlashMessage;
-    
+
     public $patient_id = '';
     public $appointment_date = '';
+    public $start_time = '';
+    public $end_time = '';
     public $reason = '';
     public $notes = '';
     public $branch_id = '';
     public $queue_number = null;
+
 
     public $patientSearch = '';
     public $showPatientDropdown = false;
@@ -40,6 +43,8 @@ class CreatePage extends Component
         $rules = [
             'patient_id' => 'required|exists:patients,id',
             'appointment_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i|after:start_time',
             'reason' => 'required|string|min:5|max:255',
             'notes' => 'nullable|string|max:500',
         ];
@@ -139,7 +144,7 @@ class CreatePage extends Component
             );
 
             $queueNumber = $this->queue_number;
-            
+
             if (Auth::user()->isSuperadmin() && $queueNumber) {
                 $maxQueue = $this->maxQueueNumber;
                 if ($queueNumber > $maxQueue + 1) {
@@ -150,6 +155,8 @@ class CreatePage extends Component
             $appointment = Appointment::create([
                 'patient_id' => $this->patient_id,
                 'appointment_date' => $this->appointment_date,
+                'start_time' => $this->start_time ?: null,
+                'end_time' => $this->end_time ?: null,
                 'reason' => $this->reason,
                 'notes' => $this->notes,
                 'branch_id' => $this->branch_id,

@@ -21,6 +21,8 @@ class UpdatePage extends Component
     public $reason;
     public $notes;
     public $status;
+    public $start_time;
+    public $end_time;
     public $branch_id;
     public $queue_number;
     public $patientSearch = '';
@@ -34,16 +36,18 @@ class UpdatePage extends Component
         $this->appointment = $appointment;
         $this->patient_id = $appointment->patient_id;
         $this->appointment_date = $appointment->appointment_date->format('Y-m-d');
+        $this->start_time = $appointment->start_time ? $appointment->start_time->format('H:i') : '';
+        $this->end_time = $appointment->end_time ? $appointment->end_time->format('H:i') : '';
         $this->reason = $appointment->reason;
         $this->notes = $appointment->notes;
         $this->status = $appointment->status->value;
         $this->branch_id = $appointment->branch_id;
         $this->queue_number = $appointment->queue_number;
 
-        // Set initial patient selection
         $this->selectedPatient = $appointment->patient;
         $this->patientSearch = $appointment->patient->full_name . ' (ID: ' . $appointment->patient->id . ')';
     }
+
 
     public function rules()
     {
@@ -51,6 +55,8 @@ class UpdatePage extends Component
 
         $rules = [
             'patient_id' => 'required|exists:patients,id',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i|after:start_time',
             'reason' => 'required|string|min:5|max:255',
             'notes' => 'nullable|string|max:500',
         ];
