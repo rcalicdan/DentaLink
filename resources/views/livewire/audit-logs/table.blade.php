@@ -11,7 +11,7 @@
             </h3>
         </div>
         <div class="p-6 bg-slate-50/50 dark:bg-slate-800/50">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 <!-- Search Filter -->
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -88,9 +88,32 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Branch Filter -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <i class="fas fa-building text-slate-400 mr-2"></i>
+                        Branch
+                    </label>
+                    <div class="relative">
+                        <select wire:model.live="searchBranch"
+                            class="w-full pl-10 pr-8 py-2.5 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-slate-300 transition-all duration-200 appearance-none">
+                            <option value="">All Branches</option>
+                            @foreach ($branches as $branch)
+                                <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-building text-slate-400 text-sm"></i>
+                        </div>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <i class="fas fa-chevron-down text-slate-400 text-sm"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            @if ($search || $searchDate || $searchEvent || $searchUser)
+            @if ($search || $searchDate || $searchEvent || $searchUser || $searchBranch)
                 <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-600">
                     <button wire:click="clearFilters" type="button"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md">
@@ -139,6 +162,19 @@
                 </span>
             @endif
         @endif
+        @if ($searchBranch)
+            @php $branch = \App\Models\Branch::find($searchBranch); @endphp
+            @if ($branch)
+                <span
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                    <i class="fas fa-building mr-1.5"></i>
+                    Branch: {{ $branch->name }}
+                    <button wire:click="$set('searchBranch', '')" class="ml-1.5 text-amber-500 hover:text-amber-700">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </span>
+            @endif
+        @endif
     </div>
 
     <!-- Mobile Card Layout (hidden on desktop) -->
@@ -179,6 +215,14 @@
                             @else
                                 <span class="text-slate-500 italic">System</span>
                             @endif
+                        </span>
+                    </div>
+
+                    <!-- Branch -->
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Branch:</span>
+                        <span class="text-sm text-slate-700 dark:text-slate-300">
+                            {{ $auditLog->branch?->name ?? 'N/A' }}
                         </span>
                     </div>
 
@@ -240,6 +284,16 @@
                     </th>
                     <th scope="col"
                         class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer"
+                        wire:click="sortBy('branch_id')">
+                        <div class="flex items-center">
+                            Branch
+                            @if ($sortColumn === 'branch_id')
+                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-2"></i>
+                            @endif
+                        </div>
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer"
                         wire:click="sortBy('ip_address')">
                         <div class="flex items-center">
                             IP Address
@@ -286,6 +340,9 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
+                            {{ $auditLog->branch?->name ?? 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
                             {{ $auditLog->ip_address ?? 'N/A' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
@@ -299,7 +356,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
+                        <td colspan="7" class="px-6 py-12 text-center">
                             <div class="text-slate-500 dark:text-slate-400">
                                 <i class="fas fa-box-open text-4xl mb-3"></i>
                                 <p>No audit logs found for the selected filters.</p>

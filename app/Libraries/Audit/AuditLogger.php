@@ -114,6 +114,7 @@ class AuditLogger
             'new_values' => $newValues,
             'message' => $finalMessage,
             'user_id' => static::getCurrentUserId(),
+            'branch_id' => auth()->user()?->branch_id,
             'ip_address' => static::getClientIpAddress(),
             'user_agent' => static::getUserAgent(),
             'url' => static::getCurrentUrl(),
