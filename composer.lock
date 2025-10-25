@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4e61ff0de1a79e7b7f50e9c797aa1fc6",
+    "content-hash": "20253433c904e5edd2beff6c0b9f9166",
     "packages": [
         {
             "name": "brick/math",
@@ -1053,6 +1053,227 @@
                 }
             ],
             "time": "2025-02-03T10:55:03+00:00"
+        },
+        {
+            "name": "hiblaphp/async",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hiblaphp/async.git",
+                "reference": "e44516d42465e51634ed59917d71e33ff7733ea1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hiblaphp/async/zipball/e44516d42465e51634ed59917d71e33ff7733ea1",
+                "reference": "e44516d42465e51634ed59917d71e33ff7733ea1",
+                "shasum": ""
+            },
+            "require": {
+                "hiblaphp/event-loop": "dev-main",
+                "hiblaphp/promise": "dev-main",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.25",
+                "pestphp/pest": "^3.0",
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-strict-rules": "^2.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Helpers/global_functions.php",
+                    "src/Helpers/namespace_functions.php"
+                ],
+                "psr-4": {
+                    "Hibla\\Async\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart A. Calicdan"
+                }
+            ],
+            "description": "async/await implementation with structured concurrency.",
+            "support": {
+                "issues": "https://github.com/hiblaphp/async/issues",
+                "source": "https://github.com/hiblaphp/async/tree/main"
+            },
+            "time": "2025-10-21T15:08:18+00:00"
+        },
+        {
+            "name": "hiblaphp/event-loop",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hiblaphp/event-loop.git",
+                "reference": "671e3327da397d7d70c29db4637c73babcae93d2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hiblaphp/event-loop/zipball/671e3327da397d7d70c29db4637c73babcae93d2",
+                "reference": "671e3327da397d7d70c29db4637c73babcae93d2",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": "^8.2",
+                "rcalicdan/defer": "^1.0",
+                "vlucas/phpdotenv": "^5.6"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.25",
+                "pestphp/pest": "^3.0",
+                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "react/event-loop": "^1.5",
+                "revolt/event-loop": "^1.0"
+            },
+            "suggest": {
+                "ext-uv": "More performant event loop using libuv instead of streams"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Boot/global-event-loop.php"
+                ],
+                "psr-4": {
+                    "Hibla\\EventLoop\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart A. Calicdan"
+                }
+            ],
+            "description": "Fiber native eventloop for building block for heart of hiblaphp libraries",
+            "support": {
+                "issues": "https://github.com/hiblaphp/event-loop/issues",
+                "source": "https://github.com/hiblaphp/event-loop/tree/main"
+            },
+            "time": "2025-10-13T13:36:36+00:00"
+        },
+        {
+            "name": "hiblaphp/http-client",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hiblaphp/http-client.git",
+                "reference": "24272f3bcdca13ab0a2a5dddf0260d74f9817952"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hiblaphp/http-client/zipball/24272f3bcdca13ab0a2a5dddf0260d74f9817952",
+                "reference": "24272f3bcdca13ab0a2a5dddf0260d74f9817952",
+                "shasum": ""
+            },
+            "require": {
+                "hiblaphp/async": "dev-main",
+                "hiblaphp/event-loop": "dev-main",
+                "hiblaphp/promise": "dev-main",
+                "psr/cache": "^3.0",
+                "psr/http-message": "^2.0",
+                "psr/simple-cache": "^3.0",
+                "rcalicdan/config-loader": "^1.0",
+                "symfony/cache": "^7.3"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.25",
+                "mockery/mockery": "^1.6",
+                "pestphp/pest": "^4.0",
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-strict-rules": "^2.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Helpers/global_functions.php",
+                    "src/Helpers/namespace_functions.php"
+                ],
+                "psr-4": {
+                    "Hibla\\HttpClient\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart A. Calicdan",
+                    "email": "reymart.calicdan@evsu.edu.ph"
+                }
+            ],
+            "support": {
+                "issues": "https://github.com/hiblaphp/http-client/issues",
+                "source": "https://github.com/hiblaphp/http-client/tree/main"
+            },
+            "time": "2025-10-21T16:45:05+00:00"
+        },
+        {
+            "name": "hiblaphp/promise",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hiblaphp/promise.git",
+                "reference": "48caaced5e3e073c4c7005560589e43a7b60e85f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hiblaphp/promise/zipball/48caaced5e3e073c4c7005560589e43a7b60e85f",
+                "reference": "48caaced5e3e073c4c7005560589e43a7b60e85f",
+                "shasum": ""
+            },
+            "require": {
+                "hiblaphp/async": "dev-main",
+                "hiblaphp/event-loop": "dev-main",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.25",
+                "mockery/mockery": "^1.6",
+                "pestphp/pest": "^3.0",
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-strict-rules": "^2.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Helpers/global_functions.php",
+                    "src/Helpers/namespace_functions.php"
+                ],
+                "psr-4": {
+                    "Hibla\\Promise\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart A. Calicdan",
+                    "email": "reymart.calicdan06@gmail.com"
+                }
+            ],
+            "description": "Promise A+ implementation with cancellation support",
+            "support": {
+                "issues": "https://github.com/hiblaphp/promise/issues",
+                "source": "https://github.com/hiblaphp/promise/tree/main"
+            },
+            "time": "2025-10-21T15:13:25+00:00"
         },
         {
             "name": "laravel/framework",
@@ -2585,16 +2806,16 @@
         },
         {
             "name": "phpoption/phpoption",
-            "version": "1.9.3",
+            "version": "1.9.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/schmittjoh/php-option.git",
-                "reference": "e3fac8b24f56113f7cb96af14958c0dd16330f54"
+                "reference": "638a154f8d4ee6a5cfa96d6a34dfbe0cffa9566d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/schmittjoh/php-option/zipball/e3fac8b24f56113f7cb96af14958c0dd16330f54",
-                "reference": "e3fac8b24f56113f7cb96af14958c0dd16330f54",
+                "url": "https://api.github.com/repos/schmittjoh/php-option/zipball/638a154f8d4ee6a5cfa96d6a34dfbe0cffa9566d",
+                "reference": "638a154f8d4ee6a5cfa96d6a34dfbe0cffa9566d",
                 "shasum": ""
             },
             "require": {
@@ -2602,7 +2823,7 @@
             },
             "require-dev": {
                 "bamarni/composer-bin-plugin": "^1.8.2",
-                "phpunit/phpunit": "^8.5.39 || ^9.6.20 || ^10.5.28"
+                "phpunit/phpunit": "^8.5.44 || ^9.6.25 || ^10.5.53 || ^11.5.34"
             },
             "type": "library",
             "extra": {
@@ -2644,7 +2865,7 @@
             ],
             "support": {
                 "issues": "https://github.com/schmittjoh/php-option/issues",
-                "source": "https://github.com/schmittjoh/php-option/tree/1.9.3"
+                "source": "https://github.com/schmittjoh/php-option/tree/1.9.4"
             },
             "funding": [
                 {
@@ -2656,7 +2877,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-07-20T21:41:07+00:00"
+            "time": "2025-08-21T11:53:16+00:00"
         },
         {
             "name": "psr/cache",
@@ -3397,6 +3618,110 @@
             "time": "2025-06-25T14:20:11+00:00"
         },
         {
+            "name": "rcalicdan/config-loader",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rcalicdan/config-loader.git",
+                "reference": "d53ab9a7a450dfffe6357ca2f139a23ff076a092"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rcalicdan/config-loader/zipball/d53ab9a7a450dfffe6357ca2f139a23ff076a092",
+                "reference": "d53ab9a7a450dfffe6357ca2f139a23ff076a092",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "vlucas/phpdotenv": "^5.6"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.10",
+                "pestphp/pest": "^3.0",
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-strict-rules": "^2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Helpers/namespace_functions.php"
+                ],
+                "psr-4": {
+                    "Rcalicdan\\ConfigLoader\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart A. Calicdan",
+                    "email": "reymart.calicdan06@gmail.com"
+                }
+            ],
+            "description": "A lightweight configuration loader with automatic project root detection and dot notation support",
+            "support": {
+                "issues": "https://github.com/rcalicdan/config-loader/issues",
+                "source": "https://github.com/rcalicdan/config-loader/tree/1.0.1"
+            },
+            "time": "2025-10-21T11:40:56+00:00"
+        },
+        {
+            "name": "rcalicdan/defer",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rcalicdan/defer.git",
+                "reference": "b06cf81b23898b2d13befee17144259f2d7394a0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rcalicdan/defer/zipball/b06cf81b23898b2d13befee17144259f2d7394a0",
+                "reference": "b06cf81b23898b2d13befee17144259f2d7394a0",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "pestphp/pest": "^4.0",
+                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rcalicdan\\Defer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart Calicdan",
+                    "email": "reymart.calicdan06@gmail.com"
+                }
+            ],
+            "description": "Framework agnostic Deferred Execution Library for PHP",
+            "homepage": "https://github.com/rcalicdan/defer",
+            "keywords": [
+                "cleanup",
+                "defer",
+                "lifecycle",
+                "php",
+                "resource-management"
+            ],
+            "support": {
+                "issues": "https://github.com/rcalicdan/defer/issues",
+                "source": "https://github.com/rcalicdan/defer"
+            },
+            "time": "2025-09-22T06:52:57+00:00"
+        },
+        {
             "name": "rcalicdan/fiber-async",
             "version": "dev-main",
             "source": {
@@ -3498,16 +3823,16 @@
         },
         {
             "name": "symfony/cache",
-            "version": "v7.3.2",
+            "version": "v7.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/cache.git",
-                "reference": "6621a2bee5373e3e972b2ae5dbedd5ac899d8cb6"
+                "reference": "bf8afc8ffd4bfd3d9c373e417f041d9f1e5b863f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/cache/zipball/6621a2bee5373e3e972b2ae5dbedd5ac899d8cb6",
-                "reference": "6621a2bee5373e3e972b2ae5dbedd5ac899d8cb6",
+                "url": "https://api.github.com/repos/symfony/cache/zipball/bf8afc8ffd4bfd3d9c373e417f041d9f1e5b863f",
+                "reference": "bf8afc8ffd4bfd3d9c373e417f041d9f1e5b863f",
                 "shasum": ""
             },
             "require": {
@@ -3576,7 +3901,7 @@
                 "psr6"
             ],
             "support": {
-                "source": "https://github.com/symfony/cache/tree/v7.3.2"
+                "source": "https://github.com/symfony/cache/tree/v7.3.4"
             },
             "funding": [
                 {
@@ -3596,7 +3921,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-07-30T17:13:41+00:00"
+            "time": "2025-09-11T10:12:26+00:00"
         },
         {
             "name": "symfony/cache-contracts",
@@ -4658,7 +4983,7 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.32.0",
+            "version": "v1.33.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
@@ -4717,7 +5042,7 @@
                 "portable"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.32.0"
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.33.0"
             },
             "funding": [
                 {
@@ -4726,6 +5051,10 @@
                 },
                 {
                     "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
                     "type": "github"
                 },
                 {
@@ -4979,7 +5308,7 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.32.0",
+            "version": "v1.33.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
@@ -5040,7 +5369,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.32.0"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.33.0"
             },
             "funding": [
                 {
@@ -5052,6 +5381,10 @@
                     "type": "github"
                 },
                 {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
                     "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
                     "type": "tidelift"
                 }
@@ -5060,7 +5393,7 @@
         },
         {
             "name": "symfony/polyfill-php80",
-            "version": "v1.32.0",
+            "version": "v1.33.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php80.git",
@@ -5120,7 +5453,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php80/tree/v1.32.0"
+                "source": "https://github.com/symfony/polyfill-php80/tree/v1.33.0"
             },
             "funding": [
                 {
@@ -5129,6 +5462,10 @@
                 },
                 {
                     "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
                     "type": "github"
                 },
                 {
@@ -5954,16 +6291,16 @@
         },
         {
             "name": "symfony/var-exporter",
-            "version": "v7.3.2",
+            "version": "v7.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-exporter.git",
-                "reference": "05b3e90654c097817325d6abd284f7938b05f467"
+                "reference": "0f020b544a30a7fe8ba972e53ee48a74c0bc87f4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/05b3e90654c097817325d6abd284f7938b05f467",
-                "reference": "05b3e90654c097817325d6abd284f7938b05f467",
+                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/0f020b544a30a7fe8ba972e53ee48a74c0bc87f4",
+                "reference": "0f020b544a30a7fe8ba972e53ee48a74c0bc87f4",
                 "shasum": ""
             },
             "require": {
@@ -6011,7 +6348,7 @@
                 "serialize"
             ],
             "support": {
-                "source": "https://github.com/symfony/var-exporter/tree/v7.3.2"
+                "source": "https://github.com/symfony/var-exporter/tree/v7.3.4"
             },
             "funding": [
                 {
@@ -6031,7 +6368,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-07-10T08:47:49+00:00"
+            "time": "2025-09-11T10:12:26+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",
@@ -9715,8 +10052,9 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": {
+        "hiblaphp/http-client": 20,
         "rcalicdan/fiber-async": 20
     },
     "prefer-stable": true,
