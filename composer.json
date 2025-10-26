@@ -13,8 +13,7 @@
         "hiblaphp/http-client": "dev-main",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "livewire/livewire": "^3.6",
-        "rcalicdan/fiber-async": "dev-main"
+        "livewire/livewire": "^3.6"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.16",
