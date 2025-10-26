@@ -49,6 +49,32 @@ class GeminiKnowledgeService
     }
 
     /**
+     * Index a user
+     */
+    public function indexUser($user): void
+    {
+        $content = $this->buildUserContent($user);
+        $embedding = $this->generateEmbedding($content);
+
+        KnowledgeBase::storeEmbedding(
+            entityType: 'user',
+            entityId: $user->id,
+            content: $content,
+            embedding: $embedding,
+            metadata: [
+                'user_id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'branch_id' => $user->branch_id,
+                'branch_name' => $user->branch_name,
+                'updated_at' => now()->toISOString(),
+            ]
+        );
+    }
+
+    /**
      * Index a patient record
      */
     public function indexPatient($patient): void
@@ -182,6 +208,32 @@ class GeminiKnowledgeService
     public function listModels()
     {
         return $this->client->models()->list();
+    }
+
+    /**
+     * Build user content for embedding
+     */
+    protected function buildUserContent($user): string
+    {
+        $roleName = match($user->role) {
+            'super_admin' => 'Super Admin',
+            'admin' => 'Admin',
+            'employee' => 'Employee',
+            default => ucfirst(str_replace('_', ' ', $user->role ?? 'Unknown'))
+        };
+
+        return sprintf(
+            "User: %s. Full Name: %s %s. Email: %s. Phone: %s. User ID: %s. Role: %s. Branch: %s. Created: %s",
+            $user->full_name,
+            $user->first_name,
+            $user->last_name,
+            $user->email,
+            $user->phone ?? 'Not provided',
+            $user->id,
+            $roleName,
+            $user->branch_name,
+            $user->created_at->format('F d, Y')
+        );
     }
 
     /**
