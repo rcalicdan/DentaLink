@@ -3,10 +3,19 @@
 namespace App\Observers;
 
 use App\Models\Appointment;
+use App\Models\KnowledgeBase;
 use App\Enums\AppointmentStatuses;
+use App\Services\GeminiKnowledgeService;
 
 class AppointmentObserver
 {
+    protected GeminiKnowledgeService $knowledgeService;
+
+    public function __construct(GeminiKnowledgeService $knowledgeService)
+    {
+        $this->knowledgeService = $knowledgeService;
+    }
+
     /**
      * Handle the Appointment "creating" event.
      */
@@ -22,6 +31,14 @@ class AppointmentObserver
         if (!$appointment->status) {
             $appointment->status = AppointmentStatuses::WAITING;
         }
+    }
+
+    /**
+     * Handle the Appointment "created" event.
+     */
+    public function created(Appointment $appointment): void
+    {
+        $this->indexAppointment($appointment);
     }
 
     /**
@@ -43,6 +60,14 @@ class AppointmentObserver
     }
 
     /**
+     * Handle the Appointment "updated" event.
+     */
+    public function updated(Appointment $appointment): void
+    {
+        $this->indexAppointment($appointment);
+    }
+
+    /**
      * Handle the Appointment "deleted" event.
      */
     public function deleted(Appointment $appointment): void
@@ -60,6 +85,19 @@ class AppointmentObserver
                     $appointment->decrement('queue_number');
                 });
             });
+
+        // Remove from knowledge base
+        KnowledgeBase::where('entity_type', 'appointment')
+            ->where('entity_id', $appointment->id)
+            ->delete();
+    }
+
+    /**
+     * Handle the Appointment "restored" event.
+     */
+    public function restored(Appointment $appointment): void
+    {
+        $this->indexAppointment($appointment);
     }
 
     /**
@@ -87,5 +125,24 @@ class AppointmentObserver
                     });
                 });
         }
+    }
+
+    /**
+     * Index appointment asynchronously to knowledge base
+     */
+    protected function indexAppointment(Appointment $appointment): void
+    {
+        dispatch(function () use ($appointment) {
+            try {
+                $appointment = Appointment::with(['patient', 'branch'])
+                    ->find($appointment->id);
+                
+                if ($appointment) {
+                    $this->knowledgeService->indexAppointment($appointment);
+                }
+            } catch (\Exception $e) {
+                logger()->error("Failed to index appointment {$appointment->id}: {$e->getMessage()}");
+            }
+        })->afterResponse();
     }
 }
