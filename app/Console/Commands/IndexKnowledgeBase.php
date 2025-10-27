@@ -20,8 +20,7 @@ class IndexKnowledgeBase extends Command
     protected $description = 'Index database records into knowledge base with Gemini embeddings';
 
     private const CHUNK_SIZE = 50;
-    private const DELAY_MICROSECONDS = 100000; // 100ms
-
+    private const DELAY_MICROSECONDS = 100000; 
     private GeminiKnowledgeService $service;
 
     public function handle(GeminiKnowledgeService $service)

@@ -48,7 +48,7 @@ class AiChatModal extends Component
             $response = $this->geminiService->enhancedChat(
                 userMessage: $userMessage,
                 entityType: null,
-                contextLimit: 5,
+                contextLimit: 100,
                 isFirstMessage: $this->isFirstMessage
             );
 

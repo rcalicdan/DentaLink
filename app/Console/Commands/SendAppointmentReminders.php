@@ -307,24 +307,19 @@ class SendAppointmentReminders extends Command
         $date = $appointment->appointment_date->format('M d, Y');
         $branch = $appointment->branch->name ?? 'our clinic';
 
-        // Start with basic greeting and date
         $message = "Hi {$patientName}! This is a reminder that you have a dental appointment today, {$date}";
 
-        // Add time information if available
         $timeInfo = $this->getTimeInfo($appointment);
         if ($timeInfo) {
             $message .= " at {$timeInfo}";
         }
 
-        // Add branch/location
         $message .= " at {$branch}";
 
-        // Add queue number if available
         if (!empty($appointment->queue_number)) {
             $message .= ". Your queue number is #{$appointment->queue_number}";
         }
 
-        // Closing
         $message .= ". See you soon!";
 
         return $message;
@@ -440,7 +435,6 @@ class SendAppointmentReminders extends Command
                 $this->info("  Success rate: {$successRate}%");
             }
 
-            // Show failed emails
             if (!empty($emailStats['failed_items'])) {
                 $this->newLine();
                 $this->warn("Failed Emails:");
