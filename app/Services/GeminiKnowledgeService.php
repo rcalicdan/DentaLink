@@ -9,7 +9,6 @@ use App\Models\Appointment;
 use App\Models\DentalService;
 use App\Models\PatientVisit;
 use Rcalicdan\GeminiClient\GeminiClient;
-use Hibla\HttpClient\SSE\SSEEvent;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Interfaces\CancellablePromiseInterface;
 use function Hibla\await;
@@ -20,9 +19,9 @@ class GeminiKnowledgeService
     private const DEFAULT_CONTEXT_LIMIT = 3;
     private const ENHANCED_CONTEXT_LIMIT = 5;
     private const EMBEDDING_MODEL = 'text-embedding-004';
-    private const GENERATION_MODEL = 'gemini-2.0-flash-exp';
+    private const GENERATION_MODEL = 'gemma-3-27b-it';
     private const BATCH_SIZE = 50;
-    private const RATE_LIMIT_DELAY = 100000; // 100ms in microseconds
+    private const RATE_LIMIT_DELAY = 100000; 
 
     protected GeminiClient $client;
     protected string $systemPrompt;
@@ -75,10 +74,17 @@ class GeminiKnowledgeService
         $context = $this->buildContext($userMessage, $entityType, $contextLimit);
         $userPrompt = $this->buildUserPrompt($context, $userMessage, $isFirstMessage);
 
-        return $this->client
-            ->prompt($userPrompt)
-            ->system($this->systemPrompt)
-            ->stream($onChunk);
+        if ($this->supportsSystemInstructions()) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->stream($onChunk);
+        } else {
+            $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+            return $this->client
+                ->prompt($combinedPrompt)
+                ->stream($onChunk);
+        }
     }
 
     /**
@@ -121,10 +127,17 @@ class GeminiKnowledgeService
         $context = $this->buildEnhancedContext($stats, $searchResults);
         $userPrompt = $this->buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
-        return $this->client
-            ->prompt($userPrompt)
-            ->system($this->systemPrompt)
-            ->stream($onChunk);
+        if ($this->supportsSystemInstructions()) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->stream($onChunk);
+        } else {
+            $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+            return $this->client
+                ->prompt($combinedPrompt)
+                ->stream($onChunk);
+        }
     }
 
     /**
@@ -133,12 +146,23 @@ class GeminiKnowledgeService
     public function getIntroduction(): string
     {
         try {
-            $response = await(
-                $this->client
-                    ->prompt("This is the user's first message in this conversation. The user is greeting you. Introduce yourself.")
-                    ->system($this->systemPrompt)
-                    ->send()
-            );
+            $prompt = "This is the user's first message in this conversation. The user is greeting you. Introduce yourself.";
+            
+            if ($this->supportsSystemInstructions()) {
+                $response = await(
+                    $this->client
+                        ->prompt($prompt)
+                        ->system($this->systemPrompt)
+                        ->send()
+                );
+            } else {
+                $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $prompt;
+                $response = await(
+                    $this->client
+                        ->prompt($combinedPrompt)
+                        ->send()
+                );
+            }
             
             return $response->text();
         } catch (\Exception $e) {
@@ -428,6 +452,14 @@ class GeminiKnowledgeService
     // ==========================================
 
     /**
+     * Check if current model supports system instructions
+     */
+    private function supportsSystemInstructions(): bool
+    {
+        return str_starts_with(self::GENERATION_MODEL, 'gemini');
+    }
+
+    /**
      * Build system prompt
      */
     private function buildSystemPrompt(): string
@@ -529,14 +561,23 @@ PROMPT;
     }
 
     /**
-     * Send chat request
+     * Send chat request with model-aware prompt handling
      */
     private function sendChatRequest(string $userPrompt): PromiseInterface
     {
-        return $this->client
-            ->prompt($userPrompt)
-            ->system($this->systemPrompt)
-            ->send();
+        if ($this->supportsSystemInstructions()) {
+            // Gemini models - use separate system instruction
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->send();
+        } else {
+            // Gemma models - combine system + user prompt
+            $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+            return $this->client
+                ->prompt($combinedPrompt)
+                ->send();
+        }
     }
 
     /**
