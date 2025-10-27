@@ -65,4 +65,6 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::get('profile', \App\Livewire\Profile\ProfilePage::class)->name('profile.edit');
+    Route::post('/ai/stream', [App\Http\Controllers\AiStreamController::class, 'stream'])
+        ->name('ai.stream');
 });
