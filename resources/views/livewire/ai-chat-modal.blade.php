@@ -60,7 +60,10 @@
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-white">AI Assistant</h3>
-                                <p class="text-white/80 text-sm">Powered by Gemini AI</p>
+                                <p class="text-white/80 text-sm">
+                                    <span x-show="!$wire.isTyping">Powered by Gemini AI</span>
+                                    <span x-show="$wire.isTyping" class="animate-pulse">Thinking...</span>
+                                </p>
                             </div>
                         </div>
                         <button @click="toggleModal()"
@@ -122,50 +125,33 @@
                             @endif
                         @endforeach
 
-                        <!-- Streaming Message -->
-                        @if ($isTyping && $streamingMessage)
-                            <div class="flex items-start space-x-3" wire:key="streaming-message">
-                                <div
-                                    class="bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-2 flex-shrink-0">
-                                    <svg class="w-4 h-4 text-white animate-spin" fill="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path
-                                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="bg-slate-100 dark:bg-slate-700 rounded-lg p-3">
-                                        <div class="text-slate-800 dark:text-slate-200 text-sm prose prose-sm max-w-none dark:prose-invert"
-                                            style="white-space: pre-wrap;">{{ $streamingMessage }}<span
-                                                class="inline-block w-2 h-4 bg-purple-500 animate-pulse ml-1"></span>
+                        <!-- Loading Indicator with Spinner -->
+                        <div x-show="$wire.isTyping" class="flex items-start space-x-3">
+                            <div
+                                class="bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-2 flex-shrink-0">
+                                <svg class="w-4 h-4 text-white animate-spin" fill="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                </svg>
+                            </div>
+                            <div class="bg-slate-100 dark:bg-slate-700 rounded-lg p-4">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Animated spinner -->
+                                    <div class="relative">
+                                        <div
+                                            class="w-8 h-8 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 dark:border-t-purple-400 rounded-full animate-spin">
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        <!-- Typing Indicator -->
-                        @if ($isTyping && !$streamingMessage)
-                            <div class="flex items-start space-x-3">
-                                <div
-                                    class="bg-gradient-to-r from-purple-500 to-blue-500 rounded-full p-2 flex-shrink-0">
-                                    <svg class="w-4 h-4 text-white animate-spin" fill="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path
-                                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                                    </svg>
-                                </div>
-                                <div class="bg-slate-100 dark:bg-slate-700 rounded-lg p-3">
-                                    <div class="flex space-x-2">
-                                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                                            style="animation-delay: 0.1s"></div>
-                                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                                            style="animation-delay: 0.2s"></div>
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-700 dark:text-slate-300 text-sm font-medium">AI is
+                                            thinking...</span>
+                                        <span class="text-slate-500 dark:text-slate-400 text-xs">This may take a few
+                                            seconds</span>
                                     </div>
                                 </div>
                             </div>
-                        @endif
+                        </div>
                     </div>
 
                     <!-- Input Area -->
@@ -179,9 +165,15 @@
                             </div>
                             <button type="submit" :disabled="$wire.isTyping || !$wire.userMessage.trim()"
                                 class="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-full p-3 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg x-show="!$wire.isTyping" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                                <svg x-show="$wire.isTyping" class="w-5 h-5 animate-spin" fill="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                                 </svg>
                             </button>
                         </form>
@@ -229,18 +221,13 @@
 <script>
     Alpine.data('aiChatModal', () => ({
         isOpen: false,
-        eventSource: null,
 
         init() {
-            this.$wire.on('start-ai-stream', (event) => {
-                this.startStreaming(event.message, event.isFirstMessage);
-            });
-
             this.$watch('$wire.messages', () => {
                 this.$nextTick(() => this.scrollToBottom());
             });
-
-            this.$watch('$wire.streamingMessage', () => {
+            
+            this.$watch('$wire.isTyping', () => {
                 this.$nextTick(() => this.scrollToBottom());
             });
         },
@@ -252,10 +239,6 @@
                 this.$nextTick(() => this.scrollToBottom());
             } else {
                 document.body.style.overflow = 'auto';
-                if (this.eventSource) {
-                    this.eventSource.close();
-                    this.eventSource = null;
-                }
             }
         },
 
@@ -263,87 +246,6 @@
             const container = this.$refs.messagesContainer;
             if (container) {
                 container.scrollTop = container.scrollHeight;
-            }
-        },
-
-        startStreaming(message, isFirstMessage) {
-            if (this.eventSource) {
-                this.eventSource.close();
-            }
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-            const formData = new FormData();
-            formData.append('message', message);
-            formData.append('isFirstMessage', isFirstMessage ? '1' : '0');
-            formData.append('_token', csrfToken);
-
-            fetch('{{ route('ai.stream') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'text/event-stream',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: formData,
-                })
-                .then(response => {
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
-                    let buffer = '';
-
-                    const processStream = ({
-                        done,
-                        value
-                    }) => {
-                        if (done) {
-                            return;
-                        }
-
-                        buffer += decoder.decode(value, {
-                            stream: true
-                        });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop(); 
-
-                        for (const line of lines) {
-                            if (line.startsWith('event: ')) {
-                                const eventType = line.slice(7).trim();
-                                continue;
-                            }
-
-                            if (line.startsWith('data: ')) {
-                                try {
-                                    const data = JSON.parse(line.slice(6));
-                                    this.handleStreamEvent(data);
-                                } catch (e) {
-                                    console.error('Error parsing SSE data:', e);
-                                }
-                            }
-                        }
-
-                        return reader.read().then(processStream);
-                    };
-
-                    return reader.read().then(processStream);
-                })
-                .catch(error => {
-                    console.error('Streaming error:', error);
-                    this.$wire.call('handleError', error.message || 'Connection failed');
-                });
-        },
-
-        handleStreamEvent(data) {
-            if (data.fullMessage !== undefined) {
-                this.$wire.call('updateStreamingMessage', data.fullMessage);
-            }
-
-            if (data.fullMessage && (data.type === undefined || data.type === 'complete')) {
-                setTimeout(() => {
-                    this.$wire.call('completeStreaming', data.fullMessage);
-                }, 100);
-            }
-
-            if (data.message && data.type === 'error') {
-                this.$wire.call('handleError', data.message);
             }
         }
     }));

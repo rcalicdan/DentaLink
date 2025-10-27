@@ -10,7 +10,6 @@ class AiChatModal extends Component
     public $messages = [];
     public $userMessage = '';
     public $isTyping = false;
-    public $streamingMessage = '';
     public $isFirstMessage = true;
 
     protected GeminiKnowledgeService $geminiService;
@@ -44,42 +43,31 @@ class AiChatModal extends Component
         $userMessage = $this->userMessage;
         $this->userMessage = '';
         $this->isTyping = true;
-        $this->streamingMessage = '';
 
-        $this->dispatch('start-ai-stream', [
-            'message' => $userMessage,
-            'isFirstMessage' => $this->isFirstMessage
-        ]);
-    }
+        try {
+            $response = $this->geminiService->enhancedChat(
+                userMessage: $userMessage,
+                entityType: null,
+                contextLimit: 5,
+                isFirstMessage: $this->isFirstMessage
+            );
 
-    public function updateStreamingMessage($content)
-    {
-        $this->streamingMessage = $content;
-    }
+            $this->messages[] = [
+                'role' => 'assistant',
+                'content' => $response,
+                'timestamp' => now()->diffForHumans(),
+            ];
 
-    public function completeStreaming($fullMessage)
-    {
-        $this->messages[] = [
-            'role' => 'assistant',
-            'content' => $fullMessage,
-            'timestamp' => now()->diffForHumans(),
-        ];
-
-        $this->isTyping = false;
-        $this->streamingMessage = '';
-        $this->isFirstMessage = false;
-    }
-
-    public function handleError($error)
-    {
-        $this->messages[] = [
-            'role' => 'assistant',
-            'content' => 'Sorry, I encountered an error: ' . $error,
-            'timestamp' => now()->diffForHumans(),
-        ];
-
-        $this->isTyping = false;
-        $this->streamingMessage = '';
+            $this->isFirstMessage = false;
+        } catch (\Exception $e) {
+            $this->messages[] = [
+                'role' => 'assistant',
+                'content' => 'Sorry, I encountered an error: ' . $e->getMessage(),
+                'timestamp' => now()->diffForHumans(),
+            ];
+        } finally {
+            $this->isTyping = false;
+        }
     }
 
     public function clearChat()
@@ -90,7 +78,6 @@ class AiChatModal extends Component
             'timestamp' => now()->diffForHumans(),
         ]];
         $this->isFirstMessage = true;
-        $this->streamingMessage = '';
         $this->isTyping = false;
     }
 
