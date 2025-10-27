@@ -8,6 +8,9 @@ use App\Models\User;
 use App\Models\Appointment;
 use App\Models\DentalService;
 use App\Models\PatientVisit;
+use App\Services\Helpers\GeminiPromptHelper;
+use App\Services\Helpers\GeminiContentBuilder;
+use App\Services\Helpers\GeminiSearchResultMapper;
 use Rcalicdan\GeminiClient\GeminiClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Interfaces\CancellablePromiseInterface;
@@ -21,7 +24,7 @@ class GeminiKnowledgeService
     private const EMBEDDING_MODEL = 'text-embedding-004';
     private const GENERATION_MODEL = 'gemma-3-27b-it';
     private const BATCH_SIZE = 50;
-    private const RATE_LIMIT_DELAY = 100000; 
+    private const RATE_LIMIT_DELAY = 100000;
 
     protected GeminiClient $client;
     protected string $systemPrompt;
@@ -33,7 +36,7 @@ class GeminiKnowledgeService
             model: self::GENERATION_MODEL
         );
 
-        $this->systemPrompt = $this->buildSystemPrompt();
+        $this->systemPrompt = GeminiPromptHelper::buildSystemPrompt();
     }
 
     // ==========================================
@@ -49,8 +52,9 @@ class GeminiKnowledgeService
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
     ): string {
-        $context = $this->buildContext($userMessage, $entityType, $contextLimit);
-        $userPrompt = $this->buildUserPrompt($context, $userMessage, $isFirstMessage);
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+        $context = GeminiPromptHelper::buildContext($searchResults);
+        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
 
         try {
             $response = await($this->sendChatRequest($userPrompt));
@@ -71,20 +75,11 @@ class GeminiKnowledgeService
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
     ): CancellablePromiseInterface {
-        $context = $this->buildContext($userMessage, $entityType, $contextLimit);
-        $userPrompt = $this->buildUserPrompt($context, $userMessage, $isFirstMessage);
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+        $context = GeminiPromptHelper::buildContext($searchResults);
+        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
 
-        if ($this->supportsSystemInstructions()) {
-            return $this->client
-                ->prompt($userPrompt)
-                ->system($this->systemPrompt)
-                ->stream($onChunk);
-        } else {
-            $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
-            return $this->client
-                ->prompt($combinedPrompt)
-                ->stream($onChunk);
-        }
+        return $this->streamWithPrompt($userPrompt, $onChunk);
     }
 
     /**
@@ -99,8 +94,8 @@ class GeminiKnowledgeService
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
         
-        $context = $this->buildEnhancedContext($stats, $searchResults);
-        $userPrompt = $this->buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
+        $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
+        $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
         try {
             $response = await($this->sendChatRequest($userPrompt));
@@ -124,20 +119,10 @@ class GeminiKnowledgeService
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
         
-        $context = $this->buildEnhancedContext($stats, $searchResults);
-        $userPrompt = $this->buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
+        $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
+        $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
-        if ($this->supportsSystemInstructions()) {
-            return $this->client
-                ->prompt($userPrompt)
-                ->system($this->systemPrompt)
-                ->stream($onChunk);
-        } else {
-            $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
-            return $this->client
-                ->prompt($combinedPrompt)
-                ->stream($onChunk);
-        }
+        return $this->streamWithPrompt($userPrompt, $onChunk);
     }
 
     /**
@@ -147,23 +132,7 @@ class GeminiKnowledgeService
     {
         try {
             $prompt = "This is the user's first message in this conversation. The user is greeting you. Introduce yourself.";
-            
-            if ($this->supportsSystemInstructions()) {
-                $response = await(
-                    $this->client
-                        ->prompt($prompt)
-                        ->system($this->systemPrompt)
-                        ->send()
-                );
-            } else {
-                $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $prompt;
-                $response = await(
-                    $this->client
-                        ->prompt($combinedPrompt)
-                        ->send()
-                );
-            }
-            
+            $response = await($this->sendChatRequest($prompt));
             return $response->text();
         } catch (\Exception $e) {
             logger()->error('Failed to generate introduction: ' . $e->getMessage());
@@ -246,7 +215,7 @@ class GeminiKnowledgeService
      */
     public function indexUser(User $user): void
     {
-        $content = $this->buildUserContent($user);
+        $content = GeminiContentBuilder::buildUserContent($user);
         $embedding = $this->generateEmbedding($content);
 
         KnowledgeBase::storeEmbedding(
@@ -272,7 +241,7 @@ class GeminiKnowledgeService
      */
     public function indexPatient(Patient $patient): void
     {
-        $content = $this->buildPatientContent($patient);
+        $content = GeminiContentBuilder::buildPatientContent($patient);
         $embedding = $this->generateEmbedding($content);
 
         KnowledgeBase::storeEmbedding(
@@ -294,7 +263,7 @@ class GeminiKnowledgeService
      */
     public function indexAppointment(Appointment $appointment): void
     {
-        $content = $this->buildAppointmentContent($appointment);
+        $content = GeminiContentBuilder::buildAppointmentContent($appointment);
         $embedding = $this->generateEmbedding($content);
 
         KnowledgeBase::storeEmbedding(
@@ -317,7 +286,7 @@ class GeminiKnowledgeService
      */
     public function indexDentalService(DentalService $service): void
     {
-        $content = $this->buildServiceContent($service);
+        $content = GeminiContentBuilder::buildServiceContent($service);
         $embedding = $this->generateEmbedding($content);
 
         KnowledgeBase::storeEmbedding(
@@ -339,7 +308,7 @@ class GeminiKnowledgeService
      */
     public function indexPatientVisit(PatientVisit $visit): void
     {
-        $content = $this->buildVisitContent($visit);
+        $content = GeminiContentBuilder::buildVisitContent($visit);
         $embedding = $this->generateEmbedding($content);
 
         KnowledgeBase::storeEmbedding(
@@ -384,17 +353,9 @@ class GeminiKnowledgeService
     public function search(string $query, ?string $entityType = null, int $limit = 5): array
     {
         $queryEmbedding = $this->generateEmbedding($query);
-
-        return KnowledgeBase::findSimilar($queryEmbedding, $limit, $entityType)
-            ->map(fn($item) => [
-                'entity_type' => $item->entity_type,
-                'entity_id' => $item->entity_id,
-                'content' => $item->content,
-                'metadata' => $item->metadata,
-                'similarity_score' => 1 - $item->distance,
-                'distance' => $item->distance,
-            ])
-            ->toArray();
+        $results = KnowledgeBase::findSimilar($queryEmbedding, $limit, $entityType);
+        
+        return GeminiSearchResultMapper::mapResults($results);
     }
 
     /**
@@ -452,226 +413,38 @@ class GeminiKnowledgeService
     // ==========================================
 
     /**
-     * Check if current model supports system instructions
-     */
-    private function supportsSystemInstructions(): bool
-    {
-        return str_starts_with(self::GENERATION_MODEL, 'gemini');
-    }
-
-    /**
-     * Build system prompt
-     */
-    private function buildSystemPrompt(): string
-    {
-        return <<<PROMPT
-You are an AI assistant exclusively for Nice Smile Clinic operations. Your role is to help with clinic-related queries only.
-
-IMPORTANT RULES:
-1. ONLY answer questions related to Nice Smile Clinic operations, including:
-   - Patient information and records
-   - Appointments and scheduling
-   - Dental services and procedures
-   - Staff and employee information
-   - Patient visits and treatment history
-   - Clinic branches and locations
-   - Billing and payment information
-
-2. For ANY question NOT related to Nice Smile Clinic operations, politely decline and redirect:
-   "I'm sorry, but I can only assist with questions related to Nice Smile Clinic operations. Please ask me about patients, appointments, services, staff, or other clinic-related matters."
-
-3. INTRODUCTION RULE - VERY IMPORTANT:
-   - If the user's message is a greeting (like "hi", "hello", "hey", etc.) AND this appears to be the start of a conversation, introduce yourself with:
-     "I'm your AI assistant for Nice Smile Clinic. Let me know anything about the clinic operation."
-   - For all OTHER messages (including follow-up questions), do NOT introduce yourself again. Just answer the question directly.
-   - Never repeat the introduction in the same conversation.
-
-4. Be professional, accurate, and helpful for all clinic-related queries.
-5. Base your answers on the provided context from the clinic database.
-6. If you don't have enough information to answer a clinic-related question, say so clearly.
-
-Remember: You are NOT a general-purpose AI. You are specifically designed for Nice Smile Clinic operations only.
-PROMPT;
-    }
-
-    /**
-     * Build context from search results
-     */
-    private function buildContext(string $userMessage, ?string $entityType, int $contextLimit): string
-    {
-        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
-
-        if (empty($searchResults)) {
-            return '';
-        }
-
-        $context = "Here is relevant information from the clinic database:\n\n";
-        foreach ($searchResults as $result) {
-            $context .= "- " . $result['content'] . "\n";
-        }
-        $context .= "\n";
-
-        return $context;
-    }
-
-    /**
-     * Build enhanced context with statistics
-     */
-    private function buildEnhancedContext(array $stats, array $searchResults): string
-    {
-        $context = "Nice Smile Clinic Database Statistics:\n";
-        foreach ($stats as $type => $count) {
-            $context .= "- Total {$type}s: {$count}\n";
-        }
-        $context .= "\nRelevant information from the clinic:\n";
-
-        foreach ($searchResults as $index => $result) {
-            $relevance = round($result['similarity_score'] * 100, 1);
-            $context .= ($index + 1) . ". " . $result['content'] . " (Relevance: {$relevance}%)\n";
-        }
-
-        return $context;
-    }
-
-    /**
-     * Build user prompt
-     */
-    private function buildUserPrompt(string $context, string $userMessage, bool $isFirstMessage): string
-    {
-        $conversationHint = $isFirstMessage 
-            ? "This is the user's first message in this conversation.\n" 
-            : "This is a follow-up message in an ongoing conversation.\n";
-
-        return $conversationHint . $context . "User message: " . $userMessage;
-    }
-
-    /**
-     * Build enhanced user prompt
-     */
-    private function buildEnhancedUserPrompt(string $context, string $userMessage, bool $isFirstMessage): string
-    {
-        $conversationHint = $isFirstMessage 
-            ? "This is the user's first message in this conversation.\n" 
-            : "This is a follow-up message in an ongoing conversation.\n";
-
-        return $conversationHint 
-            . $context 
-            . "\nUser question: " . $userMessage 
-            . "\n\nProvide a complete and accurate answer based on the clinic data. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results.";
-    }
-
-    /**
      * Send chat request with model-aware prompt handling
      */
     private function sendChatRequest(string $userPrompt): PromiseInterface
     {
-        if ($this->supportsSystemInstructions()) {
-            // Gemini models - use separate system instruction
+        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
             return $this->client
                 ->prompt($userPrompt)
                 ->system($this->systemPrompt)
                 ->send();
-        } else {
-            // Gemma models - combine system + user prompt
-            $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
-            return $this->client
-                ->prompt($combinedPrompt)
-                ->send();
         }
+
+        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+        return $this->client
+            ->prompt($combinedPrompt)
+            ->send();
     }
 
     /**
-     * Build user content for embedding
+     * Stream response with model-aware prompt handling
      */
-    private function buildUserContent(User $user): string
+    private function streamWithPrompt(string $userPrompt, callable $onChunk): CancellablePromiseInterface
     {
-        $roleName = match ($user->role) {
-            'super_admin' => 'Super Admin',
-            'admin' => 'Admin',
-            'employee' => 'Employee',
-            default => ucfirst(str_replace('_', ' ', $user->role ?? 'Unknown'))
-        };
+        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->stream($onChunk);
+        }
 
-        return sprintf(
-            "User: %s. Full Name: %s %s. Email: %s. Phone: %s. User ID: %s. Role: %s. Branch: %s. Created: %s",
-            $user->full_name,
-            $user->first_name,
-            $user->last_name,
-            $user->email,
-            $user->phone ?? 'Not provided',
-            $user->id,
-            $roleName,
-            $user->branch_name,
-            $user->created_at->format('F d, Y')
-        );
-    }
-
-    /**
-     * Build patient content for embedding
-     */
-    private function buildPatientContent(Patient $patient): string
-    {
-        return sprintf(
-            "Patient: %s. Phone: %s. Email: %s. Date of Birth: %s. Age: %s. Branch: %s. Address: %s. Registration Date: %s",
-            $patient->full_name,
-            $patient->phone,
-            $patient->email ?? 'Not provided',
-            $patient->date_of_birth?->format('F d, Y') ?? 'Not provided',
-            $patient->age ?? 'Unknown',
-            $patient->registration_branch_name,
-            $patient->address ?? 'Not provided',
-            $patient->created_at->format('F d, Y')
-        );
-    }
-
-    /**
-     * Build appointment content for embedding
-     */
-    private function buildAppointmentContent(Appointment $appointment): string
-    {
-        return sprintf(
-            "Appointment for patient %s scheduled on %s at %s. Status: %s. Queue number: %s. Reason: %s. Branch: %s. Notes: %s",
-            $appointment->patient_name,
-            $appointment->formatted_date,
-            $appointment->formatted_time_range ?? 'Time not set',
-            ucfirst($appointment->status->value),
-            $appointment->queue_number ?? 'Not assigned',
-            $appointment->reason,
-            $appointment->branch->name,
-            $appointment->notes ?? 'No additional notes'
-        );
-    }
-
-    /**
-     * Build service content for embedding
-     */
-    private function buildServiceContent(DentalService $service): string
-    {
-        return sprintf(
-            "Dental Service: %s. Category: %s. Price: ₱%s. %s. Description: Professional dental care service.",
-            $service->name,
-            $service->service_type_name,
-            number_format($service->price, 2),
-            $service->is_quantifiable ? 'Quantity-based service' : 'Fixed service'
-        );
-    }
-
-    /**
-     * Build visit content for embedding
-     */
-    private function buildVisitContent(PatientVisit $visit): string
-    {
-        $services = $visit->patientVisitServices->pluck('dentalService.name')->join(', ');
-
-        return sprintf(
-            "Patient visit for %s on %s at %s branch. Type: %s. Services: %s. Total amount: ₱%s. Notes: %s",
-            $visit->patient_name,
-            $visit->visit_date->format('F d, Y g:i A'),
-            $visit->branch_name,
-            $visit->visit_type,
-            $services ?: 'No services recorded',
-            number_format($visit->total_amount_paid, 2),
-            $visit->notes ?? 'No notes'
-        );
+        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+        return $this->client
+            ->prompt($combinedPrompt)
+            ->stream($onChunk);
     }
 }
