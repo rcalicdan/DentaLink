@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4f998b039909aa15d3f39315d7125a19",
+    "content-hash": "ddd0992203d6706205680cdd04fe3acc",
     "packages": [
         {
             "name": "brick/math",
@@ -3942,6 +3942,47 @@
                 "source": "https://github.com/rcalicdan/defer"
             },
             "time": "2025-09-22T06:52:57+00:00"
+        },
+        {
+            "name": "rcalicdan/gemini-client",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rcalicdan/gemini-client.git",
+                "reference": "cf5b7ee2422dbd48150c21f5f69d6f278c40bfcf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rcalicdan/gemini-client/zipball/cf5b7ee2422dbd48150c21f5f69d6f278c40bfcf",
+                "reference": "cf5b7ee2422dbd48150c21f5f69d6f278c40bfcf",
+                "shasum": ""
+            },
+            "require": {
+                "hiblaphp/http-client": "dev-main",
+                "php": "^8.2"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rcalicdan\\GeminiClient\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Reymart A. Calicdan"
+                }
+            ],
+            "description": "Asynchonous Gemini Client for PHP",
+            "support": {
+                "issues": "https://github.com/rcalicdan/gemini-client/issues",
+                "source": "https://github.com/rcalicdan/gemini-client/tree/main"
+            },
+            "time": "2025-10-27T10:21:19+00:00"
         },
         {
             "name": "symfony/cache",
@@ -10416,7 +10457,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "hiblaphp/http-client": 20
+        "hiblaphp/http-client": 20,
+        "rcalicdan/gemini-client": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

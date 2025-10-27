@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\KnowledgeBase;
+use App\Models\Patient;
 use Gemini;
 
 class GeminiKnowledgeService
@@ -12,6 +13,91 @@ class GeminiKnowledgeService
     public function __construct()
     {
         $this->client = Gemini::client(config('gemini.api_key'));
+    }
+
+    /**
+     * Chat with RAG - combines search with AI response
+     */
+    public function chat(string $userMessage, ?string $entityType = null, int $contextLimit = 3): string
+    {
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+
+        $context = '';
+        if (!empty($searchResults)) {
+            $context = "Here is relevant information from the database:\n\n";
+            foreach ($searchResults as $result) {
+                $context .= "- " . $result['content'] . "\n";
+            }
+            $context .= "\n";
+        }
+
+        $prompt = $context . "User message: " . $userMessage . "\n\nPlease provide a helpful response based on the context above.";
+
+        try {
+            $response = $this->client
+                ->generativeModel('gemini-2.0-flash-exp')
+                ->generateContent($prompt);
+
+            return $response->text();
+        } catch (\Exception $e) {
+            logger()->error('Failed to generate chat response: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Get entity statistics for better context
+     */
+    public function getEntityStats(?string $entityType = null): array
+    {
+        $query = KnowledgeBase::query();
+
+        if ($entityType) {
+            return [
+                'entity_type' => $entityType,
+                'total' => $query->where('entity_type', $entityType)->count(),
+            ];
+        }
+
+        return KnowledgeBase::select('entity_type')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('entity_type')
+            ->get()
+            ->pluck('count', 'entity_type')
+            ->toArray();
+    }
+
+    /**
+     * Enhanced chat with statistics
+     */
+    public function enhancedChat(string $userMessage, ?string $entityType = null, int $contextLimit = 5): string
+    {
+        $stats = $this->getEntityStats();
+
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+
+        $context = "Database Statistics:\n";
+        foreach ($stats as $type => $count) {
+            $context .= "- Total {$type}s: {$count}\n";
+        }
+        $context .= "\nRelevant information:\n";
+
+        foreach ($searchResults as $index => $result) {
+            $context .= ($index + 1) . ". " . $result['content'] . " (Relevance: " . round($result['similarity_score'] * 100, 1) . "%)\n";
+        }
+
+        $prompt = $context . "\nUser question: " . $userMessage . "\n\nProvide a complete and accurate answer. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results.";
+
+        try {
+            $response = $this->client
+                ->generativeModel('gemini-2.0-flash-exp')
+                ->generateContent($prompt);
+
+            return $response->text();
+        } catch (\Exception $e) {
+            logger()->error('Failed to generate enhanced chat response: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -170,7 +256,7 @@ class GeminiKnowledgeService
     public function search(string $query, ?string $entityType = null, int $limit = 5): array
     {
         $queryEmbedding = $this->generateEmbedding($query);
-        
+
         return KnowledgeBase::findSimilar($queryEmbedding, $limit, $entityType)
             ->map(function ($item) {
                 return [
@@ -190,7 +276,7 @@ class GeminiKnowledgeService
      */
     public function batchIndexPatients(int $batchSize = 50): void
     {
-        \App\Models\Patient::chunk($batchSize, function ($patients) {
+        Patient::chunk($batchSize, function ($patients) {
             foreach ($patients as $patient) {
                 try {
                     $this->indexPatient($patient);
@@ -215,7 +301,7 @@ class GeminiKnowledgeService
      */
     protected function buildUserContent($user): string
     {
-        $roleName = match($user->role) {
+        $roleName = match ($user->role) {
             'super_admin' => 'Super Admin',
             'admin' => 'Admin',
             'employee' => 'Employee',
@@ -292,7 +378,7 @@ class GeminiKnowledgeService
     protected function buildVisitContent($visit): string
     {
         $services = $visit->patientVisitServices->pluck('dentalService.name')->join(', ');
-        
+
         return sprintf(
             "Patient visit for %s on %s at %s branch. Type: %s. Services: %s. Total amount: ₱%s. Notes: %s",
             $visit->patient_name,
