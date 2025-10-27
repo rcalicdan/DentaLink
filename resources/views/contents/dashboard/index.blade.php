@@ -138,7 +138,7 @@
     </div>
 
     @can('view-ai-assistant')
-        @livewire('ai-chat-modal')
+       @include('contents.dashboard.ai-chat-modal')
     @endcan
 
     @include('contents.dashboard.charts-js')

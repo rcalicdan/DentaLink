@@ -19,8 +19,8 @@ use function Hibla\async;
 
 class GeminiKnowledgeService
 {
-    private const DEFAULT_CONTEXT_LIMIT = 3;
-    private const ENHANCED_CONTEXT_LIMIT = 5;
+    private const DEFAULT_CONTEXT_LIMIT = 20;
+    private const ENHANCED_CONTEXT_LIMIT = 50;
     private const EMBEDDING_MODEL = 'text-embedding-004';
     private const GENERATION_MODEL = 'gemma-3-27b-it';
     private const BATCH_SIZE = 50;
@@ -83,6 +83,80 @@ class GeminiKnowledgeService
     }
 
     /**
+     * Stream chat as SSE with auto-flush (simplest SSE streaming)
+     * 
+     * @param string $userMessage
+     * @param string|null $entityType
+     * @param int $contextLimit
+     * @param bool $isFirstMessage
+     * @param bool $sendDoneEvent Send completion event
+     * @param string|null $doneEventName Custom name for completion event
+     * @return CancellablePromiseInterface
+     */
+    public function streamChatAsSSE(
+        string $userMessage,
+        ?string $entityType = null,
+        int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
+        bool $isFirstMessage = false,
+        bool $sendDoneEvent = true,
+        ?string $doneEventName = 'done'
+    ): CancellablePromiseInterface {
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+        $context = GeminiPromptHelper::buildContext($searchResults);
+        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
+
+        return $this->streamAsSSEWithPrompt($userPrompt, $sendDoneEvent, $doneEventName);
+    }
+
+    /**
+     * Stream chat with custom event type
+     * 
+     * @param string $userMessage
+     * @param string $eventType Event type name (e.g., 'message', 'token')
+     * @param string|null $entityType
+     * @param int $contextLimit
+     * @param bool $isFirstMessage
+     * @param bool $sendDoneEvent Send completion event
+     * @return CancellablePromiseInterface
+     */
+    public function streamChatWithEvent(
+        string $userMessage,
+        string $eventType = 'message',
+        ?string $entityType = null,
+        int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
+        bool $isFirstMessage = false,
+        bool $sendDoneEvent = true
+    ): CancellablePromiseInterface {
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+        $context = GeminiPromptHelper::buildContext($searchResults);
+        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
+
+        return $this->streamWithEventType($userPrompt, $eventType, $sendDoneEvent);
+    }
+
+    /**
+     * Stream chat with progress updates (shows chunk count and total length)
+     * 
+     * @param string $userMessage
+     * @param string|null $entityType
+     * @param int $contextLimit
+     * @param bool $isFirstMessage
+     * @return CancellablePromiseInterface
+     */
+    public function streamChatWithProgress(
+        string $userMessage,
+        ?string $entityType = null,
+        int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
+        bool $isFirstMessage = false
+    ): CancellablePromiseInterface {
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+        $context = GeminiPromptHelper::buildContext($searchResults);
+        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
+
+        return $this->streamWithProgressUpdates($userPrompt);
+    }
+
+    /**
      * Enhanced chat with statistics
      */
     public function enhancedChat(
@@ -123,6 +197,34 @@ class GeminiKnowledgeService
         $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
         return $this->streamWithPrompt($userPrompt, $onChunk);
+    }
+
+    /**
+     * Enhanced stream chat as SSE with auto-flush
+     * 
+     * @param string $userMessage
+     * @param string|null $entityType
+     * @param int $contextLimit
+     * @param bool $isFirstMessage
+     * @param bool $sendDoneEvent
+     * @param string|null $doneEventName
+     * @return CancellablePromiseInterface
+     */
+    public function enhancedStreamChatAsSSE(
+        string $userMessage,
+        ?string $entityType = null,
+        int $contextLimit = self::ENHANCED_CONTEXT_LIMIT,
+        bool $isFirstMessage = false,
+        bool $sendDoneEvent = true,
+        ?string $doneEventName = 'done'
+    ): CancellablePromiseInterface {
+        $stats = $this->getEntityStats();
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+        
+        $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
+        $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
+
+        return $this->streamAsSSEWithPrompt($userPrompt, $sendDoneEvent, $doneEventName);
     }
 
     /**
@@ -446,5 +548,65 @@ class GeminiKnowledgeService
         return $this->client
             ->prompt($combinedPrompt)
             ->stream($onChunk);
+    }
+
+    /**
+     * Stream as SSE with auto-flush (uses streamAndFlush)
+     */
+    private function streamAsSSEWithPrompt(
+        string $userPrompt,
+        bool $sendDoneEvent = true,
+        ?string $doneEventName = 'done'
+    ): CancellablePromiseInterface {
+        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->streamAndFlush($sendDoneEvent, $doneEventName);
+        }
+
+        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+        return $this->client
+            ->prompt($combinedPrompt)
+            ->streamAndFlush($sendDoneEvent, $doneEventName);
+    }
+
+    /**
+     * Stream with custom event type (uses streamWithEvent)
+     */
+    private function streamWithEventType(
+        string $userPrompt,
+        string $eventType = 'message',
+        bool $sendDoneEvent = true
+    ): CancellablePromiseInterface {
+        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->streamWithEvent($eventType, $sendDoneEvent);
+        }
+
+        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+        return $this->client
+            ->prompt($combinedPrompt)
+            ->streamWithEvent($eventType, $sendDoneEvent);
+    }
+
+    /**
+     * Stream with progress updates (uses streamWithProgress)
+     */
+    private function streamWithProgressUpdates(string $userPrompt): CancellablePromiseInterface
+    {
+        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->streamWithProgress();
+        }
+
+        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+        return $this->client
+            ->prompt($combinedPrompt)
+            ->streamWithProgress();
     }
 }
