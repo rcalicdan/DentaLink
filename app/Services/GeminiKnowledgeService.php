@@ -4,40 +4,81 @@ namespace App\Services;
 
 use App\Models\KnowledgeBase;
 use App\Models\Patient;
-use Gemini;
+use Rcalicdan\GeminiClient\GeminiClient;
+use function Hibla\await;
 
 class GeminiKnowledgeService
 {
-    protected $client;
+    protected GeminiClient $client;
+    protected string $systemPrompt;
 
     public function __construct()
     {
-        $this->client = Gemini::client(config('gemini.api_key'));
+        $this->client = new GeminiClient(
+            apiKey: config('gemini.api_key'),
+            model: 'gemini-2.0-flash-exp'
+        );
+
+        $this->systemPrompt = <<<PROMPT
+You are an AI assistant exclusively for Nice Smile Clinic operations. Your role is to help with clinic-related queries only.
+
+IMPORTANT RULES:
+1. ONLY answer questions related to Nice Smile Clinic operations, including:
+   - Patient information and records
+   - Appointments and scheduling
+   - Dental services and procedures
+   - Staff and employee information
+   - Patient visits and treatment history
+   - Clinic branches and locations
+   - Billing and payment information
+
+2. For ANY question NOT related to Nice Smile Clinic operations, politely decline and redirect:
+   "I'm sorry, but I can only assist with questions related to Nice Smile Clinic operations. Please ask me about patients, appointments, services, staff, or other clinic-related matters."
+
+3. INTRODUCTION RULE - VERY IMPORTANT:
+   - If the user's message is a greeting (like "hi", "hello", "hey", etc.) AND this appears to be the start of a conversation, introduce yourself with:
+     "I'm your AI assistant for Nice Smile Clinic. Let me know anything about the clinic operation."
+   - For all OTHER messages (including follow-up questions), do NOT introduce yourself again. Just answer the question directly.
+   - Never repeat the introduction in the same conversation.
+
+4. Be professional, accurate, and helpful for all clinic-related queries.
+5. Base your answers on the provided context from the clinic database.
+6. If you don't have enough information to answer a clinic-related question, say so clearly.
+
+Remember: You are NOT a general-purpose AI. You are specifically designed for Nice Smile Clinic operations only.
+PROMPT;
     }
 
     /**
      * Chat with RAG - combines search with AI response
      */
-    public function chat(string $userMessage, ?string $entityType = null, int $contextLimit = 3): string
+    public function chat(string $userMessage, ?string $entityType = null, int $contextLimit = 3, bool $isFirstMessage = false): string
     {
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
         $context = '';
         if (!empty($searchResults)) {
-            $context = "Here is relevant information from the database:\n\n";
+            $context = "Here is relevant information from the clinic database:\n\n";
             foreach ($searchResults as $result) {
                 $context .= "- " . $result['content'] . "\n";
             }
             $context .= "\n";
         }
 
-        $prompt = $context . "User message: " . $userMessage . "\n\nPlease provide a helpful response based on the context above.";
+        $conversationHint = $isFirstMessage 
+            ? "This is the user's first message in this conversation.\n" 
+            : "This is a follow-up message in an ongoing conversation.\n";
+
+        $userPrompt = $conversationHint . $context . "User message: " . $userMessage;
 
         try {
-            $response = $this->client
-                ->generativeModel('gemini-2.0-flash-exp')
-                ->generateContent($prompt);
-
+            $response = await(
+                $this->client
+                    ->prompt($userPrompt)
+                    ->system($this->systemPrompt)
+                    ->send()
+            );
+            
             return $response->text();
         } catch (\Exception $e) {
             logger()->error('Failed to generate chat response: ' . $e->getMessage());
@@ -70,29 +111,35 @@ class GeminiKnowledgeService
     /**
      * Enhanced chat with statistics
      */
-    public function enhancedChat(string $userMessage, ?string $entityType = null, int $contextLimit = 5): string
+    public function enhancedChat(string $userMessage, ?string $entityType = null, int $contextLimit = 5, bool $isFirstMessage = false): string
     {
         $stats = $this->getEntityStats();
-
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
-        $context = "Database Statistics:\n";
+        $context = "Nice Smile Clinic Database Statistics:\n";
         foreach ($stats as $type => $count) {
             $context .= "- Total {$type}s: {$count}\n";
         }
-        $context .= "\nRelevant information:\n";
+        $context .= "\nRelevant information from the clinic:\n";
 
         foreach ($searchResults as $index => $result) {
             $context .= ($index + 1) . ". " . $result['content'] . " (Relevance: " . round($result['similarity_score'] * 100, 1) . "%)\n";
         }
 
-        $prompt = $context . "\nUser question: " . $userMessage . "\n\nProvide a complete and accurate answer. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results.";
+        $conversationHint = $isFirstMessage 
+            ? "This is the user's first message in this conversation.\n" 
+            : "This is a follow-up message in an ongoing conversation.\n";
+
+        $userPrompt = $conversationHint . $context . "\nUser question: " . $userMessage . "\n\nProvide a complete and accurate answer based on the clinic data. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results.";
 
         try {
-            $response = $this->client
-                ->generativeModel('gemini-2.0-flash-exp')
-                ->generateContent($prompt);
-
+            $response = await(
+                $this->client
+                    ->prompt($userPrompt)
+                    ->system($this->systemPrompt)
+                    ->send()
+            );
+            
             return $response->text();
         } catch (\Exception $e) {
             logger()->error('Failed to generate enhanced chat response: ' . $e->getMessage());
@@ -101,16 +148,39 @@ class GeminiKnowledgeService
     }
 
     /**
-     * Generate embedding using Gemini text-embedding-004
+     * Get a greeting/introduction response (only for first interaction)
+     */
+    public function getIntroduction(): string
+    {
+        try {
+            $response = await(
+                $this->client
+                    ->prompt("This is the user's first message in this conversation. The user is greeting you. Introduce yourself.")
+                    ->system($this->systemPrompt)
+                    ->send()
+            );
+            
+            return $response->text();
+        } catch (\Exception $e) {
+            logger()->error('Failed to generate introduction: ' . $e->getMessage());
+            // Fallback introduction
+            return "I'm your AI assistant for Nice Smile Clinic. Let me know anything about the clinic operation.";
+        }
+    }
+
+    /**
+     * Generate embedding using text-embedding-004
      */
     public function generateEmbedding(string $text): array
     {
         try {
-            $response = $this->client
-                ->embeddingModel('text-embedding-004')
-                ->embedContent($text);
-
-            return $response->embedding->values;
+            $response = await(
+                $this->client
+                    ->withEmbeddingModel('text-embedding-004')
+                    ->embedContent($text, 'RETRIEVAL_DOCUMENT')
+            );
+            
+            return $response->values();
         } catch (\Exception $e) {
             logger()->error('Failed to generate embedding: ' . $e->getMessage());
             throw $e;
@@ -123,11 +193,18 @@ class GeminiKnowledgeService
     public function batchGenerateEmbeddings(array $texts): array
     {
         try {
-            $response = $this->client
-                ->embeddingModel('text-embedding-004')
-                ->batchEmbedContents(...$texts);
+            $requests = array_map(fn($text) => [
+                'content' => $text,
+                'task_type' => 'RETRIEVAL_DOCUMENT'
+            ], $texts);
 
-            return array_map(fn($embedding) => $embedding->values, $response->embeddings);
+            $response = await(
+                $this->client
+                    ->withEmbeddingModel('text-embedding-004')
+                    ->batchEmbed($requests)
+            );
+
+            return $response->embeddings();
         } catch (\Exception $e) {
             logger()->error('Failed to batch generate embeddings: ' . $e->getMessage());
             throw $e;
@@ -280,7 +357,7 @@ class GeminiKnowledgeService
             foreach ($patients as $patient) {
                 try {
                     $this->indexPatient($patient);
-                    usleep(100000); // 100ms delay to avoid rate limits
+                    usleep(100000);
                 } catch (\Exception $e) {
                     logger()->error("Failed to index patient {$patient->id}: {$e->getMessage()}");
                 }
@@ -293,7 +370,7 @@ class GeminiKnowledgeService
      */
     public function listModels()
     {
-        return $this->client->models()->list();
+        return await($this->client->listModels())->json();
     }
 
     /**

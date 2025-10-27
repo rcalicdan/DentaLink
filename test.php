@@ -14,6 +14,7 @@ $client = new GeminiKnowledgeService();
 echo "=== Testing Enhanced Conversational Chat ===\n\n";
 
 $queries = [
+    "Hello",
     "Find user with email superadmin@nice-smile.com",
     "Who are ALL the admin users in the system?",
     "List all employees",
