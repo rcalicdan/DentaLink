@@ -316,10 +316,12 @@
 
             @php
                 $url = '';
-                if (Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) {
-                    $url = '/dashboard';
-                } else {
-                    $url = '/patients';
+                if (auth()->check()) {
+                    if (auth()->user()->isAdmin() || auth()->user()->isSuperadmin()) {
+                        $url = '/dashboard';
+                    } else {
+                        $url = '/patients';
+                    }
                 }
             @endphp
             <a href="{{ $url }}" wire:navigate class="btn btn-primary">

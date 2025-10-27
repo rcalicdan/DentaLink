@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AiStreamController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
+use Rcalicdan\GeminiClient\GeminiClient;
 
 Route::get('login', App\Livewire\Auth\LoginPage::class)->name('login');
 Route::get('/', fn() => redirect()->route('login'))->name('home');
@@ -65,4 +67,23 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::get('profile', \App\Livewire\Profile\ProfilePage::class)->name('profile.edit');
+
+    Route::post('/ai/stream', [AiStreamController::class, 'stream'])
+        ->middleware(['auth'])
+        ->name('ai.stream');
+});
+
+Route::get("test-stream/{message}", function (string $message) {
+    return response()->stream(function () use ($message) {
+        $client = new GeminiClient();
+        $client->withModel("gemini-2.5-flash")
+            ->prompt($message)
+            ->streamAndFlush()
+            ->await();
+    }, 200, [
+        'Content-Type' => 'text/event-stream',
+        'Cache-Control' => 'no-cache',
+        'X-Accel-Buffering' => 'no',
+        'Connection' => 'keep-alive',
+    ]);
 });
