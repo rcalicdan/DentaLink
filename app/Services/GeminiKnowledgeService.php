@@ -6,8 +6,12 @@ use App\Models\KnowledgeBase;
 use App\Models\Patient;
 use App\Models\User;
 use App\Models\Appointment;
+use App\Models\Branch;
 use App\Models\DentalService;
+use App\Models\DentalServiceType;
+use App\Models\Inventory;
 use App\Models\PatientVisit;
+use App\Models\PatientVisitService;
 use App\Services\Helpers\GeminiPromptHelper;
 use App\Services\Helpers\GeminiContentBuilder;
 use App\Services\Helpers\GeminiSearchResultMapper;
@@ -193,7 +197,7 @@ class GeminiKnowledgeService
     public function streamIntroductionSSE(array $sseConfig = []): CancellablePromiseInterface
     {
         $prompt = "This is the user's first message in this conversation. The user is greeting you. Introduce yourself.";
-        
+
         return $this->streamSSEWithPrompt($prompt, array_merge([
             'customMetadata' => [
                 'message_type' => 'introduction',
@@ -384,6 +388,84 @@ class GeminiKnowledgeService
                 'branch_id' => $visit->branch_id,
                 'visit_date' => $visit->visit_date->toISOString(),
                 'total_amount' => (float) $visit->total_amount_paid,
+            ]
+        );
+    }
+
+    public function indexBranch(Branch $branch): void
+    {
+        $content = "Branch: {$branch->name}, Address: {$branch->address}, Phone: {$branch->phone}, Email: {$branch->email}";
+
+        $embedding = $this->generateEmbedding($content);
+
+        KnowledgeBase::storeEmbedding(
+            'branch',
+            $branch->id,
+            $content,
+            $embedding,
+            [
+                'name' => $branch->name,
+                'address' => $branch->address,
+            ]
+        );
+    }
+
+    public function indexDentalServiceType(DentalServiceType $dentalServiceType): void
+    {
+        $content = "Dental Service Type: {$dentalServiceType->name}, Description: {$dentalServiceType->description}";
+
+        $embedding = $this->generateEmbedding($content);
+
+        KnowledgeBase::storeEmbedding(
+            'dental_service_type',
+            $dentalServiceType->id,
+            $content,
+            $embedding,
+            [
+                'name' => $dentalServiceType->name,
+            ]
+        );
+    }
+
+    public function indexInventory(Inventory $inventory): void
+    {
+        $content = "Inventory Item: {$inventory->name}, Category: {$inventory->category}, Branch: {$inventory->branch_name}, Current Stock: {$inventory->current_stock}, Minimum Stock: {$inventory->minimum_stock}, Status: {$inventory->stock_status}";
+
+        $embedding = $this->generateEmbedding($content);
+
+        KnowledgeBase::storeEmbedding(
+            'inventory',
+            $inventory->id,
+            $content,
+            $embedding,
+            [
+                'name' => $inventory->name,
+                'category' => $inventory->category,
+                'branch_id' => $inventory->branch_id,
+                'is_low_stock' => $inventory->is_low_stock,
+            ]
+        );
+    }
+
+
+    public function indexPatientVisitService(PatientVisitService $patientVisitService): void
+    {
+        $patient = $patientVisitService->patientVisit->patient;
+        $service = $patientVisitService->dentalService;
+
+        $content = "Patient Visit Service: Patient {$patient->full_name} received {$service->name} (Type: {$service->service_type_name}), Quantity: {$patientVisitService->quantity}, Price: {$patientVisitService->service_price}, Total: {$patientVisitService->total_price}, Notes: {$patientVisitService->service_notes}";
+
+        $embedding = $this->generateEmbedding($content);
+
+        KnowledgeBase::storeEmbedding(
+            'patient_visit_service',
+            $patientVisitService->id,
+            $content,
+            $embedding,
+            [
+                'patient_id' => $patient->id,
+                'dental_service_id' => $service->id,
+                'patient_visit_id' => $patientVisitService->patient_visit_id,
             ]
         );
     }
