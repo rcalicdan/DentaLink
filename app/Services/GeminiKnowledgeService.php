@@ -19,8 +19,7 @@ use function Hibla\async;
 
 class GeminiKnowledgeService
 {
-    private const DEFAULT_CONTEXT_LIMIT = 20;
-    private const ENHANCED_CONTEXT_LIMIT = 50;
+    private const DEFAULT_CONTEXT_LIMIT = 50;
     private const EMBEDDING_MODEL = 'text-embedding-004';
     private const GENERATION_MODEL = 'gemma-3-27b-it';
     private const BATCH_SIZE = 50;
@@ -44,7 +43,7 @@ class GeminiKnowledgeService
     // ==========================================
 
     /**
-     * Chat with RAG - combines search with AI response
+     * Chat with RAG - combines search with AI response (with statistics)
      */
     public function chat(
         string $userMessage,
@@ -52,9 +51,11 @@ class GeminiKnowledgeService
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
     ): string {
+        $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
-        $context = GeminiPromptHelper::buildContext($searchResults);
-        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
+
+        $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
+        $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
         try {
             $response = await($this->sendChatRequest($userPrompt));
@@ -75,45 +76,55 @@ class GeminiKnowledgeService
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
     ): CancellablePromiseInterface {
-        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
-        $context = GeminiPromptHelper::buildContext($searchResults);
-        $userPrompt = GeminiPromptHelper::buildUserPrompt($context, $userMessage, $isFirstMessage);
-
-        return $this->streamWithPrompt($userPrompt, $onChunk);
-    }
-
-    /**
-     * Enhanced chat with statistics
-     */
-    public function enhancedChat(
-        string $userMessage,
-        ?string $entityType = null,
-        int $contextLimit = self::ENHANCED_CONTEXT_LIMIT,
-        bool $isFirstMessage = false
-    ): string {
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
         $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
         $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
-        try {
-            $response = await($this->sendChatRequest($userPrompt));
-            return $response->text();
-        } catch (\Exception $e) {
-            logger()->error('Failed to generate enhanced chat response: ' . $e->getMessage());
-            throw $e;
-        }
+        return $this->streamWithPrompt($userPrompt, $onChunk);
     }
 
     /**
-     * Enhanced stream chat with statistics
+     * Stream chat with SSE - automatic SSE event emission
      */
-    public function enhancedStreamChat(
+    public function streamChatSSE(
         string $userMessage,
-        callable $onChunk,
         ?string $entityType = null,
-        int $contextLimit = self::ENHANCED_CONTEXT_LIMIT,
+        int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
+        bool $isFirstMessage = false,
+        array $sseConfig = []
+    ): CancellablePromiseInterface {
+        $stats = $this->getEntityStats();
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+
+        $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
+        $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
+
+        $defaultMetadata = [
+            'search_results_count' => count($searchResults),
+            'entity_stats' => $stats,
+            'context_limit' => $contextLimit,
+        ];
+
+        $sseConfig['customMetadata'] = array_merge(
+            $defaultMetadata,
+            $sseConfig['customMetadata'] ?? []
+        );
+
+        return $this->streamSSEWithPrompt($userPrompt, $sseConfig);
+    }
+
+    /**
+     * Stream chat with custom SSE events
+     */
+    public function streamChatWithEvents(
+        string $userMessage,
+        string $messageEvent = 'message',
+        ?string $doneEvent = 'done',
+        bool $includeMetadata = true,
+        ?string $entityType = null,
+        int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
     ): CancellablePromiseInterface {
         $stats = $this->getEntityStats();
@@ -122,7 +133,43 @@ class GeminiKnowledgeService
         $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
         $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
 
-        return $this->streamWithPrompt($userPrompt, $onChunk);
+        return $this->streamSSEWithPrompt($userPrompt, [
+            'messageEvent' => $messageEvent,
+            'doneEvent' => $doneEvent,
+            'includeMetadata' => $includeMetadata,
+            'customMetadata' => [
+                'search_results_count' => count($searchResults),
+                'entity_stats' => $stats,
+            ],
+        ]);
+    }
+
+    /**
+     * Stream chat with progress tracking
+     */
+    public function streamChatWithProgress(
+        string $userMessage,
+        string $progressEvent = 'progress',
+        ?string $entityType = null,
+        int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
+        bool $isFirstMessage = false
+    ): CancellablePromiseInterface {
+        $stats = $this->getEntityStats();
+        $searchResults = $this->search($userMessage, $entityType, $contextLimit);
+
+        $context = GeminiPromptHelper::buildEnhancedContext($stats, $searchResults);
+        $userPrompt = GeminiPromptHelper::buildEnhancedUserPrompt($context, $userMessage, $isFirstMessage);
+
+        return $this->streamSSEWithPrompt($userPrompt, [
+            'messageEvent' => 'message',
+            'doneEvent' => 'done',
+            'progressEvent' => $progressEvent,
+            'customMetadata' => [
+                'search_results_count' => count($searchResults),
+                'entity_stats' => $stats,
+                'entity_type' => $entityType,
+            ],
+        ]);
     }
 
     /**
@@ -138,6 +185,21 @@ class GeminiKnowledgeService
             logger()->error('Failed to generate introduction: ' . $e->getMessage());
             return "I'm your AI assistant for Nice Smile Clinic. Let me know anything about the clinic operation.";
         }
+    }
+
+    /**
+     * Stream introduction with SSE
+     */
+    public function streamIntroductionSSE(array $sseConfig = []): CancellablePromiseInterface
+    {
+        $prompt = "This is the user's first message in this conversation. The user is greeting you. Introduce yourself.";
+        
+        return $this->streamSSEWithPrompt($prompt, array_merge([
+            'customMetadata' => [
+                'message_type' => 'introduction',
+                'is_first_message' => true,
+            ],
+        ], $sseConfig));
     }
 
     // ==========================================
@@ -446,5 +508,23 @@ class GeminiKnowledgeService
         return $this->client
             ->prompt($combinedPrompt)
             ->stream($onChunk);
+    }
+
+    /**
+     * Stream SSE response with model-aware prompt handling
+     */
+    private function streamSSEWithPrompt(string $userPrompt, array $sseConfig = []): CancellablePromiseInterface
+    {
+        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
+            return $this->client
+                ->prompt($userPrompt)
+                ->system($this->systemPrompt)
+                ->streamSSE($sseConfig);
+        }
+
+        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+        return $this->client
+            ->prompt($combinedPrompt)
+            ->streamSSE($sseConfig);
     }
 }
