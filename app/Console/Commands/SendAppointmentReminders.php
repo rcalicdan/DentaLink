@@ -386,7 +386,6 @@ class SendAppointmentReminders extends Command
     {
         $this->info("=== Summary ===");
         
-        // SMS Summary
         if (!empty($smsResults)) {
             $smsStats = $this->calculateStats($smsResults);
             
@@ -405,7 +404,6 @@ class SendAppointmentReminders extends Command
                 $this->info("  Success rate: {$successRate}%");
             }
 
-            // Show failed SMS
             if (!empty($smsStats['failed_items'])) {
                 $this->newLine();
                 $this->warn("Failed SMS:");
@@ -415,7 +413,6 @@ class SendAppointmentReminders extends Command
             }
         }
 
-        // Email Summary
         if (!empty($emailResults)) {
             $this->newLine();
             $emailStats = $this->calculateStats($emailResults);
