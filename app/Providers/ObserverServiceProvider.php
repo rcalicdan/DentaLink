@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\DentalService;
 use App\Models\DentalServiceType;
@@ -13,6 +14,7 @@ use App\Models\PatientVisit;
 use App\Models\PatientVisitService;
 use App\Models\User;
 use App\Observers\AppointmentObserver;
+use App\Observers\AuditLogObserver;
 use App\Observers\BranchObserver;
 use App\Observers\DentalServiceObserver;
 use App\Observers\DentalServiceTypeObserver;
@@ -46,5 +48,6 @@ class ObserverServiceProvider extends ServiceProvider
         PatientVisit::observe(PatientVisitObserver::class);
         PatientVisitService::observe(PatientVisitServiceObserver::class);
         User::observe(UserObserver::class);
+        AuditLog::observe(AuditLogObserver::class);
     }
 }
