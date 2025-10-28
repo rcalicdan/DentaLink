@@ -6,6 +6,7 @@ use App\Models\KnowledgeBase;
 use App\Models\Patient;
 use App\Models\User;
 use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\DentalService;
 use App\Models\DentalServiceType;
@@ -468,6 +469,68 @@ class GeminiKnowledgeService
                 'patient_visit_id' => $patientVisitService->patient_visit_id,
             ]
         );
+    }
+
+    /**
+     * Index an audit log
+     */
+    public function indexAuditLog(AuditLog $auditLog): void
+    {
+        $content = $this->buildAuditLogContent($auditLog);
+        $embedding = $this->generateEmbedding($content);
+
+        KnowledgeBase::storeEmbedding(
+            entityType: 'audit_log',
+            entityId: $auditLog->id,
+            content: $content,
+            embedding: $embedding,
+            metadata: [
+                'audit_log_id' => $auditLog->id,
+                'auditable_type' => $auditLog->auditable_type,
+                'auditable_id' => $auditLog->auditable_id,
+                'event' => $auditLog->event,
+                'user_id' => $auditLog->user_id,
+                'branch_id' => $auditLog->branch_id,
+                'ip_address' => $auditLog->ip_address,
+                'created_at' => $auditLog->created_at->toISOString(),
+            ]
+        );
+    }
+
+    /**
+     * Build content string for audit log
+     */
+    private function buildAuditLogContent(AuditLog $auditLog): string
+    {
+        $parts = [
+            "Audit Log Entry:",
+            "Event: {$auditLog->event}",
+            "Entity: {$auditLog->auditable_type} (ID: {$auditLog->auditable_id})",
+        ];
+
+        if ($auditLog->message) {
+            $parts[] = "Message: {$auditLog->message}";
+        }
+
+        if ($auditLog->user) {
+            $parts[] = "User: {$auditLog->user->full_name} (ID: {$auditLog->user_id})";
+        }
+
+        if ($auditLog->branch) {
+            $parts[] = "Branch: {$auditLog->branch->name} (ID: {$auditLog->branch_id})";
+        }
+
+        if ($auditLog->old_values) {
+            $parts[] = "Old Values: " . json_encode($auditLog->old_values);
+        }
+
+        if ($auditLog->new_values) {
+            $parts[] = "New Values: " . json_encode($auditLog->new_values);
+        }
+
+        $parts[] = "Date: {$auditLog->created_at->format('Y-m-d H:i:s')}";
+
+        return implode(', ', $parts);
     }
 
     /**
