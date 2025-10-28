@@ -13,11 +13,13 @@
 
         <!-- Modal Container -->
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div @click.stop
-                class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div @click.stop x-ref="modal"
+                class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl mx-4 overflow-hidden border border-slate-200 dark:border-slate-700"
+                style="min-width: 320px; min-height: 400px;">
 
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 px-6 py-4">
+                <div class="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 px-6 py-4 cursor-move"
+                    @mousedown="startDrag">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="bg-white/20 rounded-full p-2">

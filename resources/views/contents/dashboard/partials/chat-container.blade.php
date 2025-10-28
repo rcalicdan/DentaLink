@@ -1,3 +1,4 @@
+<!-- Chat Container -->
 <div class="h-96 flex flex-col">
     <!-- Messages Area -->
     <div x-ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4">

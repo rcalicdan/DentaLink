@@ -9,9 +9,7 @@
                 conversationHistory: [],
                 eventSource: null,
 
-                init() {
-                    // 
-                },
+                init() {},
 
                 destroy() {
                     this.cleanup();
@@ -44,8 +42,16 @@
                 updateLastAssistantMessage(chunk) {
                     const lastMessage = this.messages[this.messages.length - 1];
                     if (lastMessage && lastMessage.role === 'assistant') {
+                        const container = this.$refs.messagesContainer;
+                        if (!container) return;
+
+                        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
+
                         lastMessage.content += chunk;
-                        this.scrollToBottom();
+
+                        if (isScrolledToBottom) {
+                            this.scrollToBottom();
+                        }
                     }
                 },
 
@@ -59,7 +65,10 @@
                 },
 
                 updateConversationHistory(role, content) {
-                    this.conversationHistory.push({ role, content });
+                    this.conversationHistory.push({
+                        role,
+                        content
+                    });
                     if (this.conversationHistory.length > 20) {
                         this.conversationHistory = this.conversationHistory.slice(-20);
                     }
@@ -133,9 +142,7 @@
                         if (data.content) {
                             this.updateLastAssistantMessage(data.content);
                         }
-                    } catch (error) {
-                       
-                    }
+                    } catch (error) {}
                 },
 
                 handleDoneEvent(event) {
@@ -191,7 +198,10 @@
 
                 getTimestamp() {
                     const now = new Date();
-                    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return now.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 },
 
                 formatMessage(content) {
