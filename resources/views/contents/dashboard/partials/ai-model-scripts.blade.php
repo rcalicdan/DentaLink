@@ -107,11 +107,11 @@
 
                     this.setupEventListeners();
 
-                    const streamTimeout = setTimeout(() => {
-                        if (this.isStreaming) {
-                            this.handleStreamTimeout();
-                        }
-                    }, 60000);
+                    // const streamTimeout = setTimeout(() => {
+                    //     if (this.isStreaming) {
+                    //         this.handleStreamTimeout();
+                    //     }
+                    // }, 60000);
 
                     this.eventSource.timeout = streamTimeout;
                 },
