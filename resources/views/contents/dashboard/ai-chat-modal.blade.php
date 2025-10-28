@@ -191,18 +191,15 @@
                         <div class="flex items-center justify-between mt-3">
                             <!-- Quick Actions -->
                             <div class="flex flex-wrap gap-2">
-                                <button @click="sendQuickAction('Today\'s Stats')"
-                                    :disabled="isStreaming"
+                                <button @click="sendQuickAction('Today\'s Stats')" :disabled="isStreaming"
                                     class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-xs hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                     📊 Today's Stats
                                 </button>
-                                <button @click="sendQuickAction('Schedule Overview')"
-                                    :disabled="isStreaming"
+                                <button @click="sendQuickAction('Schedule Overview')" :disabled="isStreaming"
                                     class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                     📅 Schedule Overview
                                 </button>
-                                <button @click="sendQuickAction('Revenue Report')"
-                                    :disabled="isStreaming"
+                                <button @click="sendQuickAction('Revenue Report')" :disabled="isStreaming"
                                     class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                     💰 Revenue Report
                                 </button>
@@ -296,90 +293,66 @@
 
                     const params = new URLSearchParams();
                     params.append('message', message);
-                    
-                    // Only send relevant history (exclude current message)
+                    params.append('enhanced', 'false'); // or 'true' for enhanced mode
+
                     if (this.conversationHistory.length > 1) {
                         const historyToSend = this.conversationHistory.slice(0, -1);
                         params.append('history', JSON.stringify(historyToSend));
                     }
 
                     const url = `{{ route('chat.stream') }}?${params.toString()}`;
-                    console.log('Starting stream:', url);
+                    console.log('🚀 Starting manual stream:', url);
 
                     this.eventSource = new EventSource(url);
                     let receivedData = false;
+                    let chunkCount = 0;
+                    let startTime = Date.now();
 
-                    // Listen for message events (default data)
+                    // Listen for 'message' events (content chunks)
                     this.eventSource.addEventListener('message', (event) => {
                         receivedData = true;
+                        chunkCount++;
+
                         try {
                             const data = JSON.parse(event.data);
                             const lastMessage = this.messages[this.messages.length - 1];
 
-                            if (lastMessage && lastMessage.role === 'assistant') {
+                            if (lastMessage && lastMessage.role === 'assistant' && data.content) {
                                 lastMessage.content += data.content;
                                 this.scrollToBottom();
                             }
+
+                            console.log(`✓ Chunk ${chunkCount}: "${data.content.substring(0, 20)}..."`);
                         } catch (error) {
-                            console.error('Error parsing SSE message:', error, event.data);
+                            console.error('❌ Error parsing message:', error, event.data);
                         }
                     });
 
-                    // Listen for done event
+                    // Listen for 'progress' events (optional - if you add progress tracking)
+                    this.eventSource.addEventListener('progress', (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log(`📊 Progress: ${data.chunk} chunks, ${data.length} chars`);
+                        } catch (error) {
+                            console.error('Error parsing progress:', error);
+                        }
+                    });
+
+                    // Listen for 'done' event (completion)
                     this.eventSource.addEventListener('done', (event) => {
                         try {
                             const data = JSON.parse(event.data);
-                            console.log('Stream complete:', data);
+                            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                            console.log(`✅ Stream complete:`, {
+                                chunks: data.chunks,
+                                length: data.length,
+                                duration: `${duration}s`,
+                                chunksReceived: chunkCount
+                            });
 
                             const lastMessage = this.messages[this.messages.length - 1];
                             if (lastMessage && lastMessage.role === 'assistant') {
-                                lastMessage.complete = true;
-                                lastMessage.timestamp = this.getTimestamp();
-
-                                this.conversationHistory.push({
-                                    role: 'assistant',
-                                    content: lastMessage.content
-                                });
-
-                                if (this.conversationHistory.length > 20) {
-                                    this.conversationHistory = this.conversationHistory.slice(-20);
-                                }
-                            }
-
-                            this.cleanup();
-                        } catch (error) {
-                            console.error('Error handling done event:', error);
-                            this.cleanup();
-                        }
-                    });
-
-                    this.eventSource.addEventListener('error', (event) => {
-                        console.error('SSE Connection Error:', event)
-                        if (!receivedData) {
-                            // Remove the empty assistant message
-                            if (this.messages.length > 0 && 
-                                this.messages[this.messages.length - 1].role === 'assistant' &&
-                                this.messages[this.messages.length - 1].content === '') {
-                                this.messages.pop();
-                            }
-
-                            // Remove the user message from history
-                            if (this.conversationHistory.length > 0 &&
-                                this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
-                                this.conversationHistory.pop();
-                            }
-
-                            // Add error message
-                            this.messages.push({
-                                role: 'error',
-                                content: 'Failed to connect. Please check your internet connection and try again.',
-                                timestamp: this.getTimestamp(),
-                                complete: true
-                            });
-                        } else {
-                            // We received some data, mark last message as complete
-                            const lastMessage = this.messages[this.messages.length - 1];
-                            if (lastMessage && lastMessage.role === 'assistant' && !lastMessage.complete) {
                                 lastMessage.complete = true;
                                 lastMessage.timestamp = this.getTimestamp();
 
@@ -388,21 +361,101 @@
                                     role: 'assistant',
                                     content: lastMessage.content
                                 });
+
+                                // Trim history
+                                if (this.conversationHistory.length > 20) {
+                                    this.conversationHistory = this.conversationHistory.slice(-20);
+                                }
+                            }
+
+                            this.cleanup();
+                        } catch (error) {
+                            console.error('❌ Error handling done event:', error);
+                            this.cleanup();
+                        }
+                    });
+
+                    // Listen for 'error' events
+                    this.eventSource.addEventListener('error', (event) => {
+                        console.error('❌ SSE error event:', event);
+
+                        if (event.data) {
+                            try {
+                                const errorData = JSON.parse(event.data);
+                                console.error('Error details:', errorData);
+
+                                this.messages.push({
+                                    role: 'error',
+                                    content: errorData.error || 'An error occurred',
+                                    timestamp: this.getTimestamp(),
+                                    complete: true
+                                });
+                            } catch (e) {
+                                // Not JSON error data
+                            }
+                        }
+                    });
+
+                    // Connection error handler
+                    this.eventSource.onerror = (error) => {
+                        console.error('🔌 EventSource connection error:', error);
+
+                        if (!receivedData) {
+                            // No data received at all - connection failed
+                            console.error('❌ Connection failed - no data received');
+
+                            if (this.messages.length > 0 &&
+                                this.messages[this.messages.length - 1].role === 'assistant' &&
+                                this.messages[this.messages.length - 1].content === '') {
+                                this.messages.pop();
+                            }
+
+                            if (this.conversationHistory.length > 0 &&
+                                this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
+                                this.conversationHistory.pop();
+                            }
+
+                            this.messages.push({
+                                role: 'error',
+                                content: 'Failed to connect to AI assistant. Please check your connection and try again.',
+                                timestamp: this.getTimestamp(),
+                                complete: true
+                            });
+                        } else {
+                            // We got some data, connection dropped mid-stream
+                            console.warn(`⚠️ Connection dropped after ${chunkCount} chunks`);
+
+                            const lastMessage = this.messages[this.messages.length - 1];
+                            if (lastMessage && lastMessage.role === 'assistant' && !lastMessage.complete) {
+                                lastMessage.complete = true;
+                                lastMessage.timestamp = this.getTimestamp();
+
+                                this.conversationHistory.push({
+                                    role: 'assistant',
+                                    content: lastMessage.content
+                                });
+
+                                // Optionally add a warning indicator
+                                this.messages.push({
+                                    role: 'error',
+                                    content: '⚠️ Connection interrupted. Response may be incomplete.',
+                                    timestamp: this.getTimestamp(),
+                                    complete: true
+                                });
                             }
                         }
 
                         this.cleanup();
                         this.scrollToBottom();
-                    });
+                    };
 
-                    // Set a timeout to check if stream is stuck
+                    // Timeout safety net (increased to 60 seconds)
                     setTimeout(() => {
                         if (this.isStreaming && !receivedData) {
-                            console.warn('No data received after 10 seconds, closing connection');
-                            this.cleanup();
-                            
-                            // Remove empty assistant message
-                            if (this.messages.length > 0 && 
+                            console.warn('⏱️ Timeout: No data received after 60 seconds');
+                            this.eventSource.close();
+
+                            if (this.messages.length > 0 &&
                                 this.messages[this.messages.length - 1].role === 'assistant' &&
                                 this.messages[this.messages.length - 1].content === '') {
                                 this.messages.pop();
@@ -410,14 +463,15 @@
 
                             this.messages.push({
                                 role: 'error',
-                                content: 'Request timeout. Please try again.',
+                                content: 'Request timeout. The server took too long to respond. Please try again.',
                                 timestamp: this.getTimestamp(),
                                 complete: true
                             });
-                            
+
+                            this.cleanup();
                             this.scrollToBottom();
                         }
-                    }, 10000); // 10 second timeout
+                    }, 60000); // 60 seconds
                 },
 
                 cleanup() {
@@ -442,7 +496,7 @@
                     const ampm = hours >= 12 ? 'PM' : 'AM';
                     const displayHours = hours % 12 || 12;
                     const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
-                    
+
                     return `${displayHours}:${displayMinutes} ${ampm}`;
                 },
 

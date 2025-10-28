@@ -12,7 +12,7 @@
         "php": "^8.2",
         "google-gemini-php/laravel": "^2.0",
         "hiblaphp/http-client": "dev-main",
-        "rcalicdan/gemini-client": "^0.1.0",
+        "rcalicdan/gemini-client": "dev-main",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6"

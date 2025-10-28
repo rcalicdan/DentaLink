@@ -550,26 +550,98 @@ class GeminiKnowledgeService
             ->stream($onChunk);
     }
 
-    /**
-     * Stream as SSE with auto-flush (uses streamAndFlush)
-     */
-    private function streamAsSSEWithPrompt(
-        string $userPrompt,
-        bool $sendDoneEvent = true,
-        ?string $doneEventName = 'done'
-    ): CancellablePromiseInterface {
-        if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
-            return $this->client
-                ->prompt($userPrompt)
-                ->system($this->systemPrompt)
-                ->streamAndFlush($sendDoneEvent, $doneEventName);
-        }
-
-        $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+private function streamAsSSEWithPrompt(
+    string $userPrompt,
+    bool $sendDoneEvent = true,
+    ?string $doneEventName = 'done'
+): CancellablePromiseInterface {
+    logger()->info('Starting SSE stream', [
+        'prompt_length' => strlen($userPrompt),
+        'send_done_event' => $sendDoneEvent
+    ]);
+    
+    // Track chunks manually
+    $totalChunks = 0;
+    $totalLength = 0;
+    
+    if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
         return $this->client
-            ->prompt($combinedPrompt)
-            ->streamAndFlush($sendDoneEvent, $doneEventName);
+            ->prompt($userPrompt)
+            ->system($this->systemPrompt)
+            ->stream(function (string $chunk, $event) use (&$totalChunks, &$totalLength) {
+                $totalChunks++;
+                $totalLength += strlen($chunk);
+                
+                echo "event: message\n";
+                echo "data: " . json_encode(['content' => $chunk]) . "\n\n";
+                
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+                flush();
+            })
+            ->then(function ($response) use ($sendDoneEvent, $doneEventName, &$totalChunks, &$totalLength) {
+                if ($sendDoneEvent) {
+                    echo "event: {$doneEventName}\n";
+                    echo "data: " . json_encode([
+                        'status' => 'complete',
+                        'chunks' => $totalChunks,
+                        'length' => $totalLength
+                    ]) . "\n\n";
+                    
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+                
+                logger()->info('Stream completed', [
+                    'chunks' => $totalChunks,
+                    'length' => $totalLength
+                ]);
+                
+                return $response;
+            });
     }
+
+    $combinedPrompt = $this->systemPrompt . "\n\n---\n\n" . $userPrompt;
+    return $this->client
+        ->prompt($combinedPrompt)
+        ->stream(function (string $chunk, $event) use (&$totalChunks, &$totalLength) {
+            $totalChunks++;
+            $totalLength += strlen($chunk);
+            
+            echo "event: message\n";
+            echo "data: " . json_encode(['content' => $chunk]) . "\n\n";
+            
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
+            flush();
+        })
+        ->then(function ($response) use ($sendDoneEvent, $doneEventName, &$totalChunks, &$totalLength) {
+            if ($sendDoneEvent) {
+                echo "event: {$doneEventName}\n";
+                echo "data: " . json_encode([
+                    'status' => 'complete',
+                    'chunks' => $totalChunks,
+                    'length' => $totalLength
+                ]) . "\n\n";
+                
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+                flush();
+            }
+            
+            logger()->info('Stream completed', [
+                'chunks' => $totalChunks,
+                'length' => $totalLength
+            ]);
+            
+            return $response;
+        });
+}
 
     /**
      * Stream with custom event type (uses streamWithEvent)
