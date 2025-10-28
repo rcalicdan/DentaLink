@@ -54,7 +54,7 @@ class DentalServiceObserver
      */
     protected function indexDentalService(DentalService $dentalService): void
     {
-        dispatch(function () use ($dentalService) {
+        defer(function () use ($dentalService) {
             try {
                 $dentalService = DentalService::with('dentalServiceType')
                     ->find($dentalService->id);
@@ -65,6 +65,6 @@ class DentalServiceObserver
             } catch (\Exception $e) {
                 logger()->error("Failed to index dental service {$dentalService->id}: {$e->getMessage()}");
             }
-        })->afterResponse();
+        });
     }
 }

@@ -22,7 +22,6 @@ class PatientVisitObserver
      */
     public function created(PatientVisit $patientVisit): void
     {
-        // Update related appointment
         if ($patientVisit->appointment_id) {
             $appointment = Appointment::find($patientVisit->appointment_id);
             if ($appointment) {
@@ -33,7 +32,6 @@ class PatientVisitObserver
             }
         }
 
-        // Index to knowledge base
         $this->indexPatientVisit($patientVisit);
     }
 
@@ -85,7 +83,7 @@ class PatientVisitObserver
      */
     protected function indexPatientVisit(PatientVisit $patientVisit): void
     {
-        dispatch(function () use ($patientVisit) {
+        defer(function () use ($patientVisit) {
             try {
                 $patientVisit = PatientVisit::with([
                     'patient', 
@@ -99,6 +97,6 @@ class PatientVisitObserver
             } catch (\Exception $e) {
                 logger()->error("Failed to index patient visit {$patientVisit->id}: {$e->getMessage()}");
             }
-        })->afterResponse();
+        });
     }
 }

@@ -7,6 +7,8 @@ use App\Models\KnowledgeBase;
 use App\Enums\AppointmentStatuses;
 use App\Services\GeminiKnowledgeService;
 
+use function Illuminate\Support\defer;
+
 class AppointmentObserver
 {
     protected GeminiKnowledgeService $knowledgeService;
@@ -24,7 +26,6 @@ class AppointmentObserver
         if (!$appointment->queue_number) {
             $appointment->queue_number = Appointment::getNextQueueNumber($appointment->appointment_date);
         } else {
-            // If queue number is specified, handle insertion
             $this->handleQueueInsertion($appointment);
         }
 
@@ -75,7 +76,6 @@ class AppointmentObserver
         $deletedQueueNumber = $appointment->queue_number;
         $appointmentDate = $appointment->appointment_date;
 
-        // Shift all appointments with higher queue numbers down by 1
         Appointment::where('appointment_date', $appointmentDate)
             ->where('queue_number', '>', $deletedQueueNumber)
             ->orderBy('queue_number')
@@ -86,7 +86,6 @@ class AppointmentObserver
                 });
             });
 
-        // Remove from knowledge base
         KnowledgeBase::where('entity_type', 'appointment')
             ->where('entity_id', $appointment->id)
             ->delete();
@@ -108,13 +107,11 @@ class AppointmentObserver
         $targetQueue = $appointment->queue_number;
         $appointmentDate = $appointment->appointment_date;
 
-        // Check if there's an existing appointment with this queue number
         $existingAppointment = Appointment::where('appointment_date', $appointmentDate)
             ->where('queue_number', $targetQueue)
             ->first();
 
         if ($existingAppointment) {
-            // Shift all appointments with queue number >= target up by 1
             Appointment::where('appointment_date', $appointmentDate)
                 ->where('queue_number', '>=', $targetQueue)
                 ->orderByDesc('queue_number')
@@ -132,17 +129,17 @@ class AppointmentObserver
      */
     protected function indexAppointment(Appointment $appointment): void
     {
-        dispatch(function () use ($appointment) {
+        defer(function () use ($appointment) {
             try {
                 $appointment = Appointment::with(['patient', 'branch'])
                     ->find($appointment->id);
-                
+
                 if ($appointment) {
                     $this->knowledgeService->indexAppointment($appointment);
                 }
             } catch (\Exception $e) {
                 logger()->error("Failed to index appointment {$appointment->id}: {$e->getMessage()}");
             }
-        })->afterResponse();
+        });
     }
 }

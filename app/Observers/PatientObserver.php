@@ -54,7 +54,7 @@ class PatientObserver
      */
     protected function indexPatient(Patient $patient): void
     {
-        dispatch(function () use ($patient) {
+        defer(function () use ($patient) {
             try {
                 $patient = Patient::with('registrationBranch')->find($patient->id);
                 
@@ -64,6 +64,6 @@ class PatientObserver
             } catch (\Exception $e) {
                 logger()->error("Failed to index patient {$patient->id}: {$e->getMessage()}");
             }
-        })->afterResponse();
+        });
     }
 }
