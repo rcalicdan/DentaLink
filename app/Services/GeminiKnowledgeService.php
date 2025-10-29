@@ -14,8 +14,8 @@ use App\Models\Inventory;
 use App\Models\PatientVisit;
 use App\Models\PatientVisitService;
 use App\Services\Helpers\GeminiPromptHelper;
-use App\Services\Helpers\GeminiContentBuilder;
 use App\Services\Helpers\GeminiSearchResultMapper;
+use App\Services\Helpers\GeminiIndexer;
 use Rcalicdan\GeminiClient\GeminiClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Interfaces\CancellablePromiseInterface;
@@ -282,25 +282,9 @@ class GeminiKnowledgeService
      */
     public function indexUser(User $user): void
     {
-        $content = GeminiContentBuilder::buildUserContent($user);
+        $content = GeminiIndexer::getContentForUser($user);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            entityType: 'user',
-            entityId: $user->id,
-            content: $content,
-            embedding: $embedding,
-            metadata: [
-                'user_id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'branch_id' => $user->branch_id,
-                'branch_name' => $user->branch_name,
-                'updated_at' => now()->toISOString(),
-            ]
-        );
+        GeminiIndexer::indexUser($user, $embedding);
     }
 
     /**
@@ -308,21 +292,9 @@ class GeminiKnowledgeService
      */
     public function indexPatient(Patient $patient): void
     {
-        $content = GeminiContentBuilder::buildPatientContent($patient);
+        $content = GeminiIndexer::getContentForPatient($patient);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            entityType: 'patient',
-            entityId: $patient->id,
-            content: $content,
-            embedding: $embedding,
-            metadata: [
-                'patient_id' => $patient->id,
-                'branch_id' => $patient->registration_branch_id,
-                'full_name' => $patient->full_name,
-                'updated_at' => now()->toISOString(),
-            ]
-        );
+        GeminiIndexer::indexPatient($patient, $embedding);
     }
 
     /**
@@ -330,22 +302,9 @@ class GeminiKnowledgeService
      */
     public function indexAppointment(Appointment $appointment): void
     {
-        $content = GeminiContentBuilder::buildAppointmentContent($appointment);
+        $content = GeminiIndexer::getContentForAppointment($appointment);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            entityType: 'appointment',
-            entityId: $appointment->id,
-            content: $content,
-            embedding: $embedding,
-            metadata: [
-                'appointment_id' => $appointment->id,
-                'patient_id' => $appointment->patient_id,
-                'branch_id' => $appointment->branch_id,
-                'appointment_date' => $appointment->appointment_date->toISOString(),
-                'status' => $appointment->status->value,
-            ]
-        );
+        GeminiIndexer::indexAppointment($appointment, $embedding);
     }
 
     /**
@@ -353,21 +312,9 @@ class GeminiKnowledgeService
      */
     public function indexDentalService(DentalService $service): void
     {
-        $content = GeminiContentBuilder::buildServiceContent($service);
+        $content = GeminiIndexer::getContentForDentalService($service);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            entityType: 'dental_service',
-            entityId: $service->id,
-            content: $content,
-            embedding: $embedding,
-            metadata: [
-                'service_id' => $service->id,
-                'service_type_id' => $service->dental_service_type_id,
-                'price' => (float) $service->price,
-                'is_quantifiable' => $service->is_quantifiable,
-            ]
-        );
+        GeminiIndexer::indexDentalService($service, $embedding);
     }
 
     /**
@@ -375,100 +322,49 @@ class GeminiKnowledgeService
      */
     public function indexPatientVisit(PatientVisit $visit): void
     {
-        $content = GeminiContentBuilder::buildVisitContent($visit);
+        $content = GeminiIndexer::getContentForPatientVisit($visit);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            entityType: 'patient_visit',
-            entityId: $visit->id,
-            content: $content,
-            embedding: $embedding,
-            metadata: [
-                'visit_id' => $visit->id,
-                'patient_id' => $visit->patient_id,
-                'branch_id' => $visit->branch_id,
-                'visit_date' => $visit->visit_date->toISOString(),
-                'total_amount' => (float) $visit->total_amount_paid,
-            ]
-        );
+        GeminiIndexer::indexPatientVisit($visit, $embedding);
     }
 
+    /**
+     * Index a branch
+     */
     public function indexBranch(Branch $branch): void
     {
-        $content = "Branch: {$branch->name}, Address: {$branch->address}, Phone: {$branch->phone}, Email: {$branch->email}";
-
+        $content = GeminiIndexer::getContentForBranch($branch);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            'branch',
-            $branch->id,
-            $content,
-            $embedding,
-            [
-                'name' => $branch->name,
-                'address' => $branch->address,
-            ]
-        );
+        GeminiIndexer::indexBranch($branch, $embedding);
     }
 
+    /**
+     * Index a dental service type
+     */
     public function indexDentalServiceType(DentalServiceType $dentalServiceType): void
     {
-        $content = "Dental Service Type: {$dentalServiceType->name}, Description: {$dentalServiceType->description}";
-
+        $content = GeminiIndexer::getContentForDentalServiceType($dentalServiceType);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            'dental_service_type',
-            $dentalServiceType->id,
-            $content,
-            $embedding,
-            [
-                'name' => $dentalServiceType->name,
-            ]
-        );
+        GeminiIndexer::indexDentalServiceType($dentalServiceType, $embedding);
     }
 
+    /**
+     * Index an inventory item
+     */
     public function indexInventory(Inventory $inventory): void
     {
-        $content = "Inventory Item: {$inventory->name}, Category: {$inventory->category}, Branch: {$inventory->branch_name}, Current Stock: {$inventory->current_stock}, Minimum Stock: {$inventory->minimum_stock}, Status: {$inventory->stock_status}";
-
+        $content = GeminiIndexer::getContentForInventory($inventory);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            'inventory',
-            $inventory->id,
-            $content,
-            $embedding,
-            [
-                'name' => $inventory->name,
-                'category' => $inventory->category,
-                'branch_id' => $inventory->branch_id,
-                'is_low_stock' => $inventory->is_low_stock,
-            ]
-        );
+        GeminiIndexer::indexInventory($inventory, $embedding);
     }
 
-
+    /**
+     * Index a patient visit service
+     */
     public function indexPatientVisitService(PatientVisitService $patientVisitService): void
     {
-        $patient = $patientVisitService->patientVisit->patient;
-        $service = $patientVisitService->dentalService;
-
-        $content = "Patient Visit Service: Patient {$patient->full_name} received {$service->name} (Type: {$service->service_type_name}), Quantity: {$patientVisitService->quantity}, Price: {$patientVisitService->service_price}, Total: {$patientVisitService->total_price}, Notes: {$patientVisitService->service_notes}";
-
+        $content = GeminiIndexer::getContentForPatientVisitService($patientVisitService);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            'patient_visit_service',
-            $patientVisitService->id,
-            $content,
-            $embedding,
-            [
-                'patient_id' => $patient->id,
-                'dental_service_id' => $service->id,
-                'patient_visit_id' => $patientVisitService->patient_visit_id,
-            ]
-        );
+        GeminiIndexer::indexPatientVisitService($patientVisitService, $embedding);
     }
 
     /**
@@ -476,61 +372,9 @@ class GeminiKnowledgeService
      */
     public function indexAuditLog(AuditLog $auditLog): void
     {
-        $content = $this->buildAuditLogContent($auditLog);
+        $content = GeminiIndexer::getContentForAuditLog($auditLog);
         $embedding = $this->generateEmbedding($content);
-
-        KnowledgeBase::storeEmbedding(
-            entityType: 'audit_log',
-            entityId: $auditLog->id,
-            content: $content,
-            embedding: $embedding,
-            metadata: [
-                'audit_log_id' => $auditLog->id,
-                'auditable_type' => $auditLog->auditable_type,
-                'auditable_id' => $auditLog->auditable_id,
-                'event' => $auditLog->event,
-                'user_id' => $auditLog->user_id,
-                'branch_id' => $auditLog->branch_id,
-                'ip_address' => $auditLog->ip_address,
-                'created_at' => $auditLog->created_at->toISOString(),
-            ]
-        );
-    }
-
-    /**
-     * Build content string for audit log
-     */
-    private function buildAuditLogContent(AuditLog $auditLog): string
-    {
-        $parts = [
-            "Audit Log Entry:",
-            "Event: {$auditLog->event}",
-            "Entity: {$auditLog->auditable_type} (ID: {$auditLog->auditable_id})",
-        ];
-
-        if ($auditLog->message) {
-            $parts[] = "Message: {$auditLog->message}";
-        }
-
-        if ($auditLog->user) {
-            $parts[] = "User: {$auditLog->user->full_name} (ID: {$auditLog->user_id})";
-        }
-
-        if ($auditLog->branch) {
-            $parts[] = "Branch: {$auditLog->branch->name} (ID: {$auditLog->branch_id})";
-        }
-
-        if ($auditLog->old_values) {
-            $parts[] = "Old Values: " . json_encode($auditLog->old_values);
-        }
-
-        if ($auditLog->new_values) {
-            $parts[] = "New Values: " . json_encode($auditLog->new_values);
-        }
-
-        $parts[] = "Date: {$auditLog->created_at->format('Y-m-d H:i:s')}";
-
-        return implode(', ', $parts);
+        GeminiIndexer::indexAuditLog($auditLog, $embedding);
     }
 
     /**
