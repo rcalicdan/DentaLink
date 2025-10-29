@@ -28,36 +28,49 @@ class ChatController extends Controller
             return response()->stream(function () use ($validated, $conversationContext) {
                 $this->disableOutputBuffering();
 
-
-                $contextualMessage = $this->buildContextualMessage(
-                    $validated['message'],
-                    $conversationContext
-                );
-
-                $useEnhanced = filter_var($validated['enhanced'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-                if ($useEnhanced) {
-                    $promise = $this->knowledgeService->streamChatWithEvents(
-                        userMessage: $contextualMessage,
-                        messageEvent: 'message',
-                        doneEvent: 'done',
-                        includeMetadata: true,
-                        entityType: $validated['entity_type'] ?? null,
-                        isFirstMessage: empty($conversationContext),
-                        contextLimit: 100,
+                try {
+                    $contextualMessage = $this->buildContextualMessage(
+                        $validated['message'],
+                        $conversationContext
                     );
-                } else {
-                    $promise = $this->knowledgeService->streamChatWithEvents(
-                        userMessage: $contextualMessage,
-                        messageEvent: 'message',
-                        doneEvent: 'done',
-                        includeMetadata: true,
-                        entityType: $validated['entity_type'] ?? null,
-                        isFirstMessage: empty($conversationContext)
-                    );
+
+                    $useEnhanced = filter_var($validated['enhanced'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+                    if ($useEnhanced) {
+                        $promise = $this->knowledgeService->streamChatWithEvents(
+                            userMessage: $contextualMessage,
+                            messageEvent: 'message',
+                            doneEvent: 'done',
+                            includeMetadata: true,
+                            entityType: $validated['entity_type'] ?? null,
+                            isFirstMessage: empty($conversationContext),
+                            contextLimit: 100,
+                        );
+                    } else {
+                        $promise = $this->knowledgeService->streamChatWithEvents(
+                            userMessage: $contextualMessage,
+                            messageEvent: 'message',
+                            doneEvent: 'done',
+                            includeMetadata: true,
+                            entityType: $validated['entity_type'] ?? null,
+                            isFirstMessage: empty($conversationContext)
+                        );
+                    }
+
+                    $promise->await();
+                    
+                } catch (\Exception $e) {
+                    Log::error('Stream error: ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    
+                    echo "event: error\n";
+                    echo 'data: ' . json_encode(['error' => 'An error occurred while processing your request.']) . "\n\n";
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
                 }
-
-                $promise->await();
             }, 200, [
                 'Content-Type' => 'text/event-stream',
                 'Cache-Control' => 'no-cache',
@@ -65,6 +78,7 @@ class ChatController extends Controller
                 'X-Accel-Buffering' => 'no',
             ]);
         } catch (\Exception $e) {
+            Log::error('Validation error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Validation failed',
                 'message' => $e->getMessage()
@@ -119,11 +133,18 @@ class ChatController extends Controller
     private function disableOutputBuffering(): void
     {
         set_time_limit(0);
+    
         if (function_exists('apache_setenv')) {
             apache_setenv('no-gzip', '1');
         }
 
-        ini_set('zlib.output_compression', 0);
-        ini_set('implicit_flush', 1);
+        ini_set('zlib.output_compression', '0');
+        ini_set('implicit_flush', '1');
+        
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
+        ob_implicit_flush(1);
     }
 }

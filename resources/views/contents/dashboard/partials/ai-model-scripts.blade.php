@@ -45,7 +45,8 @@
                         const container = this.$refs.messagesContainer;
                         if (!container) return;
 
-                        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
+                        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop +
+                            10;
 
                         lastMessage.content += chunk;
 
@@ -106,14 +107,6 @@
                     this.eventSource = new EventSource(url);
 
                     this.setupEventListeners();
-
-                    // const streamTimeout = setTimeout(() => {
-                    //     if (this.isStreaming) {
-                    //         this.handleStreamTimeout();
-                    //     }
-                    // }, 60000);
-
-                    this.eventSource.timeout = streamTimeout;
                 },
 
                 buildStreamURL(message) {
@@ -187,9 +180,6 @@
 
                 cleanup() {
                     if (this.eventSource) {
-                        if (this.eventSource.timeout) {
-                            clearTimeout(this.eventSource.timeout);
-                        }
                         this.eventSource.close();
                         this.eventSource = null;
                     }
