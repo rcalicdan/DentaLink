@@ -17,7 +17,7 @@ use App\Models\PatientVisitService;
 class GeminiIndexer
 {
     private const BATCH_SIZE = 50;
-    private const RATE_LIMIT_DELAY = 100000; // microseconds
+    private const RATE_LIMIT_DELAY = 100000;
 
     /**
      * Index a user
@@ -216,7 +216,7 @@ class GeminiIndexer
      */
     public static function indexAuditLog(AuditLog $auditLog, array $embedding): void
     {
-        $content = self::buildAuditLogContent($auditLog);
+        $content = GeminiContentBuilder::buildAuditLogContent($auditLog);
 
         KnowledgeBase::storeEmbedding(
             entityType: 'audit_log',
@@ -234,42 +234,6 @@ class GeminiIndexer
                 'created_at' => $auditLog->created_at->toISOString(),
             ]
         );
-    }
-
-    /**
-     * Build content string for audit log
-     */
-    private static function buildAuditLogContent(AuditLog $auditLog): string
-    {
-        $parts = [
-            "Audit Log Entry:",
-            "Event: {$auditLog->event}",
-            "Entity: {$auditLog->auditable_type} (ID: {$auditLog->auditable_id})",
-        ];
-
-        if ($auditLog->message) {
-            $parts[] = "Message: {$auditLog->message}";
-        }
-
-        if ($auditLog->user) {
-            $parts[] = "User: {$auditLog->user->full_name} (ID: {$auditLog->user_id})";
-        }
-
-        if ($auditLog->branch) {
-            $parts[] = "Branch: {$auditLog->branch->name} (ID: {$auditLog->branch_id})";
-        }
-
-        if ($auditLog->old_values) {
-            $parts[] = "Old Values: " . json_encode($auditLog->old_values);
-        }
-
-        if ($auditLog->new_values) {
-            $parts[] = "New Values: " . json_encode($auditLog->new_values);
-        }
-
-        $parts[] = "Date: {$auditLog->created_at->format('Y-m-d H:i:s')}";
-
-        return implode(', ', $parts);
     }
 
     /**
@@ -325,6 +289,6 @@ class GeminiIndexer
 
     public static function getContentForAuditLog(AuditLog $auditLog): string
     {
-        return self::buildAuditLogContent($auditLog);
+        return GeminiContentBuilder::buildAuditLogContent($auditLog);
     }
 }

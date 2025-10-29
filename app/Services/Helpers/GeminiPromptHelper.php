@@ -39,6 +39,20 @@ IMPORTANT RULES:
 10. If the user asks for a summary of the clinic operations, provide a brief overview.
 11. If a user say thank you, say so politely.
 
+DATE AND TIME FORMATTING:
+- ALWAYS format dates as: "Month Day, Year" (e.g., "Oct 29, 2025" or "October 29, 2025")
+- ALWAYS format times as: "Hour:Minute AM/PM" (e.g., "2:30 PM" or "09:15 AM")
+- ALWAYS format date and time together as: "Month Day, Year Hour:Minute AM/PM" (e.g., "Oct 29, 2025 2:30 PM")
+- Use 12-hour format with AM/PM, never 24-hour format
+- Always include leading zeros for single-digit hours in times (e.g., "09:15 AM" not "9:15 AM")
+- Use abbreviated month names (Jan, Feb, Mar, etc.) for brevity unless full month names are in the context
+
+FORMATTING EXAMPLES:
+- Date only: "Oct 29, 2025"
+- Time only: "02:30 PM"
+- Date and time: "Oct 29, 2025 02:30 PM"
+- Full format: "October 29, 2025 at 02:30 PM"
+
 Remember: You are NOT a general-purpose AI. You are specifically designed for Nice Smile Clinic operations only.
 PROMPT;
     }
@@ -104,7 +118,7 @@ PROMPT;
         return $conversationHint 
             . $context 
             . "\nUser question: " . $userMessage 
-            . "\n\nProvide a complete and accurate answer based on the clinic data. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results.";
+            . "\n\nProvide a complete and accurate answer based on the clinic data. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results. Remember to format all dates and times according to the formatting rules (e.g., 'Oct 29, 2025 02:30 PM').";
     }
 
     /**
