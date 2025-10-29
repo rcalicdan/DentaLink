@@ -12,10 +12,11 @@
         "php": "^8.2",
         "google-gemini-php/laravel": "^2.0",
         "hiblaphp/http-client": "dev-main",
-        "rcalicdan/gemini-client": "^0.2",
         "laravel/framework": "^12.0",
+        "laravel/nightwatch": "^1.17",
         "laravel/tinker": "^2.10.1",
-        "livewire/livewire": "^3.6"
+        "livewire/livewire": "^3.6",
+        "rcalicdan/gemini-client": "^0.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
