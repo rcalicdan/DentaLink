@@ -13,78 +13,86 @@ class ChatController extends Controller
         private GeminiKnowledgeService $knowledgeService
     ) {}
 
-    public function stream(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'message' => 'required|string|max:1000',
-                'entity_type' => 'nullable|string|in:patient,user,appointment,dental_service,patient_visit',
-                'history' => 'nullable|string',
-                'enhanced' => 'nullable|in:true,false,1,0',
-            ]);
+public function stream(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'message' => 'required|string|max:1000',
+            'entity_type' => 'nullable|string|in:patient,user,appointment,dental_service,patient_visit',
+            'history' => 'nullable|string',
+            'enhanced' => 'nullable|in:true,false,1,0',
+        ]);
 
-            $conversationContext = $this->parseConversationHistory($validated['history'] ?? null);
+        $conversationContext = $this->parseConversationHistory($validated['history'] ?? null);
 
-            return response()->stream(function () use ($validated, $conversationContext) {
-                $this->disableOutputBuffering();
+        return response()->stream(function () use ($validated, $conversationContext) {
+            $this->disableOutputBuffering();
+            
+            echo "event: connected\n";
+            echo "data: " . json_encode(['status' => 'connected']) . "\n\n";
+            if (ob_get_level() > 0) ob_flush();
+            flush();
 
-                try {
-                    $contextualMessage = $this->buildContextualMessage(
-                        $validated['message'],
-                        $conversationContext
+            try {
+                $contextualMessage = $this->buildContextualMessage(
+                    $validated['message'],
+                    $conversationContext
+                );
+
+                $useEnhanced = filter_var($validated['enhanced'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+                if ($useEnhanced) {
+                    $promise = $this->knowledgeService->streamChatWithEvents(
+                        userMessage: $contextualMessage,
+                        messageEvent: 'message',
+                        doneEvent: 'done',
+                        includeMetadata: true,
+                        entityType: $validated['entity_type'] ?? null,
+                        isFirstMessage: empty($conversationContext),
+                        contextLimit: 100,
                     );
-
-                    $useEnhanced = filter_var($validated['enhanced'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-                    if ($useEnhanced) {
-                        $promise = $this->knowledgeService->streamChatWithEvents(
-                            userMessage: $contextualMessage,
-                            messageEvent: 'message',
-                            doneEvent: 'done',
-                            includeMetadata: true,
-                            entityType: $validated['entity_type'] ?? null,
-                            isFirstMessage: empty($conversationContext),
-                            contextLimit: 100,
-                        );
-                    } else {
-                        $promise = $this->knowledgeService->streamChatWithEvents(
-                            userMessage: $contextualMessage,
-                            messageEvent: 'message',
-                            doneEvent: 'done',
-                            includeMetadata: true,
-                            entityType: $validated['entity_type'] ?? null,
-                            isFirstMessage: empty($conversationContext)
-                        );
-                    }
-
-                    $promise->await();
-                    
-                } catch (\Exception $e) {
-                    Log::error('Stream error: ' . $e->getMessage(), [
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    
-                    echo "event: error\n";
-                    echo 'data: ' . json_encode(['error' => 'An error occurred while processing your request.']) . "\n\n";
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
-                    flush();
+                } else {
+                    $promise = $this->knowledgeService->streamChatWithEvents(
+                        userMessage: $contextualMessage,
+                        messageEvent: 'message',
+                        doneEvent: 'done',
+                        includeMetadata: true,
+                        entityType: $validated['entity_type'] ?? null,
+                        isFirstMessage: empty($conversationContext)
+                    );
                 }
-            }, 200, [
-                'Content-Type' => 'text/event-stream',
-                'Cache-Control' => 'no-cache',
-                'Connection' => 'keep-alive',
-                'X-Accel-Buffering' => 'no',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Validation error: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Validation failed',
-                'message' => $e->getMessage()
-            ], 422);
-        }
+
+                $promise->await();
+                
+                echo "event: done\n";
+                echo "data: " . json_encode(['status' => 'completed']) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+                
+            } catch (\Exception $e) {
+                Log::error('Stream error: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                echo "event: error\n";
+                echo 'data: ' . json_encode(['error' => 'An error occurred while processing your request.']) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Validation error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Validation failed',
+            'message' => $e->getMessage()
+        ], 422);
     }
+}
 
     private function parseConversationHistory(?string $history): array
     {

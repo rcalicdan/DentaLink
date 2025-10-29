@@ -9,6 +9,7 @@
                 conversationHistory: [],
                 eventSource: null,
                 streamCompleted: false,
+                hasReceivedContent: false,
 
                 init() {},
 
@@ -49,6 +50,7 @@
                         const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
 
                         lastMessage.content += chunk;
+                        this.hasReceivedContent = true;
 
                         if (isScrolledToBottom) {
                             this.scrollToBottom();
@@ -102,6 +104,7 @@
                 streamResponse(message) {
                     this.isStreaming = true;
                     this.streamCompleted = false;
+                    this.hasReceivedContent = false;
                     this.addMessage('assistant', '', false);
 
                     const url = this.buildStreamURL(message);
@@ -147,56 +150,68 @@
                 },
 
                 handleDoneEvent(event) {
+                    console.log('Stream completed via done event');
                     this.streamCompleted = true;
                     this.finalizeLastAssistantMessage();
                     this.cleanup();
                 },
 
                 handleErrorEvent(event) {
+                    console.log('Error event received:', event);
                     try {
                         const errorData = JSON.parse(event.data);
-                        this.addMessage('error', errorData.error || 'An unexpected error occurred.');
+                        
+                        // Check if this is actually a completion, not an error
+                        if (errorData.status === 'completed' || errorData.done) {
+                            console.log('Treating error event as completion');
+                            this.streamCompleted = true;
+                            this.finalizeLastAssistantMessage();
+                        } else {
+                            // Actual error
+                            this.addMessage('error', errorData.error || 'An unexpected error occurred.');
+                        }
                     } catch (e) {
-                        this.addMessage('error', 'An unexpected error occurred.');
+                        // If we received content, treat connection close as success
+                        if (this.hasReceivedContent) {
+                            console.log('Connection closed with content - treating as success');
+                            this.streamCompleted = true;
+                            this.finalizeLastAssistantMessage();
+                        } else {
+                            this.addMessage('error', 'An unexpected error occurred.');
+                        }
                     }
-                    this.streamCompleted = true;
                     this.cleanup();
                 },
 
                 handleConnectionError(event) {
+                    console.log('Connection error event:', event);
+                    
+                    // If we've marked stream as completed, don't show error
                     if (this.streamCompleted) {
+                        console.log('Stream already completed, ignoring connection error');
                         return;
                     }
 
-                    const lastMessage = this.messages[this.messages.length - 1];
-                    const wasInProgress = lastMessage && lastMessage.role === 'assistant' && !lastMessage.complete;
-
-                    if (wasInProgress && lastMessage.content.trim() !== '') {
+                    // If we received content, treat as successful completion
+                    if (this.hasReceivedContent) {
+                        console.log('Connection closed after receiving content - treating as success');
+                        this.streamCompleted = true;
                         this.finalizeLastAssistantMessage();
-                        console.log('Stream completed with content');
-                    } else if (wasInProgress && lastMessage.content === '') {
-                        this.messages.pop();
-                        this.addMessage('error', 'Failed to connect to the AI assistant. Please check your connection.');
-                    } else if (!wasInProgress) {
-                        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content === '') {
-                            this.messages.pop();
-                        }
-                        this.addMessage('error', 'Failed to connect to the AI assistant. Please check your connection.');
+                        this.cleanup();
+                        return;
                     }
-                    
-                    this.cleanup();
-                },
 
-                handleStreamTimeout() {
+                    // Actual error - no content received
                     const lastMessage = this.messages[this.messages.length - 1];
                     if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content === '') {
                         this.messages.pop();
                     }
-                    this.addMessage('error', 'Request timeout. The server took too long to respond.');
+                    this.addMessage('error', 'Failed to connect to the AI assistant. Please check your connection.');
                     this.cleanup();
                 },
 
                 cleanup() {
+                    console.log('Cleaning up connection');
                     if (this.eventSource) {
                         this.eventSource.close();
                         this.eventSource = null;
