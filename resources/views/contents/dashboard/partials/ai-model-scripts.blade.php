@@ -8,6 +8,7 @@
                 messages: [],
                 conversationHistory: [],
                 eventSource: null,
+                streamCompleted: false,
 
                 init() {},
 
@@ -45,8 +46,7 @@
                         const container = this.$refs.messagesContainer;
                         if (!container) return;
 
-                        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop +
-                            10;
+                        const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
 
                         lastMessage.content += chunk;
 
@@ -101,6 +101,7 @@
 
                 streamResponse(message) {
                     this.isStreaming = true;
+                    this.streamCompleted = false;
                     this.addMessage('assistant', '', false);
 
                     const url = this.buildStreamURL(message);
@@ -123,10 +124,15 @@
                 },
 
                 setupEventListeners() {
+                    this.eventSource.addEventListener('connected', this.handleConnectedEvent.bind(this));
                     this.eventSource.addEventListener('message', this.handleMessageEvent.bind(this));
                     this.eventSource.addEventListener('done', this.handleDoneEvent.bind(this));
                     this.eventSource.addEventListener('error', this.handleErrorEvent.bind(this));
                     this.eventSource.onerror = this.handleConnectionError.bind(this);
+                },
+
+                handleConnectedEvent(event) {
+                    console.log('Stream connected successfully');
                 },
 
                 handleMessageEvent(event) {
@@ -135,10 +141,13 @@
                         if (data.content) {
                             this.updateLastAssistantMessage(data.content);
                         }
-                    } catch (error) {}
+                    } catch (error) {
+                        console.error('Error parsing message:', error);
+                    }
                 },
 
                 handleDoneEvent(event) {
+                    this.streamCompleted = true;
                     this.finalizeLastAssistantMessage();
                     this.cleanup();
                 },
@@ -150,22 +159,31 @@
                     } catch (e) {
                         this.addMessage('error', 'An unexpected error occurred.');
                     }
+                    this.streamCompleted = true;
                     this.cleanup();
                 },
 
-                handleConnectionError() {
+                handleConnectionError(event) {
+                    if (this.streamCompleted) {
+                        return;
+                    }
+
                     const lastMessage = this.messages[this.messages.length - 1];
                     const wasInProgress = lastMessage && lastMessage.role === 'assistant' && !lastMessage.complete;
 
-                    if (wasInProgress) {
+                    if (wasInProgress && lastMessage.content.trim() !== '') {
                         this.finalizeLastAssistantMessage();
-                        this.addMessage('error', '⚠️ Connection interrupted. The response may be incomplete.');
-                    } else {
+                        console.log('Stream completed with content');
+                    } else if (wasInProgress && lastMessage.content === '') {
+                        this.messages.pop();
+                        this.addMessage('error', 'Failed to connect to the AI assistant. Please check your connection.');
+                    } else if (!wasInProgress) {
                         if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content === '') {
                             this.messages.pop();
                         }
                         this.addMessage('error', 'Failed to connect to the AI assistant. Please check your connection.');
                     }
+                    
                     this.cleanup();
                 },
 
