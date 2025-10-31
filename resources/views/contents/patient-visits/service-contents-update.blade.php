@@ -160,7 +160,7 @@
                 </div>
 
                 {{-- Price Display & Manual Total Toggle --}}
-                @if (!empty($service['dental_service_id']) && !empty($service['service_price']))
+                @if (!empty($service['dental_service_id']) && isset($service['service_price']))
                     <div class="space-y-3">
                         {{-- Manual Total Toggle - Enhanced Visibility --}}
                         <div
@@ -173,28 +173,31 @@
                                     </div>
                                     <div>
                                         <div class="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                                            Manual Total Override
+                                            Manual Price Override
                                         </div>
                                         <div class="text-xs text-amber-700 dark:text-amber-300">
                                             Click to enter custom amount
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" wire:click="toggleManualTotal({{ $index }})"
-                                    role="switch" aria-checked="{{ $service['use_manual_total'] ? 'true' : 'false' }}"
-                                    class="relative inline-flex h-8 w-16 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-amber-300 dark:focus:ring-amber-700 shadow-lg hover:shadow-xl transform hover:scale-105 {{ $service['use_manual_total'] ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-slate-400 dark:bg-slate-600' }}">
-                                    <span class="sr-only">Toggle manual total</span>
-                                    <span
-                                        class="inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 {{ $service['use_manual_total'] ? 'translate-x-9' : 'translate-x-1' }}">
-                                        @if ($service['use_manual_total'])
-                                            <i
-                                                class="fas fa-check text-amber-600 text-xs flex items-center justify-center h-full"></i>
-                                        @else
-                                            <i
-                                                class="fas fa-times text-slate-400 text-xs flex items-center justify-center h-full"></i>
-                                        @endif
-                                    </span>
-                                </button>
+                                @if (!$isReadonly)
+                                    <button type="button" wire:click="toggleManualTotal({{ $index }})"
+                                        role="switch"
+                                        aria-checked="{{ $service['use_manual_total'] ? 'true' : 'false' }}"
+                                        class="relative inline-flex h-8 w-16 items-center rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-600 shadow-lg hover:shadow-xl transform hover:scale-105 {{ $service['use_manual_total'] ? 'bg-gradient-to-r from-green-500 to-teal-500' : 'bg-gray-500 dark:bg-gray-700' }}">
+                                        <span class="sr-only">Toggle manual total</span>
+                                        <span
+                                            class="inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 {{ $service['use_manual_total'] ? 'translate-x-9' : 'translate-x-1' }}">
+                                            @if ($service['use_manual_total'])
+                                                <i
+                                                    class="fas fa-check text-green-600 text-xs flex items-center justify-center h-full"></i>
+                                            @else
+                                                <i
+                                                    class="fas fa-times text-gray-500 text-xs flex items-center justify-center h-full"></i>
+                                            @endif
+                                        </span>
+                                    </button>
+                                @endif
                             </div>
 
                             {{-- Status Indicator --}}
@@ -218,18 +221,23 @@
                         @if ($service['use_manual_total'])
                             {{-- Manual Total Input - Enhanced --}}
                             <div class="relative">
-                                <label class="block text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                                <label
+                                    class="block text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2">
                                     <i class="fas fa-edit mr-1"></i>
                                     Enter Custom Total Amount <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 flex items-center pl-4">
-                                        <span class="text-lg font-bold text-amber-600 dark:text-amber-400">₱</span>
+                                        <span
+                                            class="text-lg font-bold text-amber-600 dark:text-amber-400">₱</span>
                                     </div>
-                                    <input type="number" wire:model.live="services.{{ $index }}.manual_total"
+                                    <input type="number"
+                                        wire:model.live="services.{{ $index }}.manual_total"
                                         step="0.01" min="0" placeholder="0.00"
-                                        class="w-full pl-10 pr-4 py-3 text-lg font-semibold bg-white dark:bg-slate-700 border-2 border-amber-300 dark:border-amber-600 rounded-lg focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 transition shadow-sm hover:shadow-md">
-                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        {{ $isReadonly ? 'readonly' : '' }}
+                                        class="w-full pl-10 pr-4 py-3 text-lg font-semibold bg-white dark:bg-slate-700 border-2 border-amber-300 dark:border-amber-600 rounded-lg focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 transition shadow-sm hover:shadow-md {{ $isReadonly ? 'opacity-60 cursor-not-allowed' : '' }}">
+                                    <div
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <i class="fas fa-pen-to-square text-amber-400 dark:text-amber-500"></i>
                                     </div>
                                 </div>
@@ -244,14 +252,14 @@
                                     <p class="text-xs text-amber-800 dark:text-amber-200 flex items-start">
                                         <i class="fas fa-info-circle mr-2 mt-0.5 flex-shrink-0"></i>
                                         <span>This custom amount will override the automatic price calculation
-                                            (₱{{ number_format($service['service_price'], 2) }} ×
+                                            (₱{{ number_format((float) $service['service_price'], 2) }} ×
                                             {{ $service['quantity'] }})</span>
                                     </p>
                                 </div>
                             </div>
                         @endif
 
-                        {{-- Price Display --}}
+                        {{-- Final Price Display --}}
                         <div
                             class="bg-sky-50 dark:bg-sky-900/20 rounded-lg p-4 border border-sky-200 dark:border-sky-700">
                             <div class="flex items-center justify-between">

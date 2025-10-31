@@ -290,15 +290,11 @@ class UpdatePage extends Component
         $service = DentalService::find($serviceId);
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
-            $this->services[$index]['service_price'] = $service->price;
+            $this->services[$index]['service_price'] = $service->price ?? 0;
 
             if (!$service->is_quantifiable) {
                 $this->services[$index]['quantity'] = 1;
             }
-
-            // Reset manual total when service changes
-            $this->services[$index]['use_manual_total'] = false;
-            $this->services[$index]['manual_total'] = 0;
 
             $this->showServiceDropdowns[$index] = false;
             $this->serviceSearches[$index] = $service->name;
