@@ -77,14 +77,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Date of Birth
+                            Age
                         </dt>
                         <dd
                             class="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            @if ($patient->date_of_birth)
-                                {{ $patient->date_of_birth->format('M d, Y') }}
-                                <span class="text-sm text-gray-500 ml-2">({{ $patient->date_of_birth->age }} years
-                                    old)</span>
+                            @if ($patient->age)
+                                {{ $patient->age }} years old
                             @else
                                 <span class="text-gray-400 italic">Not provided</span>
                             @endif

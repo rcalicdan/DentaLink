@@ -58,10 +58,9 @@ class Table extends Component
                     'sortable' => true
                 ],
                 [
-                    'key' => 'date_of_birth',
-                    'label' => 'Date of Birth',
-                    'sortable' => true,
-                    'type' => 'date'
+                    'key' => 'age',
+                    'label' => 'Age',
+                    'sortable' => true
                 ],
                 [
                     'key' => 'registration_branch_name',
@@ -93,7 +92,7 @@ class Table extends Component
     public function rowsQuery()
     {
         $query = Patient::with('registrationBranch');
-        
+
         $query->when($this->searchBranch, function ($q) {
             return $q->where('registration_branch_id', $this->searchBranch);
         });
@@ -101,7 +100,7 @@ class Table extends Component
         if (!Auth::user()->isSuperadmin() && !$this->searchBranch) {
             $query->where('registration_branch_id', Auth::user()->branch_id);
         }
-        
+
         $dataTable = $this->getDataTableConfig();
 
         return $this->applySearchAndSort($query, ['first_name', 'last_name', 'phone', 'email'], $dataTable);
@@ -140,16 +139,16 @@ class Table extends Component
     public function bulkDelete()
     {
         $query = Patient::query();
-        
+
         if ($this->selectAll) {
             $query = $this->rowsQuery();
         } else {
             $query->whereIn('id', $this->selectedRows);
         }
-        
+
         $patientsWithAppointments = $query->whereHas('appointments')->exists();
         $patientsWithVisits = $query->whereHas('patientVisits')->exists();
-        
+
         if ($patientsWithAppointments || $patientsWithVisits) {
             $this->dispatch('show-message', [
                 'message' => 'Cannot delete patients that have appointments or visits.',
@@ -170,7 +169,7 @@ class Table extends Component
     {
         $patient = Patient::with(['appointments', 'patientVisits'])->findOrFail($id);
         $this->authorize('delete', $patient);
-        
+
         if ($patient->appointments()->exists() || $patient->patientVisits()->exists()) {
             $this->dispatch('show-message', [
                 'message' => 'Cannot delete patient that has appointments or visits.',

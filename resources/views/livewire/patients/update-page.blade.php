@@ -31,10 +31,10 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <x-form.field label="Date of Birth" name="date_of_birth" type="date" 
-                wire:model="date_of_birth" icon="fas fa-calendar" />
+            <x-form.field label="Age" name="age" type="number" wire:model="age" icon="fas fa-calendar"
+                placeholder="Enter age" min="0" max="150" />
 
-            <x-form.field label="Registration Branch" name="registration_branch_id" type="select" 
+            <x-form.field label="Registration Branch" name="registration_branch_id" type="select"
                 wire:model="registration_branch_id" :options="$branchOptions" required icon="fas fa-building"
                 help="{{ $isAdmin ? 'Patients must be in your branch' : 'Select the branch where patient is registered' }}"
                 :readonly="$isAdmin" />

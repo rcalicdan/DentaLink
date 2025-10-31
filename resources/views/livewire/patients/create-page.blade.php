@@ -30,24 +30,23 @@
                 wire:model="email" icon="fas fa-envelope" />
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <x-form.field label="Date of Birth" name="date_of_birth" type="date" 
-                wire:model="date_of_birth" icon="fas fa-calendar" />
+        <x-form.field label="Age" name="age" type="number" wire:model="age" icon="fas fa-calendar"
+            placeholder="Enter age" min="0" max="150" />
 
-            <x-form.field label="Registration Branch" name="registration_branch_id" type="select" 
-                wire:model="registration_branch_id" :options="$branchOptions" required icon="fas fa-building"
-                help="{{ $isAdmin ? 'Patients will be registered to your branch' : 'Select the branch where patient is registering' }}"
-                :readonly="$isAdmin" />
-        </div>
+        <x-form.field label="Registration Branch" name="registration_branch_id" type="select"
+            wire:model="registration_branch_id" :options="$branchOptions" required icon="fas fa-building"
+            help="{{ $isAdmin ? 'Patients will be registered to your branch' : 'Select the branch where patient is registering' }}"
+            :readonly="$isAdmin" />
+</div>
 
-        <div class="grid grid-cols-1 gap-6">
-            <x-form.field label="Address" name="address" type="textarea" placeholder="Enter patient address"
-                wire:model="address" icon="fas fa-map-marker-alt" rows="3" />
-        </div>
+<div class="grid grid-cols-1 gap-6">
+    <x-form.field label="Address" name="address" type="textarea" placeholder="Enter patient address"
+        wire:model="address" icon="fas fa-map-marker-alt" rows="3" />
+</div>
 
-        <div class="flex justify-end space-x-3 pt-6">
-            <x-utils.link-button href="{{ route('patients.index') }}" buttonText="Cancel" />
-            <x-utils.submit-button buttonText="Register Patient" wireTarget="save" />
-        </div>
-    </x-form.container>
+<div class="flex justify-end space-x-3 pt-6">
+    <x-utils.link-button href="{{ route('patients.index') }}" buttonText="Cancel" />
+    <x-utils.submit-button buttonText="Register Patient" wireTarget="save" />
+</div>
+</x-form.container>
 </div>

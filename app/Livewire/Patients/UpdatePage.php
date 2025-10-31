@@ -15,7 +15,7 @@ class UpdatePage extends Component
     public $last_name;
     public $phone;
     public $email;
-    public $date_of_birth;
+    public $age;
     public $address;
     public $registration_branch_id;
 
@@ -30,7 +30,7 @@ class UpdatePage extends Component
         $this->last_name = $patient->last_name;
         $this->phone = $patient->phone;
         $this->email = $patient->email;
-        $this->date_of_birth = $patient->date_of_birth?->format('Y-m-d');
+        $this->age = $patient->age;
         $this->address = $patient->address;
         $this->registration_branch_id = $patient->registration_branch_id;
     }
@@ -42,7 +42,7 @@ class UpdatePage extends Component
             'last_name' => 'required|string|max:50',
             'phone' => 'required|string|max:20',
             'email' => ['nullable', 'email', 'max:100', Rule::unique('patients')->ignore($this->patient->id)],
-            'date_of_birth' => 'nullable|date|before:today',
+            'age' => 'nullable|integer|min:0|max:150',
             'address' => 'nullable|string|max:1000',
             'registration_branch_id' => 'required|exists:branches,id',
         ];
@@ -64,7 +64,7 @@ class UpdatePage extends Component
             'last_name' => $this->last_name,
             'phone' => $this->phone,
             'email' => $this->email ?: null,
-            'date_of_birth' => $this->date_of_birth ?: null,
+            'age' => $this->age ?: null,
             'address' => $this->address ?: null,
             'registration_branch_id' => $this->registration_branch_id,
         ]);

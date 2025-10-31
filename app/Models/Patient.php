@@ -14,7 +14,7 @@ class Patient extends Model
         'last_name',
         'phone',
         'email',
-        'date_of_birth',
+        'age',
         'address',
         'registration_branch_id',
     ];
@@ -22,7 +22,7 @@ class Patient extends Model
     protected function casts(): array
     {
         return [
-            'date_of_birth' => 'date',
+            'age' => 'integer',
         ];
     }
 
@@ -31,7 +31,6 @@ class Patient extends Model
         return $this->registrationBranch->name;
     }
 
-    // Relationships
     public function registrationBranch()
     {
         return $this->belongsTo(Branch::class, 'registration_branch_id');
@@ -47,14 +46,8 @@ class Patient extends Model
         return $this->hasMany(PatientVisit::class);
     }
 
-    // Accessor for full name
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->last_name;
-    }
-
-    public function getAgeAttribute()
-    {
-        return $this->date_of_birth ? $this->date_of_birth->age : null;
     }
 }

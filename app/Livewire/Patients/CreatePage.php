@@ -13,7 +13,7 @@ class CreatePage extends Component
     public $last_name = '';
     public $phone = '';
     public $email = '';
-    public $date_of_birth = '';
+    public $age = '';
     public $address = '';
     public $registration_branch_id = '';
 
@@ -31,7 +31,7 @@ class CreatePage extends Component
             'last_name' => 'required|string|max:50',
             'phone' => 'required|string|max:20',
             'email' => 'nullable|email|max:100|unique:patients,email',
-            'date_of_birth' => 'nullable|date|before:today',
+            'age' => 'nullable|integer|min:0|max:150',
             'address' => 'nullable|string|max:1000',
             'registration_branch_id' => 'required|exists:branches,id',
         ];
@@ -53,7 +53,7 @@ class CreatePage extends Component
             'last_name' => $this->last_name,
             'phone' => $this->phone,
             'email' => $this->email ?: null,
-            'date_of_birth' => $this->date_of_birth ?: null,
+            'age' => $this->age ?: null,
             'address' => $this->address ?: null,
             'registration_branch_id' => $this->registration_branch_id,
         ]);
