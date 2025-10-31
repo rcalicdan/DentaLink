@@ -43,9 +43,9 @@ class CreatePage extends Component
 
         $this->services = [
             [
-                'dental_service_id' => '', 
-                'quantity' => 1, 
-                'service_notes' => '', 
+                'dental_service_id' => '',
+                'quantity' => 1,
+                'service_notes' => '',
                 'service_price' => 0,
                 'use_manual_total' => false,
                 'manual_total' => 0
@@ -73,8 +73,7 @@ class CreatePage extends Component
                 $this->patientSearch = $appointment->patient->full_name . ' (ID: ' . $appointment->patient->id . ')';
                 $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
             }
-        }
-        elseif (request()->has('patient_id') && !request()->has('appointment_id')) {
+        } elseif (request()->has('patient_id') && !request()->has('appointment_id')) {
             $patientId = request()->get('patient_id');
             $patient = Patient::find($patientId);
 
@@ -214,9 +213,9 @@ class CreatePage extends Component
     {
         $newIndex = count($this->services);
         $this->services[] = [
-            'dental_service_id' => '', 
-            'quantity' => 1, 
-            'service_notes' => '', 
+            'dental_service_id' => '',
+            'quantity' => 1,
+            'service_notes' => '',
             'service_price' => 0,
             'use_manual_total' => false,
             'manual_total' => 0
@@ -244,15 +243,12 @@ class CreatePage extends Component
         $service = DentalService::find($serviceId);
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
-            $this->services[$index]['service_price'] = $service->price;
-            
+            // Updated Line: Handle null prices by converting them to 0
+            $this->services[$index]['service_price'] = $service->price ?? 0;
+
             if (!$service->is_quantifiable) {
                 $this->services[$index]['quantity'] = 1;
             }
-
-            // Reset manual total when service changes
-            $this->services[$index]['use_manual_total'] = false;
-            $this->services[$index]['manual_total'] = 0;
 
             $this->showServiceDropdowns[$index] = false;
             $this->serviceSearches[$index] = $service->name;
@@ -262,7 +258,7 @@ class CreatePage extends Component
     public function toggleManualTotal($index)
     {
         $this->services[$index]['use_manual_total'] = !$this->services[$index]['use_manual_total'];
-        
+
         if ($this->services[$index]['use_manual_total']) {
             // Initialize manual total with current calculated total
             $currentTotal = (float)$this->services[$index]['service_price'] * (int)$this->services[$index]['quantity'];
@@ -281,9 +277,10 @@ class CreatePage extends Component
             $field = $parts[1];
 
             // If quantity or service changes and not using manual total, recalculate
-            if (($field === 'quantity' || $field === 'dental_service_id') && 
-                !$this->services[$index]['use_manual_total']) {
-                
+            if (($field === 'quantity' || $field === 'dental_service_id') &&
+                !$this->services[$index]['use_manual_total']
+            ) {
+
                 if (!empty($this->services[$index]['dental_service_id'])) {
                     $dentalService = DentalService::find($this->services[$index]['dental_service_id']);
                     if ($dentalService) {
@@ -297,15 +294,15 @@ class CreatePage extends Component
     public function getServiceTotal($index)
     {
         $service = $this->services[$index];
-        
+
         if ($service['use_manual_total']) {
             return (float)$service['manual_total'];
         }
-        
+
         if (!empty($service['dental_service_id']) && !empty($service['service_price'])) {
             return (float)$service['service_price'] * (int)$service['quantity'];
         }
-        
+
         return 0;
     }
 
@@ -412,12 +409,12 @@ class CreatePage extends Component
                 foreach ($this->services as $index => $service) {
                     if (!empty($service['dental_service_id'])) {
                         $serviceTotal = $this->getServiceTotal($index);
-                        
+
                         PatientVisitService::create([
                             'patient_visit_id' => $patientVisit->id,
                             'dental_service_id' => $service['dental_service_id'],
-                            'service_price' => $service['use_manual_total'] 
-                                ? $service['manual_total'] 
+                            'service_price' => $service['use_manual_total']
+                                ? $service['manual_total']
                                 : $service['service_price'],
                             'quantity' => $service['use_manual_total'] ? 1 : $service['quantity'],
                             'service_notes' => $service['service_notes'],
