@@ -32,7 +32,7 @@ class UpdatePage extends Component
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'dental_service_type_id' => 'required|exists:dental_service_types,id',
-            'price' => 'nullable|numeric|min:0|max:999999.99',
+            'price' => 'nullable|numeric|min:0.01|max:999999.99',
             'is_quantifiable' => 'required|boolean',
         ];
     }

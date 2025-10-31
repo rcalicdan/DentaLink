@@ -38,14 +38,12 @@ class UpdatePage extends Component
     public $serviceSearches = [];
     public $showServiceDropdowns = [];
 
-    // Add readonly state
     public $isReadonly = false;
 
     public function mount(PatientVisit $patientVisit)
     {
         $this->authorize('update', $patientVisit);
 
-        // Check if user is employee (readonly access)
         $this->isReadonly = Auth::user()->isEmployee();
 
         $this->patientVisit = $patientVisit;
@@ -56,7 +54,7 @@ class UpdatePage extends Component
         $this->visit_type = $patientVisit->appointment_id ? 'appointment' : 'walk-in';
         $this->selectedPatient = $patientVisit->patient;
         $this->patientSearch = $patientVisit->patient->full_name . ' (ID: ' . $patientVisit->patient->id . ')';
-        
+
         if ($patientVisit->appointment) {
             $this->selectedAppointment = $patientVisit->appointment;
             $this->appointmentSearch = "Queue #{$patientVisit->appointment->queue_number} - {$patientVisit->appointment->appointment_date->format('M d, Y')} - {$patientVisit->appointment->reason}";
@@ -64,26 +62,50 @@ class UpdatePage extends Component
 
         $this->services = [];
         foreach ($patientVisit->patientVisitServices as $visitService) {
+            $dentalService = DentalService::find($visitService->dental_service_id);
+
+            // Determine if this was saved with manual total
+            // If quantity is 1 and service is quantifiable, it might be a manual total
+            $useManualTotal = false;
+            $manualTotal = 0;
+
+            if ($dentalService && $dentalService->is_quantifiable && $visitService->quantity == 1) {
+                // Check if the stored price differs from the service's base price
+                if ($visitService->service_price != $dentalService->price) {
+                    $useManualTotal = true;
+                    $manualTotal = $visitService->service_price;
+                }
+            } elseif ($dentalService && !$dentalService->is_quantifiable && $visitService->service_price != $dentalService->price) {
+                $useManualTotal = true;
+                $manualTotal = $visitService->service_price;
+            }
+
             $this->services[] = [
                 'dental_service_id' => $visitService->dental_service_id,
                 'quantity' => $visitService->quantity,
                 'service_notes' => $visitService->service_notes,
-                'service_price' => $visitService->service_price,
+                'service_price' => $dentalService ? $dentalService->price : $visitService->service_price,
+                'use_manual_total' => $useManualTotal,
+                'manual_total' => $useManualTotal ? $manualTotal : 0,
             ];
         }
 
         if (empty($this->services)) {
             $this->services = [
-                ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0]
+                [
+                    'dental_service_id' => '',
+                    'quantity' => 1,
+                    'service_notes' => '',
+                    'service_price' => 0,
+                    'use_manual_total' => false,
+                    'manual_total' => 0
+                ]
             ];
         }
 
         $this->initializeServiceSearches();
     }
 
-    /**
-     * Server-side authorization check for any modification attempts
-     */
     private function checkWritePermission()
     {
         if (Auth::user()->isEmployee()) {
@@ -93,7 +115,6 @@ class UpdatePage extends Component
 
     public function rules()
     {
-        // Block validation if readonly
         $this->checkWritePermission();
 
         $user = Auth::user();
@@ -106,6 +127,8 @@ class UpdatePage extends Component
             'services.*.dental_service_id' => 'required|exists:dental_services,id',
             'services.*.quantity' => 'required|integer|min:1',
             'services.*.service_notes' => 'nullable|string|max:500',
+            'services.*.use_manual_total' => 'boolean',
+            'services.*.manual_total' => 'nullable|numeric|min:0',
         ];
 
         if ($this->visit_type === 'appointment') {
@@ -232,7 +255,14 @@ class UpdatePage extends Component
         $this->checkWritePermission();
 
         $newIndex = count($this->services);
-        $this->services[] = ['dental_service_id' => '', 'quantity' => 1, 'service_notes' => '', 'service_price' => 0];
+        $this->services[] = [
+            'dental_service_id' => '',
+            'quantity' => 1,
+            'service_notes' => '',
+            'service_price' => 0,
+            'use_manual_total' => false,
+            'manual_total' => 0
+        ];
 
         $this->serviceSearches[$newIndex] = '';
         $this->showServiceDropdowns[$newIndex] = false;
@@ -266,32 +296,75 @@ class UpdatePage extends Component
                 $this->services[$index]['quantity'] = 1;
             }
 
+            // Reset manual total when service changes
+            $this->services[$index]['use_manual_total'] = false;
+            $this->services[$index]['manual_total'] = 0;
+
             $this->showServiceDropdowns[$index] = false;
             $this->serviceSearches[$index] = $service->name;
         }
     }
 
-    public function updatedServices()
+    public function toggleManualTotal($index)
     {
         $this->checkWritePermission();
 
-        foreach ($this->services as $index => $service) {
-            if (!empty($service['dental_service_id'])) {
-                $dentalService = DentalService::find($service['dental_service_id']);
-                if ($dentalService) {
-                    $this->services[$index]['service_price'] = $dentalService->price;
+        $this->services[$index]['use_manual_total'] = !$this->services[$index]['use_manual_total'];
+
+        if ($this->services[$index]['use_manual_total']) {
+            // Initialize manual total with current calculated total
+            $currentTotal = (float)$this->services[$index]['service_price'] * (int)$this->services[$index]['quantity'];
+            $this->services[$index]['manual_total'] = $currentTotal;
+        } else {
+            $this->services[$index]['manual_total'] = 0;
+        }
+    }
+
+    public function updatedServices($value, $key)
+    {
+        $this->checkWritePermission();
+
+        // Parse the key to get index and field
+        $parts = explode('.', $key);
+        if (count($parts) >= 2) {
+            $index = $parts[0];
+            $field = $parts[1];
+
+            // If quantity or service changes and not using manual total, recalculate
+            if (($field === 'quantity' || $field === 'dental_service_id') &&
+                !$this->services[$index]['use_manual_total']
+            ) {
+
+                if (!empty($this->services[$index]['dental_service_id'])) {
+                    $dentalService = DentalService::find($this->services[$index]['dental_service_id']);
+                    if ($dentalService) {
+                        $this->services[$index]['service_price'] = $dentalService->price;
+                    }
                 }
             }
         }
     }
 
+    public function getServiceTotal($index)
+    {
+        $service = $this->services[$index];
+
+        if ($service['use_manual_total']) {
+            return (float)$service['manual_total'];
+        }
+
+        if (!empty($service['dental_service_id']) && !empty($service['service_price'])) {
+            return (float)$service['service_price'] * (int)$service['quantity'];
+        }
+
+        return 0;
+    }
+
     public function getTotalAmountProperty()
     {
         $total = 0;
-        foreach ($this->services as $service) {
-            if (!empty($service['dental_service_id']) && !empty($service['service_price'])) {
-                $total += (float)$service['service_price'] * (int)$service['quantity'];
-            }
+        foreach ($this->services as $index => $service) {
+            $total += $this->getServiceTotal($index);
         }
         return number_format($total, 2);
     }
@@ -355,7 +428,6 @@ class UpdatePage extends Component
 
     public function update()
     {
-        // Double-check authorization
         $this->authorize('update', $this->patientVisit);
         $this->checkWritePermission();
 
@@ -368,9 +440,9 @@ class UpdatePage extends Component
         try {
             DB::transaction(function () {
                 $totalAmount = 0;
-                foreach ($this->services as $service) {
+                foreach ($this->services as $index => $service) {
                     if (!empty($service['dental_service_id'])) {
-                        $totalAmount += $service['service_price'] * $service['quantity'];
+                        $totalAmount += $this->getServiceTotal($index);
                     }
                 }
 
@@ -391,13 +463,17 @@ class UpdatePage extends Component
 
                 $this->patientVisit->patientVisitServices()->delete();
 
-                foreach ($this->services as $service) {
+                foreach ($this->services as $index => $service) {
                     if (!empty($service['dental_service_id'])) {
+                        $serviceTotal = $this->getServiceTotal($index);
+
                         PatientVisitService::create([
                             'patient_visit_id' => $this->patientVisit->id,
                             'dental_service_id' => $service['dental_service_id'],
-                            'service_price' => $service['service_price'],
-                            'quantity' => $service['quantity'],
+                            'service_price' => $service['use_manual_total']
+                                ? $service['manual_total']
+                                : $service['service_price'],
+                            'quantity' => $service['use_manual_total'] ? 1 : $service['quantity'],
                             'service_notes' => $service['service_notes'],
                         ]);
                     }

@@ -27,7 +27,6 @@
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Service
                             <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            {{-- Updated wire:model to use array index --}}
                             <input type="text" wire:model.live="serviceSearches.{{ $index }}"
                                 placeholder="Search and select a service..." onfocus="if(this.value) this.select()"
                                 class="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm">
@@ -109,7 +108,7 @@
                         @php
                             $selectedService = \App\Models\DentalService::find($service['dental_service_id']);
                         @endphp
-                        @if ($selectedService && $selectedService->is_quantifiable)
+                        @if ($selectedService && $selectedService->is_quantifiable && !$service['use_manual_total'])
                             <div class="md:col-span-4">
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Quantity <span class="text-red-500">*</span>
@@ -126,7 +125,7 @@
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
-                        @else
+                        @elseif(!$service['use_manual_total'])
                             {{-- Show quantity as 1 for non-quantifiable services --}}
                             <div class="md:col-span-4">
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -159,28 +158,74 @@
                     @enderror
                 </div>
 
-                {{-- Price Display --}}
+                {{-- Price Display & Manual Total Toggle --}}
                 @if (!empty($service['dental_service_id']) && !empty($service['service_price']))
-                    <div class="bg-sky-50 dark:bg-sky-900/20 rounded-lg p-4 border border-sky-200 dark:border-sky-700">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-sky-600 dark:text-sky-400">
-                                Service Total:
+                    <div class="space-y-3">
+                        {{-- Manual Total Toggle --}}
+                        <div class="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-edit text-amber-600 dark:text-amber-400"></i>
+                                <span class="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                    Use Manual Total
+                                </span>
                             </div>
-                            <div class="font-semibold text-lg text-sky-900 dark:text-sky-100">
-                                ₱{{ number_format((float) $service['service_price'] * (int) $service['quantity'], 2) }}
-                            </div>
+                            <button type="button" 
+                                wire:click="toggleManualTotal({{ $index }})"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 {{ $service['use_manual_total'] ? 'bg-amber-600' : 'bg-slate-300 dark:bg-slate-600' }}">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {{ $service['use_manual_total'] ? 'translate-x-6' : 'translate-x-1' }}"></span>
+                            </button>
                         </div>
-                        @if ((int) $service['quantity'] > 1)
-                            <div class="text-xs text-sky-500 dark:text-sky-400 mt-1">
-                                ₱{{ number_format((float) $service['service_price'], 2) }} ×
-                                {{ (int) $service['quantity'] }}
+
+                        @if ($service['use_manual_total'])
+                            {{-- Manual Total Input --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Manual Total Amount <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 dark:text-slate-400">₱</span>
+                                    <input type="number" 
+                                        wire:model.live="services.{{ $index }}.manual_total"
+                                        step="0.01"
+                                        min="0"
+                                        class="w-full pl-8 pr-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-sm">
+                                </div>
+                                @error("services.{$index}.manual_total")
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                                    <i class="fas fa-info-circle"></i> Manual total overrides automatic calculation
+                                </p>
                             </div>
                         @endif
+
+                        {{-- Price Display --}}
+                        <div class="bg-sky-50 dark:bg-sky-900/20 rounded-lg p-4 border border-sky-200 dark:border-sky-700">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-sky-600 dark:text-sky-400">
+                                    Service Total:
+                                </div>
+                                <div class="font-semibold text-lg text-sky-900 dark:text-sky-100">
+                                    ₱{{ number_format($this->getServiceTotal($index), 2) }}
+                                </div>
+                            </div>
+                            @if (!$service['use_manual_total'] && (int) $service['quantity'] > 1)
+                                <div class="text-xs text-sky-500 dark:text-sky-400 mt-1">
+                                    ₱{{ number_format((float) $service['service_price'], 2) }} ×
+                                    {{ (int) $service['quantity'] }}
+                                </div>
+                            @elseif($service['use_manual_total'])
+                                <div class="text-xs text-amber-500 dark:text-amber-400 mt-1">
+                                    <i class="fas fa-edit"></i> Manual total applied
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 @endif
 
                 <input type="hidden" wire:model="services.{{ $index }}.dental_service_id">
                 <input type="hidden" wire:model="services.{{ $index }}.service_price">
+                <input type="hidden" wire:model="services.{{ $index }}.use_manual_total">
             </div>
         </div>
     @endforeach
