@@ -11,6 +11,7 @@ class UpdatePage extends Component
 {
     public DentalService $dentalService;
     public $name;
+    public $description;
     public $dental_service_type_id;
     public $price;
     public $is_quantifiable;
@@ -19,6 +20,7 @@ class UpdatePage extends Component
     {
         $this->dentalService = $dentalService;
         $this->name = $dentalService->name;
+        $this->description = $dentalService->description;
         $this->dental_service_type_id = $dentalService->dental_service_type_id;
         $this->price = $dentalService->price;
         $this->is_quantifiable = $dentalService->is_quantifiable;
@@ -28,8 +30,9 @@ class UpdatePage extends Component
     {
         return [
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'dental_service_type_id' => 'required|exists:dental_service_types,id',
-            'price' => 'required|numeric|min:0|max:999999.99',
+            'price' => 'nullable|numeric|min:0|max:999999.99',
             'is_quantifiable' => 'required|boolean',
         ];
     }
@@ -41,8 +44,9 @@ class UpdatePage extends Component
 
         $this->dentalService->update([
             'name' => $this->name,
+            'description' => $this->description ?: null,
             'dental_service_type_id' => $this->dental_service_type_id,
-            'price' => $this->price,
+            'price' => $this->price ?: null,
             'is_quantifiable' => $this->is_quantifiable,
         ]);
 

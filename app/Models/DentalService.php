@@ -8,19 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 class DentalService extends Model
 {
     use Auditable;
-    
+
     protected $fillable = [
         'name',
+        'description',
         'dental_service_type_id',
         'price',
-        'is_quantifiable', 
+        'is_quantifiable',
     ];
 
     protected function casts(): array
     {
         return [
             'price' => 'decimal:2',
-            'is_quantifiable' => 'boolean', 
+            'is_quantifiable' => 'boolean',
         ];
     }
 
@@ -29,7 +30,6 @@ class DentalService extends Model
         return $this->dentalServiceType?->name ?? 'N/A';
     }
 
-    // Relationships
     public function dentalServiceType()
     {
         return $this->belongsTo(DentalServiceType::class);

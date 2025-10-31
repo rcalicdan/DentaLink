@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 class CreatePage extends Component
 {
     public $name = '';
+    public $description = '';
     public $dental_service_type_id = '';
     public $price = '';
     public $is_quantifiable = true;
@@ -18,8 +19,9 @@ class CreatePage extends Component
     {
         return [
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'dental_service_type_id' => 'required|exists:dental_service_types,id',
-            'price' => 'required|numeric|min:0|max:999999.99',
+            'price' => 'nullable|numeric|min:0|max:999999.99',
             'is_quantifiable' => 'required|boolean',
         ];
     }
@@ -31,8 +33,9 @@ class CreatePage extends Component
 
         DentalService::create([
             'name' => $this->name,
+            'description' => $this->description ?: null,
             'dental_service_type_id' => $this->dental_service_type_id,
-            'price' => $this->price,
+            'price' => $this->price ?: null,
             'is_quantifiable' => $this->is_quantifiable,
         ]);
 

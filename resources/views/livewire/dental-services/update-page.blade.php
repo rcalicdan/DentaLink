@@ -19,15 +19,21 @@
                 wire:model="name" required icon="fas fa-tooth"
                 help="Enter a descriptive name for this dental service" />
 
+            <x-form.field label="Description" name="description" type="textarea" 
+                placeholder="Enter service description (optional)"
+                wire:model="description" icon="fas fa-align-left" rows="3"
+                help="Provide additional details about this service" />
+
             <x-form.field label="Service Type" name="dental_service_type_id" type="select"
                 wire:model="dental_service_type_id" :options="$serviceTypeOptions" required icon="fas fa-tags"
                 help="Select the category this service belongs to" />
 
-            <x-form.field label="Price" name="price" type="number" placeholder="0.00" step="0.01"
-                wire:model="price" required icon="fas fa-dollar-sign"
-                help="Enter the price for this service in your local currency" />
+            <x-form.field label="Default Price" name="price" type="number" placeholder="0.00" step="0.01"
+                wire:model="price" icon="fas fa-dollar-sign"
+                help="Enter the default price for this service (optional - can be set per visit)" />
 
-            <x-form.field type="checkbox" name="is_quantifiable" label="Allow Multiple Quantities" wire:model="is_quantifiable"
+            <x-form.field type="checkbox" name="is_quantifiable" label="Allow Multiple Quantities" 
+                wire:model="is_quantifiable"
                 help="Uncheck for services like 'Dental Cleaning' that are one-time only" />
         </div>
 
