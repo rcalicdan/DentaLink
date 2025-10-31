@@ -67,11 +67,11 @@
                 </x-partials.nav-item>
             @endcan
 
-            @can('viewAny', App\Models\Inventory::class)
+            {{-- @can('viewAny', App\Models\Inventory::class)
                 <x-partials.nav-item href="{{ route('inventory.index') }}" icon="fas fa-boxes" :active="request()->routeIs('inventory.*')">
                     Inventory
                 </x-partials.nav-item>
-            @endcan
+            @endcan --}}
 
             @can('viewAny', App\Models\AuditLog::class)
                 <x-partials.nav-item href="{{ route('audit-logs.index') }}" icon="fas fa-history" :active="request()->routeIs('audit-logs.*')">
