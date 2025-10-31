@@ -2,6 +2,8 @@
 
 namespace App\Services\Helpers;
 
+use Carbon\Carbon;
+
 class GeminiPromptHelper
 {
     /**
@@ -9,8 +11,19 @@ class GeminiPromptHelper
      */
     public static function buildSystemPrompt(): string
     {
+        $now = Carbon::now();
+        $currentDate = $now->format('F j, Y'); 
+        $currentTime = $now->format('g:i A'); 
+        $currentDay = $now->format('l'); 
+        
         return <<<PROMPT
 You are an AI assistant exclusively for Nice Smile Clinic operations. Your role is to help with clinic-related queries only.
+
+CURRENT DATE AND TIME INFORMATION:
+- Today is: {$currentDay}, {$currentDate}
+- Current time: {$currentTime}
+- Use this information to interpret relative terms like "today", "tomorrow", "yesterday", "this week", "this month", etc.
+- When users ask about "upcoming" or "recent" items, calculate based on this current date and time.
 
 IMPORTANT RULES:
 1. ONLY answer questions related to Nice Smile Clinic operations, including:
@@ -36,29 +49,49 @@ IMPORTANT RULES:
 7. If a question is about overall clinic statistics, provide those from the clinic database.
 8. If you can't provide all the content let the user know if they want to continue generating to the provided context
 9. If the user can't understand the context, and ask you to simplify the answer, do so.
-10. If the user asks for a summary of the clinic operations, provide a brief overview.
-11. If a user say thank you, say so politely.
-12. **Date and Time Formatting:**
-   - Always present dates in conversational, human-readable format
-   - Use natural language like "January 15, 2024" instead of "2024-01-15"
-   - For recent dates, use relative terms: "today", "yesterday", "tomorrow", "last week", "next Monday"
-   - Include time in 12-hour format with AM/PM: "2:30 PM" instead of "14:30"
-   - When discussing date ranges, make them natural: "from January 1 to January 31, 2024"
-   - For timestamps, use phrases like "on January 15, 2024 at 2:30 PM"
+10. If a user say thank you, say so politely.
 
-DATE AND TIME FORMATTING:
-- ALWAYS format dates as: "Month Day, Year" (e.g., "Oct 29, 2025" or "October 29, 2025")
-- ALWAYS format times as: "Hour:Minute AM/PM" (e.g., "2:30 PM" or "09:15 AM")
-- ALWAYS format date and time together as: "Month Day, Year Hour:Minute AM/PM" (e.g., "Oct 29, 2025 2:30 PM")
-- Use 12-hour format with AM/PM, never 24-hour format
-- Always include leading zeros for single-digit hours in times (e.g., "09:15 AM" not "9:15 AM")
-- Use abbreviated month names (Jan, Feb, Mar, etc.) for brevity unless full month names are in the context
+DATE AND TIME FORMATTING - CRITICAL RULES:
+ALWAYS convert and format ALL dates and times in your responses to be human-readable:
+
+DATES:
+- Format: "Month Day, Year" (e.g., "October 29, 2025" or "Oct 29, 2025")
+- Use full month names for clarity (January, February, March, etc.)
+- You may abbreviate for brevity in lists (Jan, Feb, Mar, etc.)
+- Convert any date formats from the database (YYYY-MM-DD, timestamps, etc.) to this format
+
+TIMES:
+- Format: "Hour:Minute AM/PM" (e.g., "2:30 PM" or "9:15 AM")
+- Use 12-hour format with AM/PM, NEVER 24-hour format
+- Include leading zeros for minutes (e.g., "2:05 PM" not "2:5 PM")
+- Do NOT include leading zeros for hours (e.g., "9:15 AM" not "09:15 AM")
+
+DATE AND TIME COMBINED:
+- Format: "Month Day, Year at Hour:Minute AM/PM"
+- Example: "October 29, 2025 at 2:30 PM"
+- Alternative: "Oct 29, 2025, 2:30 PM" (for lists or brief mentions)
+
+RELATIVE DATES (when appropriate):
+- Use friendly terms like "Today", "Tomorrow", "Yesterday" when relevant
+- Follow with the actual date: "Today (October 29, 2025)"
+- Calculate relative dates based on the CURRENT DATE AND TIME provided above
 
 FORMATTING EXAMPLES:
-- Date only: "Oct 29, 2025"
-- Time only: "02:30 PM"
-- Date and time: "Oct 29, 2025 02:30 PM"
-- Full format: "October 29, 2025 at 02:30 PM"
+✓ CORRECT:
+  - "October 29, 2025"
+  - "2:30 PM"
+  - "October 29, 2025 at 2:30 PM"
+  - "Today ({$currentDate}) at 2:30 PM"
+  - "Appointment scheduled for Oct 29, 2025, 2:30 PM"
+
+✗ INCORRECT:
+  - "2025-10-29" (database format)
+  - "14:30" (24-hour format)
+  - "10/29/2025" (numeric format)
+  - "2025-10-29 14:30:00" (timestamp format)
+  - "09:15 AM" (leading zero on hour)
+
+IMPORTANT: If you receive dates/times from the database in formats like "YYYY-MM-DD", "YYYY-MM-DD HH:MM:SS", or timestamps, you MUST convert them to the human-readable formats above before presenting them to the user.
 
 Remember: You are NOT a general-purpose AI. You are specifically designed for Nice Smile Clinic operations only.
 PROMPT;
@@ -87,76 +120,45 @@ PROMPT;
      */
     public static function buildEnhancedContext(array $stats, array $searchResults): string
     {
-        $context = "# Knowledge Base Context\n\n";
-
-        // Add statistics
-        if (!empty($stats)) {
-            $context .= "## Available Data:\n";
-            foreach ($stats as $entityType => $count) {
-                $readableName = self::getReadableEntityName($entityType);
-                $context .= "- {$readableName}: " . number_format($count) . " records\n";
-            }
-            $context .= "\n";
+        $context = "Nice Smile Clinic Database Statistics:\n";
+        foreach ($stats as $type => $count) {
+            $context .= "- Total {$type}s: {$count}\n";
         }
+        $context .= "\nRelevant information from the clinic:\n";
 
-        // Add search results
-        if (!empty($searchResults)) {
-            $context .= "## Relevant Information:\n\n";
-            foreach ($searchResults as $index => $result) {
-                $context .= "### Result " . ($index + 1) . " (Relevance: " . number_format($result['similarity'] * 100, 1) . "%)\n";
-                $context .= $result['content'] . "\n\n";
-            }
+        foreach ($searchResults as $index => $result) {
+            $relevance = round($result['similarity_score'] * 100, 1);
+            $context .= ($index + 1) . ". " . $result['content'] . " (Relevance: {$relevance}%)\n";
         }
 
         return $context;
     }
-
 
     /**
      * Build user prompt
      */
     public static function buildUserPrompt(string $context, string $userMessage, bool $isFirstMessage): string
     {
-        $conversationHint = $isFirstMessage
-            ? "This is the user's first message in this conversation.\n"
+        $conversationHint = $isFirstMessage 
+            ? "This is the user's first message in this conversation.\n" 
             : "This is a follow-up message in an ongoing conversation.\n";
 
         return $conversationHint . $context . "User message: " . $userMessage;
     }
 
     /**
-     * Build user prompt with enhanced context
+     * Build enhanced user prompt
      */
-    public static function buildEnhancedUserPrompt(string $context, string $userMessage, bool $isFirstMessage = false): string
+    public static function buildEnhancedUserPrompt(string $context, string $userMessage, bool $isFirstMessage): string
     {
-        if ($isFirstMessage) {
-            return <<<PROMPT
-{$context}
+        $conversationHint = $isFirstMessage 
+            ? "This is the user's first message in this conversation.\n" 
+            : "This is a follow-up message in an ongoing conversation.\n";
 
----
-
-This is the user's first message. They are greeting you or starting a new conversation.
-
-User's message: {$userMessage}
-
-Please provide a warm, helpful introduction and ask how you can assist them with clinic information today.
-PROMPT;
-        }
-
-        return <<<PROMPT
-{$context}
-
----
-
-User's question: {$userMessage}
-
-Please provide a helpful, accurate response based on the available data above. Remember to:
-- Use natural, conversational language
-- Format dates and times in a human-readable way
-- Present currency in Philippine Peso (₱) format
-- If the information isn't in the context, politely say so
-- Be concise but thorough
-PROMPT;
+        return $conversationHint 
+            . $context 
+            . "\nUser question: " . $userMessage 
+            . "\n\nProvide a complete and accurate answer based on the clinic data. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results. CRITICAL: Convert ALL dates and times from database formats to human-readable formats as specified in the system prompt (e.g., 'October 29, 2025 at 2:30 PM', not '2025-10-29 14:30:00').";
     }
 
     /**
@@ -165,34 +167,5 @@ PROMPT;
     public static function supportsSystemInstructions(string $model): bool
     {
         return str_starts_with($model, 'gemini');
-    }
-
-
-    /**
-     * Get current date formatted
-     */
-    private static function getCurrentDate(): string
-    {
-        return now()->format('l, F d, Y');
-    }
-
-    /**
-     * Get readable entity name
-     */
-    private static function getReadableEntityName(string $entityType): string
-    {
-        return match ($entityType) {
-            'user' => 'Users',
-            'patient' => 'Patients',
-            'appointment' => 'Appointments',
-            'dental_service' => 'Dental Services',
-            'patient_visit' => 'Patient Visits',
-            'branch' => 'Branches',
-            'dental_service_type' => 'Service Categories',
-            'inventory' => 'Inventory Items',
-            'patient_visit_service' => 'Service Records',
-            'audit_log' => 'Activity Logs',
-            default => ucfirst(str_replace('_', ' ', $entityType))
-        };
     }
 }

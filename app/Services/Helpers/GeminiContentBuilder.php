@@ -8,6 +8,7 @@ use App\Models\Appointment;
 use App\Models\DentalService;
 use App\Models\PatientVisit;
 use App\Models\AuditLog;
+use Carbon\Carbon;
 
 class GeminiContentBuilder
 {
@@ -33,7 +34,7 @@ class GeminiContentBuilder
             $user->id,
             $roleName,
             $user->branch_name,
-            $user->created_at->format('F d, Y')
+            self::formatDate($user->created_at)
         );
     }
 
@@ -47,11 +48,11 @@ class GeminiContentBuilder
             $patient->full_name,
             $patient->phone,
             $patient->email ?? 'Not provided',
-            $patient->date_of_birth?->format('F d, Y') ?? 'Not provided',
+            $patient->date_of_birth ? self::formatDate($patient->date_of_birth) : 'Not provided',
             $patient->age ?? 'Unknown',
             $patient->registration_branch_name,
             $patient->address ?? 'Not provided',
-            $patient->created_at->format('F d, Y')
+            self::formatDate($patient->created_at)
         );
     }
 
@@ -60,11 +61,24 @@ class GeminiContentBuilder
      */
     public static function buildAppointmentContent(Appointment $appointment): string
     {
+        $formattedDate = $appointment->appointment_date
+            ? self::formatDate($appointment->appointment_date)
+            : 'Date not set';
+
+        $formattedTime = 'Time not set';
+        if ($appointment->start_time && $appointment->end_time) {
+            $startTime = self::formatTime($appointment->start_time);
+            $endTime = self::formatTime($appointment->end_time);
+            $formattedTime = "{$startTime} - {$endTime}";
+        } elseif ($appointment->start_time) {
+            $formattedTime = self::formatTime($appointment->start_time);
+        }
+
         return sprintf(
             "Appointment for patient %s scheduled on %s at %s. Status: %s. Queue number: %s. Reason: %s. Branch: %s. Notes: %s",
             $appointment->patient_name,
-            $appointment->formatted_date,
-            $appointment->formatted_time_range ?? 'Time not set',
+            $formattedDate,
+            $formattedTime,
             ucfirst($appointment->status->value),
             $appointment->queue_number ?? 'Not assigned',
             $appointment->reason,
@@ -106,10 +120,13 @@ class GeminiContentBuilder
     {
         $services = $visit->patientVisitServices->pluck('dentalService.name')->join(', ');
 
+        // Format visit date and time properly
+        $formattedVisitDate = self::formatDateTime($visit->visit_date);
+
         return sprintf(
             "Patient visit for %s on %s at %s branch. Type: %s. Services: %s. Total amount: ₱%s. Notes: %s",
             $visit->patient_name,
-            $visit->visit_date->format('F d, Y g:i A'),
+            $formattedVisitDate,
             $visit->branch_name,
             $visit->visit_type,
             $services ?: 'No services recorded',
@@ -149,9 +166,69 @@ class GeminiContentBuilder
             $parts[] = "Updated information: " . self::formatValues($auditLog->new_values, $auditLog->auditable_type);
         }
 
-        $parts[] = "Date and time: {$auditLog->created_at->format('F d, Y at g:i A')}";
+        // Format date and time properly
+        $parts[] = "Date and time: " . self::formatDateTime($auditLog->created_at);
 
         return implode('. ', $parts) . '.';
+    }
+
+    /**
+     * Format date in human-readable format
+     * 
+     * @param mixed $date Carbon instance, string, or null
+     * @return string Formatted date (e.g., "October 29, 2025")
+     */
+    private static function formatDate($date): string
+    {
+        if (!$date) {
+            return 'Not set';
+        }
+
+        try {
+            return Carbon::parse($date)->format('F j, Y');
+        } catch (\Exception $e) {
+            return 'Invalid date';
+        }
+    }
+
+    /**
+     * Format time in human-readable format
+     * 
+     * @param mixed $time Carbon instance, string, or null
+     * @return string Formatted time (e.g., "2:30 PM")
+     */
+    private static function formatTime($time): string
+    {
+        if (!$time) {
+            return 'Not set';
+        }
+
+        try {
+            $carbonTime = $time instanceof Carbon ? $time : Carbon::parse($time);
+
+            return $carbonTime->format('g:i A');
+        } catch (\Exception $e) {
+            return 'Invalid time';
+        }
+    }
+
+    /**
+     * Format date and time together in human-readable format
+     * 
+     * @param mixed $datetime Carbon instance, string, or null
+     * @return string Formatted datetime (e.g., "October 29, 2025 at 2:30 PM")
+     */
+    private static function formatDateTime($datetime): string
+    {
+        if (!$datetime) {
+            return 'Not set';
+        }
+
+        try {
+            return Carbon::parse($datetime)->format('F j, Y \a\t g:i A');
+        } catch (\Exception $e) {
+            return 'Invalid date/time';
+        }
     }
 
     /**
@@ -345,19 +422,11 @@ class GeminiContentBuilder
         }
 
         if (str_contains($fieldName, 'date') || str_contains($fieldName, '_at')) {
-            try {
-                return \Carbon\Carbon::parse($value)->format('F d, Y');
-            } catch (\Exception $e) {
-                return $value;
-            }
+            return self::formatDate($value);
         }
 
-        if (str_contains($fieldName, 'time')) {
-            try {
-                return \Carbon\Carbon::parse($value)->format('g:i A');
-            } catch (\Exception $e) {
-                return $value;
-            }
+        if (str_contains($fieldName, 'time') && !str_contains($fieldName, 'date')) {
+            return self::formatTime($value);
         }
 
         if (str_contains($fieldName, 'amount') || str_contains($fieldName, 'price') || str_contains($fieldName, 'cost')) {

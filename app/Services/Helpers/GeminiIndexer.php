@@ -13,6 +13,7 @@ use App\Models\DentalServiceType;
 use App\Models\Inventory;
 use App\Models\PatientVisit;
 use App\Models\PatientVisitService;
+use Carbon\Carbon;
 
 class GeminiIndexer
 {
@@ -89,9 +90,9 @@ class GeminiIndexer
                 'patient_name' => $appointment->patient_name,
                 'branch_id' => $appointment->branch_id,
                 'branch_name' => $appointment->branch->name,
-                'appointment_date' => $appointment->appointment_date->toISOString(),
-                'start_time' => $appointment->start_time?->format('H:i:s'),
-                'end_time' => $appointment->end_time?->format('H:i:s'),
+                'appointment_date' => $appointment->appointment_date->toDateString(), 
+                'start_time' => $appointment->start_time ? Carbon::parse($appointment->start_time)->format('H:i:s') : null,
+                'end_time' => $appointment->end_time ? Carbon::parse($appointment->end_time)->format('H:i:s') : null,
                 'formatted_time_range' => $appointment->formatted_time_range,
                 'queue_number' => $appointment->queue_number,
                 'status' => $appointment->status->value,

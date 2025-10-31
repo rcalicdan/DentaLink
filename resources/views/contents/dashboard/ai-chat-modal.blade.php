@@ -14,7 +14,8 @@
         <!-- Modal Container -->
         <div class="flex items-center justify-center min-h-screen p-4">
             <div @click.stop x-ref="modal"
-                class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-3xl mx-4 overflow-hidden border border-slate-200 dark:border-slate-700"
+                {{-- THE CHANGE IS ON THIS LINE: Changed max-w-lg md:max-w-3xl to max-w-2xl --}}
+                class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-slate-200 dark:border-slate-700"
                 style="min-width: 320px; min-height: 400px;">
 
                 <!-- Header -->
