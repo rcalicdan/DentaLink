@@ -26,7 +26,7 @@ class GeminiKnowledgeService
 {
     private const DEFAULT_CONTEXT_LIMIT = 50;
     private const EMBEDDING_MODEL = 'text-embedding-004';
-    private const GENERATION_MODEL = 'gemma-3-27b-it';
+    private const GENERATION_MODEL = 'gemini-2.5-flash';
     private const BATCH_SIZE = 50;
     private const RATE_LIMIT_DELAY = 100000;
 

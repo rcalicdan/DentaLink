@@ -24,18 +24,12 @@ class GeminiContentBuilder
             default => ucfirst(str_replace('_', ' ', $user->role ?? 'Unknown'))
         };
 
-        return sprintf(
-            "User: %s. Full Name: %s %s. Email: %s. Phone: %s. User ID: %s. Role: %s. Branch: %s. Created: %s",
-            $user->full_name,
-            $user->first_name,
-            $user->last_name,
-            $user->email,
-            $user->phone ?? 'Not provided',
-            $user->id,
-            $roleName,
-            $user->branch_name,
-            self::formatDate($user->created_at)
-        );
+        $phone = $user->phone ?? 'Not provided';
+        $createdAt = self::formatDate($user->created_at);
+
+        return <<<TEXT
+User: {$user->full_name}. Full Name: {$user->first_name} {$user->last_name}. Email: {$user->email}. Phone: {$phone}. User ID: {$user->id}. Role: {$roleName}. Branch: {$user->branch_name}. Created: {$createdAt}
+TEXT;
     }
 
     /**
@@ -43,17 +37,15 @@ class GeminiContentBuilder
      */
     public static function buildPatientContent(Patient $patient): string
     {
-        return sprintf(
-            "Patient: %s. Phone: %s. Email: %s. Date of Birth: %s. Age: %s. Branch: %s. Address: %s. Registration Date: %s",
-            $patient->full_name,
-            $patient->phone,
-            $patient->email ?? 'Not provided',
-            $patient->date_of_birth ? self::formatDate($patient->date_of_birth) : 'Not provided',
-            $patient->age ?? 'Unknown',
-            $patient->registration_branch_name,
-            $patient->address ?? 'Not provided',
-            self::formatDate($patient->created_at)
-        );
+        $email = $patient->email ?? 'Not provided';
+        $dateOfBirth = $patient->date_of_birth ? self::formatDate($patient->date_of_birth) : 'Not provided';
+        $age = $patient->age ?? 'Unknown';
+        $address = $patient->address ?? 'Not provided';
+        $createdAt = self::formatDate($patient->created_at);
+
+        return <<<TEXT
+Patient: {$patient->full_name}. Phone: {$patient->phone}. Email: {$email}. Date of Birth: {$dateOfBirth}. Age: {$age}. Branch: {$patient->registration_branch_name}. Address: {$address}. Registration Date: {$createdAt}
+TEXT;
     }
 
     /**
@@ -74,17 +66,14 @@ class GeminiContentBuilder
             $formattedTime = self::formatTime($appointment->start_time);
         }
 
-        return sprintf(
-            "Appointment for patient %s scheduled on %s at %s. Status: %s. Queue number: %s. Reason: %s. Branch: %s. Notes: %s",
-            $appointment->patient_name,
-            $formattedDate,
-            $formattedTime,
-            ucfirst($appointment->status->value),
-            $appointment->queue_number ?? 'Not assigned',
-            $appointment->reason,
-            $appointment->branch->name,
-            $appointment->notes ?? 'No additional notes'
-        );
+        $status = ucfirst($appointment->status->value);
+        $queueNumber = $appointment->queue_number ?? 'Not assigned';
+        $branchName = $appointment->branch->name;
+        $notes = $appointment->notes ?? 'No additional notes';
+
+        return <<<TEXT
+Appointment for patient {$appointment->patient_name} scheduled on {$formattedDate} at {$formattedTime}. Status: {$status}. Queue number: {$queueNumber}. Reason: {$appointment->reason}. Branch: {$branchName}. Notes: {$notes}
+TEXT;
     }
 
     /**
@@ -93,24 +82,18 @@ class GeminiContentBuilder
     public static function buildServiceContent(DentalService $service): string
     {
         $priceInfo = $service->price
-            ? sprintf('Price: ₱%s', number_format($service->price, 2))
+            ? 'Price: ₱' . number_format($service->price, 2)
             : 'Price: Varies depending on patient condition and treatment requirements';
 
         $serviceType = $service->is_quantifiable
             ? 'Quantity-based service'
             : 'Fixed service';
 
-        $description = $service->description
-            ?? 'Professional dental care service';
+        $description = $service->description ?? 'Professional dental care service';
 
-        return sprintf(
-            "Dental Service: %s. Category: %s. %s. %s. Description: %s",
-            $service->name,
-            $service->service_type_name,
-            $priceInfo,
-            $serviceType,
-            $description
-        );
+        return <<<TEXT
+Dental Service: {$service->name}. Category: {$service->service_type_name}. {$priceInfo}. {$serviceType}. Description: {$description}
+TEXT;
     }
 
     /**
@@ -119,20 +102,14 @@ class GeminiContentBuilder
     public static function buildVisitContent(PatientVisit $visit): string
     {
         $services = $visit->patientVisitServices->pluck('dentalService.name')->join(', ');
-
-        // Format visit date and time properly
+        $servicesText = $services ?: 'No services recorded';
         $formattedVisitDate = self::formatDateTime($visit->visit_date);
+        $totalAmount = number_format($visit->total_amount_paid, 2);
+        $notes = $visit->notes ?? 'No notes';
 
-        return sprintf(
-            "Patient visit for %s on %s at %s branch. Type: %s. Services: %s. Total amount: ₱%s. Notes: %s",
-            $visit->patient_name,
-            $formattedVisitDate,
-            $visit->branch_name,
-            $visit->visit_type,
-            $services ?: 'No services recorded',
-            number_format($visit->total_amount_paid, 2),
-            $visit->notes ?? 'No notes'
-        );
+        return <<<TEXT
+Patient visit for {$visit->patient_name} on {$formattedVisitDate} at {$visit->branch_name} branch. Type: {$visit->visit_type}. Services: {$servicesText}. Total amount: ₱{$totalAmount}. Notes: {$notes}
+TEXT;
     }
 
     /**
@@ -159,15 +136,17 @@ class GeminiContentBuilder
         }
 
         if ($auditLog->old_values) {
-            $parts[] = "Previous information: " . self::formatValues($auditLog->old_values, $auditLog->auditable_type);
+            $oldValues = self::formatValues($auditLog->old_values, $auditLog->auditable_type);
+            $parts[] = "Previous information: {$oldValues}";
         }
 
         if ($auditLog->new_values) {
-            $parts[] = "Updated information: " . self::formatValues($auditLog->new_values, $auditLog->auditable_type);
+            $newValues = self::formatValues($auditLog->new_values, $auditLog->auditable_type);
+            $parts[] = "Updated information: {$newValues}";
         }
 
-        // Format date and time properly
-        $parts[] = "Date and time: " . self::formatDateTime($auditLog->created_at);
+        $formattedDateTime = self::formatDateTime($auditLog->created_at);
+        $parts[] = "Date and time: {$formattedDateTime}";
 
         return implode('. ', $parts) . '.';
     }
@@ -185,8 +164,14 @@ class GeminiContentBuilder
         }
 
         try {
-            return Carbon::parse($date)->format('F j, Y');
+            if ($date instanceof Carbon) {
+                return $date->format('F j, Y');
+            }
+            
+            $carbonDate = Carbon::parse($date);
+            return $carbonDate->format('F j, Y');
         } catch (\Exception $e) {
+            logger()->error('Invalid date format: ' . json_encode($date) . ' - ' . $e->getMessage());
             return 'Invalid date';
         }
     }
@@ -204,10 +189,14 @@ class GeminiContentBuilder
         }
 
         try {
-            $carbonTime = $time instanceof Carbon ? $time : Carbon::parse($time);
-
+            if ($time instanceof Carbon) {
+                return $time->format('g:i A');
+            }
+            
+            $carbonTime = Carbon::parse($time);
             return $carbonTime->format('g:i A');
         } catch (\Exception $e) {
+            logger()->error('Invalid time format: ' . json_encode($time) . ' - ' . $e->getMessage());
             return 'Invalid time';
         }
     }
@@ -225,8 +214,14 @@ class GeminiContentBuilder
         }
 
         try {
-            return Carbon::parse($datetime)->format('F j, Y \a\t g:i A');
+            if ($datetime instanceof Carbon) {
+                return $datetime->format('F j, Y \a\t g:i A');
+            }
+            
+            $carbonDatetime = Carbon::parse($datetime);
+            return $carbonDatetime->format('F j, Y \a\t g:i A');
         } catch (\Exception $e) {
+            logger()->error('Invalid datetime format: ' . json_encode($datetime) . ' - ' . $e->getMessage());
             return 'Invalid date/time';
         }
     }
@@ -287,9 +282,7 @@ class GeminiContentBuilder
     private static function extractModelName(string $entityType): string
     {
         $className = class_basename($entityType);
-
         $readable = preg_replace('/(?<!^)[A-Z]/', ' $0', $className);
-
         return ucfirst(strtolower($readable));
     }
 
