@@ -78,12 +78,24 @@ class GeminiContentBuilder
      */
     public static function buildServiceContent(DentalService $service): string
     {
+        $priceInfo = $service->price
+            ? sprintf('Price: ₱%s', number_format($service->price, 2))
+            : 'Price: Varies depending on patient condition and treatment requirements';
+
+        $serviceType = $service->is_quantifiable
+            ? 'Quantity-based service'
+            : 'Fixed service';
+
+        $description = $service->description
+            ?? 'Professional dental care service';
+
         return sprintf(
-            "Dental Service: %s. Category: %s. Price: ₱%s. %s. Description: Professional dental care service.",
+            "Dental Service: %s. Category: %s. %s. %s. Description: %s",
             $service->name,
             $service->service_type_name,
-            number_format($service->price, 2),
-            $service->is_quantifiable ? 'Quantity-based service' : 'Fixed service'
+            $priceInfo,
+            $serviceType,
+            $description
         );
     }
 
@@ -198,9 +210,9 @@ class GeminiContentBuilder
     private static function extractModelName(string $entityType): string
     {
         $className = class_basename($entityType);
-        
+
         $readable = preg_replace('/(?<!^)[A-Z]/', ' $0', $className);
-        
+
         return ucfirst(strtolower($readable));
     }
 
@@ -214,15 +226,15 @@ class GeminiContentBuilder
         }
 
         $formatted = [];
-        
+
         foreach ($values as $key => $value) {
             if (in_array($key, ['id', 'created_at', 'updated_at', 'remember_token', 'password'])) {
                 continue;
             }
-            
+
             $readableKey = self::formatFieldName($key);
             $readableValue = self::formatFieldValue($key, $value);
-            
+
             $formatted[] = "{$readableKey}: {$readableValue}";
         }
 

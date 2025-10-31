@@ -38,6 +38,13 @@ IMPORTANT RULES:
 9. If the user can't understand the context, and ask you to simplify the answer, do so.
 10. If the user asks for a summary of the clinic operations, provide a brief overview.
 11. If a user say thank you, say so politely.
+12. **Date and Time Formatting:**
+   - Always present dates in conversational, human-readable format
+   - Use natural language like "January 15, 2024" instead of "2024-01-15"
+   - For recent dates, use relative terms: "today", "yesterday", "tomorrow", "last week", "next Monday"
+   - Include time in 12-hour format with AM/PM: "2:30 PM" instead of "14:30"
+   - When discussing date ranges, make them natural: "from January 1 to January 31, 2024"
+   - For timestamps, use phrases like "on January 15, 2024 at 2:30 PM"
 
 DATE AND TIME FORMATTING:
 - ALWAYS format dates as: "Month Day, Year" (e.g., "Oct 29, 2025" or "October 29, 2025")
@@ -80,45 +87,76 @@ PROMPT;
      */
     public static function buildEnhancedContext(array $stats, array $searchResults): string
     {
-        $context = "Nice Smile Clinic Database Statistics:\n";
-        foreach ($stats as $type => $count) {
-            $context .= "- Total {$type}s: {$count}\n";
-        }
-        $context .= "\nRelevant information from the clinic:\n";
+        $context = "# Knowledge Base Context\n\n";
 
-        foreach ($searchResults as $index => $result) {
-            $relevance = round($result['similarity_score'] * 100, 1);
-            $context .= ($index + 1) . ". " . $result['content'] . " (Relevance: {$relevance}%)\n";
+        // Add statistics
+        if (!empty($stats)) {
+            $context .= "## Available Data:\n";
+            foreach ($stats as $entityType => $count) {
+                $readableName = self::getReadableEntityName($entityType);
+                $context .= "- {$readableName}: " . number_format($count) . " records\n";
+            }
+            $context .= "\n";
+        }
+
+        // Add search results
+        if (!empty($searchResults)) {
+            $context .= "## Relevant Information:\n\n";
+            foreach ($searchResults as $index => $result) {
+                $context .= "### Result " . ($index + 1) . " (Relevance: " . number_format($result['similarity'] * 100, 1) . "%)\n";
+                $context .= $result['content'] . "\n\n";
+            }
         }
 
         return $context;
     }
+
 
     /**
      * Build user prompt
      */
     public static function buildUserPrompt(string $context, string $userMessage, bool $isFirstMessage): string
     {
-        $conversationHint = $isFirstMessage 
-            ? "This is the user's first message in this conversation.\n" 
+        $conversationHint = $isFirstMessage
+            ? "This is the user's first message in this conversation.\n"
             : "This is a follow-up message in an ongoing conversation.\n";
 
         return $conversationHint . $context . "User message: " . $userMessage;
     }
 
     /**
-     * Build enhanced user prompt
+     * Build user prompt with enhanced context
      */
-    public static function buildEnhancedUserPrompt(string $context, string $userMessage, bool $isFirstMessage): string
+    public static function buildEnhancedUserPrompt(string $context, string $userMessage, bool $isFirstMessage = false): string
     {
-        $conversationHint = $isFirstMessage 
-            ? "This is the user's first message in this conversation.\n" 
-            : "This is a follow-up message in an ongoing conversation.\n";
+        if ($isFirstMessage) {
+            return <<<PROMPT
+{$context}
 
-        return $conversationHint 
-            . $context 
-            . "\nUser question: " . $userMessage 
-            . "\n\nProvide a complete and accurate answer based on the clinic data. If the user asks for a list or count, make sure to provide the full information based on the statistics and search results. Remember to format all dates and times according to the formatting rules (e.g., 'Oct 29, 2025 02:30 PM').";
+---
+
+This is the user's first message. They are greeting you or starting a new conversation.
+
+User's message: {$userMessage}
+
+Please provide a warm, helpful introduction and ask how you can assist them with clinic information today.
+PROMPT;
+        }
+
+        return <<<PROMPT
+{$context}
+
+---
+
+User's question: {$userMessage}
+
+Please provide a helpful, accurate response based on the available data above. Remember to:
+- Use natural, conversational language
+- Format dates and times in a human-readable way
+- Present currency in Philippine Peso (₱) format
+- If the information isn't in the context, politely say so
+- Be concise but thorough
+PROMPT;
     }
 
     /**
@@ -127,5 +165,34 @@ PROMPT;
     public static function supportsSystemInstructions(string $model): bool
     {
         return str_starts_with($model, 'gemini');
+    }
+
+
+    /**
+     * Get current date formatted
+     */
+    private static function getCurrentDate(): string
+    {
+        return now()->format('l, F d, Y');
+    }
+
+    /**
+     * Get readable entity name
+     */
+    private static function getReadableEntityName(string $entityType): string
+    {
+        return match ($entityType) {
+            'user' => 'Users',
+            'patient' => 'Patients',
+            'appointment' => 'Appointments',
+            'dental_service' => 'Dental Services',
+            'patient_visit' => 'Patient Visits',
+            'branch' => 'Branches',
+            'dental_service_type' => 'Service Categories',
+            'inventory' => 'Inventory Items',
+            'patient_visit_service' => 'Service Records',
+            'audit_log' => 'Activity Logs',
+            default => ucfirst(str_replace('_', ' ', $entityType))
+        };
     }
 }

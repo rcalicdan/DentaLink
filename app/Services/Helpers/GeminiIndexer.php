@@ -58,8 +58,14 @@ class GeminiIndexer
             embedding: $embedding,
             metadata: [
                 'patient_id' => $patient->id,
-                'branch_id' => $patient->registration_branch_id,
+                'first_name' => $patient->first_name,
+                'last_name' => $patient->last_name,
                 'full_name' => $patient->full_name,
+                'email' => $patient->email,
+                'phone' => $patient->phone,
+                'age' => $patient->age,
+                'registration_branch_id' => $patient->registration_branch_id,
+                'registration_branch_name' => $patient->registration_branch_name,
                 'updated_at' => now()->toISOString(),
             ]
         );
@@ -80,9 +86,18 @@ class GeminiIndexer
             metadata: [
                 'appointment_id' => $appointment->id,
                 'patient_id' => $appointment->patient_id,
+                'patient_name' => $appointment->patient_name,
                 'branch_id' => $appointment->branch_id,
+                'branch_name' => $appointment->branch->name,
                 'appointment_date' => $appointment->appointment_date->toISOString(),
+                'start_time' => $appointment->start_time?->format('H:i:s'),
+                'end_time' => $appointment->end_time?->format('H:i:s'),
+                'formatted_time_range' => $appointment->formatted_time_range,
+                'queue_number' => $appointment->queue_number,
                 'status' => $appointment->status->value,
+                'reason' => $appointment->reason,
+                'has_visit' => $appointment->has_visit,
+                'created_by' => $appointment->created_by,
             ]
         );
     }
@@ -101,7 +116,10 @@ class GeminiIndexer
             embedding: $embedding,
             metadata: [
                 'service_id' => $service->id,
-                'service_type_id' => $service->dental_service_type_id,
+                'name' => $service->name,
+                'description' => $service->description,
+                'dental_service_type_id' => $service->dental_service_type_id,
+                'service_type_name' => $service->service_type_name,
                 'price' => (float) $service->price,
                 'is_quantifiable' => $service->is_quantifiable,
             ]
@@ -143,8 +161,11 @@ class GeminiIndexer
             $content,
             $embedding,
             [
+                'branch_id' => $branch->id,
                 'name' => $branch->name,
                 'address' => $branch->address,
+                'phone' => $branch->phone,
+                'email' => $branch->email,
             ]
         );
     }
@@ -162,7 +183,9 @@ class GeminiIndexer
             $content,
             $embedding,
             [
+                'dental_service_type_id' => $dentalServiceType->id,
                 'name' => $dentalServiceType->name,
+                'description' => $dentalServiceType->description,
             ]
         );
     }
@@ -180,9 +203,12 @@ class GeminiIndexer
             $content,
             $embedding,
             [
+                'inventory_id' => $inventory->id,
                 'name' => $inventory->name,
                 'category' => $inventory->category,
                 'branch_id' => $inventory->branch_id,
+                'current_stock' => $inventory->current_stock,
+                'minimum_stock' => $inventory->minimum_stock,
                 'is_low_stock' => $inventory->is_low_stock,
             ]
         );
@@ -204,9 +230,15 @@ class GeminiIndexer
             $content,
             $embedding,
             [
+                'patient_visit_service_id' => $patientVisitService->id,
                 'patient_id' => $patient->id,
+                'patient_name' => $patient->full_name,
                 'dental_service_id' => $service->id,
+                'dental_service_name' => $service->name,
                 'patient_visit_id' => $patientVisitService->patient_visit_id,
+                'quantity' => $patientVisitService->quantity,
+                'service_price' => (float) $patientVisitService->service_price,
+                'total_price' => (float) $patientVisitService->total_price,
             ]
         );
     }
