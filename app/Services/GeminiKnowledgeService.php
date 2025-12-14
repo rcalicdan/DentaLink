@@ -18,7 +18,6 @@ use App\Services\Helpers\GeminiSearchResultMapper;
 use App\Services\Helpers\GeminiIndexer;
 use Rcalicdan\GeminiClient\GeminiClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\Promise\Interfaces\CancellablePromiseInterface;
 use function Hibla\await;
 use function Hibla\async;
 
@@ -80,7 +79,7 @@ class GeminiKnowledgeService
         ?string $entityType = null,
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
-    ): CancellablePromiseInterface {
+    ): PromiseInterface {
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
@@ -99,7 +98,7 @@ class GeminiKnowledgeService
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false,
         array $sseConfig = []
-    ): CancellablePromiseInterface {
+    ): PromiseInterface {
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
@@ -131,7 +130,7 @@ class GeminiKnowledgeService
         ?string $entityType = null,
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
-    ): CancellablePromiseInterface {
+    ): PromiseInterface {
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
@@ -158,7 +157,7 @@ class GeminiKnowledgeService
         ?string $entityType = null,
         int $contextLimit = self::DEFAULT_CONTEXT_LIMIT,
         bool $isFirstMessage = false
-    ): CancellablePromiseInterface {
+    ): PromiseInterface {
         $stats = $this->getEntityStats();
         $searchResults = $this->search($userMessage, $entityType, $contextLimit);
 
@@ -195,7 +194,7 @@ class GeminiKnowledgeService
     /**
      * Stream introduction with SSE
      */
-    public function streamIntroductionSSE(array $sseConfig = []): CancellablePromiseInterface
+    public function streamIntroductionSSE(array $sseConfig = []): PromiseInterface
     {
         $prompt = "This is the user's first message in this conversation. The user is greeting you. Introduce yourself.";
 
@@ -484,7 +483,7 @@ class GeminiKnowledgeService
     /**
      * Stream response with model-aware prompt handling
      */
-    private function streamWithPrompt(string $userPrompt, callable $onChunk): CancellablePromiseInterface
+    private function streamWithPrompt(string $userPrompt, callable $onChunk): PromiseInterface
     {
         if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
             return $this->client
@@ -502,7 +501,7 @@ class GeminiKnowledgeService
     /**
      * Stream SSE response with model-aware prompt handling
      */
-    private function streamSSEWithPrompt(string $userPrompt, array $sseConfig = []): CancellablePromiseInterface
+    private function streamSSEWithPrompt(string $userPrompt, array $sseConfig = []): PromiseInterface
     {
         if (GeminiPromptHelper::supportsSystemInstructions(self::GENERATION_MODEL)) {
             return $this->client
