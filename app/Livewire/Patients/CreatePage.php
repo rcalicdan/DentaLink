@@ -30,7 +30,13 @@ class CreatePage extends Component
             'first_name' => 'required|string|max:50',
             'last_name' => 'required|string|max:50',
             'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:100|unique:patients,email',
+            'email' => [
+                'nullable',
+                'email',
+                'max:100',
+                'unique:patients,email',
+                'regex:/^.+@\w+\.\w{2,}$/'
+            ],
             'age' => 'nullable|integer|min:0|max:150',
             'address' => 'nullable|string|max:1000',
             'registration_branch_id' => 'required|exists:branches,id',
@@ -43,9 +49,15 @@ class CreatePage extends Component
         return $rules;
     }
 
+    public function updated($propertyName)
+    {
+        $this->validateOnly($propertyName);
+    }
+    
     public function save()
     {
         $this->authorize('create', Patient::class);
+        
         $this->validate();
 
         Patient::create([

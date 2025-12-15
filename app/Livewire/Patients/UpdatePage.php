@@ -41,7 +41,13 @@ class UpdatePage extends Component
             'first_name' => 'required|string|max:50',
             'last_name' => 'required|string|max:50',
             'phone' => 'required|string|max:20',
-            'email' => ['nullable', 'email', 'max:100', Rule::unique('patients')->ignore($this->patient->id)],
+            'email' => [
+                'nullable',
+                'email',
+                'max:100',
+                Rule::unique('patients')->ignore($this->patient->id),
+                'regex:/^.+@\w+\.\w{2,}$/'
+            ],
             'age' => 'nullable|integer|min:0|max:150',
             'address' => 'nullable|string|max:1000',
             'registration_branch_id' => 'required|exists:branches,id',
@@ -52,6 +58,11 @@ class UpdatePage extends Component
         }
 
         return $rules;
+    }
+
+    public function updated($propertyName)
+    {
+        $this->validateOnly($propertyName);
     }
 
     public function update()
@@ -75,7 +86,7 @@ class UpdatePage extends Component
     }
 
     public function render()
-    {
+        {
         $this->authorize('update', $this->patient);
         return view('livewire.patients.update-page', [
             'branchOptions' => $this->getBranchOptions(),

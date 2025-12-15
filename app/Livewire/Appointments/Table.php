@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Appointments;
 
+use App\Actions\Appointments\GenerateAppointmentsPdfAction;
+use App\Actions\Appointments\GenerateAppointmentsCsvAction;
 use App\DataTable\DataTableFactory;
 use App\Models\Appointment;
 use App\Models\Patient;
@@ -13,6 +15,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Response;
 
 #[Layout('components.layouts.app')]
 class Table extends Component
@@ -20,6 +23,9 @@ class Table extends Component
     use WithDataTable, WithPagination;
 
     public $searchDate = '';
+    public $searchDateFrom = '';
+    public $searchDateTo = '';
+    public $searchDateRange = 'single'; // single, 7days, 15days, 30days, 3months, custom
     public $searchStatus = '';
     public $searchPatient = '';
     public $searchBranch = '';
@@ -30,12 +36,64 @@ class Table extends Component
         $this->routeIdColumn = 'id';
         $this->setDataTableFactory($this->getDataTableConfig());
 
-        if (empty($this->searchDate)) {
+        if (empty($this->searchDate) && $this->searchDateRange === 'single') {
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
 
         if (!Auth::user()->isSuperadmin() && empty($this->searchBranch)) {
             $this->searchBranch = Auth::user()->branch_id;
+        }
+
+        $this->applyDateRange();
+    }
+
+    public function updatedSearchDateRange()
+    {
+        $this->applyDateRange();
+        $this->resetPage();
+    }
+
+    private function applyDateRange()
+    {
+        $today = Carbon::today();
+
+        switch ($this->searchDateRange) {
+            case 'single':
+                $this->searchDateFrom = '';
+                $this->searchDateTo = '';
+                if (empty($this->searchDate)) {
+                    $this->searchDate = $today->format('Y-m-d');
+                }
+                break;
+            case '7days':
+                $this->searchDateFrom = $today->format('Y-m-d');
+                $this->searchDateTo = $today->copy()->addDays(6)->format('Y-m-d');
+                $this->searchDate = '';
+                break;
+            case '15days':
+                $this->searchDateFrom = $today->format('Y-m-d');
+                $this->searchDateTo = $today->copy()->addDays(14)->format('Y-m-d');
+                $this->searchDate = '';
+                break;
+            case '30days':
+                $this->searchDateFrom = $today->format('Y-m-d');
+                $this->searchDateTo = $today->copy()->addDays(29)->format('Y-m-d');
+                $this->searchDate = '';
+                break;
+            case '3months':
+                $this->searchDateFrom = $today->format('Y-m-d');
+                $this->searchDateTo = $today->copy()->addMonths(3)->format('Y-m-d');
+                $this->searchDate = '';
+                break;
+            case 'custom':
+                $this->searchDate = '';
+                if (empty($this->searchDateFrom)) {
+                    $this->searchDateFrom = $today->format('Y-m-d');
+                }
+                if (empty($this->searchDateTo)) {
+                    $this->searchDateTo = $today->copy()->addDays(7)->format('Y-m-d');
+                }
+                break;
         }
     }
 
@@ -98,10 +156,14 @@ class Table extends Component
     {
         $query = Appointment::with(['patient', 'branch']);
 
-        $query->when($this->searchDate, function ($q) {
-            return $q->whereDate('appointment_date', $this->searchDate);
-        })
-            ->when($this->searchStatus, function ($q) {
+        // Apply date filters based on range type
+        if ($this->searchDateRange === 'single' && $this->searchDate) {
+            $query->whereDate('appointment_date', $this->searchDate);
+        } elseif ($this->searchDateRange !== 'single' && $this->searchDateFrom && $this->searchDateTo) {
+            $query->whereBetween('appointment_date', [$this->searchDateFrom, $this->searchDateTo]);
+        }
+
+        $query->when($this->searchStatus, function ($q) {
                 return $q->where('status', $this->searchStatus);
             })
             ->when($this->searchBranch, function ($q) {
@@ -122,7 +184,10 @@ class Table extends Component
 
     public function clearFilters()
     {
+        $this->searchDateRange = 'single';
         $this->searchDate = Carbon::today()->format('Y-m-d');
+        $this->searchDateFrom = '';
+        $this->searchDateTo = '';
         $this->searchStatus = '';
 
         if (Auth::user()->isSuperadmin()) {
@@ -133,6 +198,69 @@ class Table extends Component
 
         $this->search = '';
         $this->resetPage();
+    }
+
+    public function downloadPdf()
+    {
+        $filters = [
+            'branch_id' => $this->searchBranch,
+            'status' => $this->searchStatus,
+        ];
+
+        if ($this->searchDateRange === 'single') {
+            $filters['date'] = $this->searchDate;
+        } else {
+            $filters['date_from'] = $this->searchDateFrom;
+            $filters['date_to'] = $this->searchDateTo;
+        }
+
+        if ($this->searchBranch) {
+            $branch = Branch::find($this->searchBranch);
+            $filters['branch_name'] = $branch?->name;
+        }
+
+        if ($this->searchStatus) {
+            $status = AppointmentStatuses::from($this->searchStatus);
+            $filters['status_name'] = $status->getDisplayName();
+        }
+
+        $action = new GenerateAppointmentsPdfAction();
+        $pdfContent = $action->execute($filters);
+
+        $fileName = 'appointments_' . date('Y-m-d_His') . '.pdf';
+
+        return Response::streamDownload(function () use ($pdfContent) {
+            echo $pdfContent;
+        }, $fileName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    public function downloadCsv()
+    {
+        $filters = [
+            'branch_id' => $this->searchBranch,
+            'status' => $this->searchStatus,
+        ];
+
+        if ($this->searchDateRange === 'single') {
+            $filters['date'] = $this->searchDate;
+        } else {
+            $filters['date_from'] = $this->searchDateFrom;
+            $filters['date_to'] = $this->searchDateTo;
+        }
+
+        $action = new GenerateAppointmentsCsvAction();
+        $csvContent = $action->execute($filters);
+
+        $fileName = 'appointments_' . date('Y-m-d_His') . '.csv';
+
+        return Response::streamDownload(function () use ($csvContent) {
+            echo $csvContent;
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 
     public function updateStatus($appointmentId, $newStatus)
@@ -161,7 +289,7 @@ class Table extends Component
         $title = 'Appointments';
         $indicators = [];
 
-        if ($this->searchDate) {
+        if ($this->searchDateRange === 'single' && $this->searchDate) {
             $date = Carbon::parse($this->searchDate);
             if ($date->isToday()) {
                 $indicators[] = 'Today';
@@ -172,6 +300,10 @@ class Table extends Component
             } else {
                 $indicators[] = $date->format('M j, Y');
             }
+        } elseif ($this->searchDateRange !== 'single' && $this->searchDateFrom && $this->searchDateTo) {
+            $dateFrom = Carbon::parse($this->searchDateFrom);
+            $dateTo = Carbon::parse($this->searchDateTo);
+            $indicators[] = $dateFrom->format('M j') . ' - ' . $dateTo->format('M j, Y');
         }
 
         if ($this->searchStatus) {
