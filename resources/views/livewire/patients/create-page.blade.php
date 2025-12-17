@@ -32,17 +32,25 @@
 
         <x-form.field label="Age" name="age" type="number" wire:model.live="age" icon="fas fa-calendar"
             placeholder="Enter age" min="0" max="150" />
-            
-        <div class="grid grid-cols-1 gap-6">
-            <x-form.field label="Registration Branch" name="registration_branch_id" type="select"
-                wire:model.live="registration_branch_id" :options="$branchOptions" required icon="fas fa-building"
-                help="{{ $isAdmin ? 'Patients will be registered to your branch' : 'Select the branch where patient is registering' }}"
-                :readonly="$isAdmin" />
-        </div>
 
-        <div class="grid grid-cols-1 gap-6">
-            <x-form.field label="Address" name="address" type="textarea" placeholder="Enter patient address"
-                wire:model.live="address" icon="fas fa-map-marker-alt" rows="3" />
+        <x-form.field label="Registration Branch" name="registration_branch_id" type="select"
+            wire:model.live="registration_branch_id" :options="$branchOptions" required icon="fas fa-building"
+            help="{{ $isAdmin ? 'Patients will be registered to your branch' : 'Select the branch where patient is registering' }}"
+            :readonly="$isAdmin" />
+
+        <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mt-6 mb-3">Address Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <x-form.field label="Street Name / House No." name="street" type="text" placeholder="e.g. 123 Main St."
+                wire:model.live="street" icon="fas fa-road" />
+
+            <x-form.field label="Barangay" name="barangay" type="text" placeholder="Enter Barangay"
+                wire:model.live="barangay" icon="fas fa-map-marker-alt" />
+
+            <x-form.field label="Town / City" name="town_city" type="text" placeholder="Enter Town or City"
+                wire:model.live="town_city" icon="fas fa-city" />
+
+            <x-form.field label="Province" name="province" type="text" placeholder="Enter Province"
+                wire:model.live="province" icon="fas fa-map" />
         </div>
 
         <div class="flex justify-end space-x-3 pt-6">

@@ -16,7 +16,11 @@ class UpdatePage extends Component
     public $phone;
     public $email;
     public $age;
-    public $address;
+    public $street;
+    public $barangay;
+    public $town_city;
+    public $province;
+    
     public $registration_branch_id;
 
     public function mount(Patient $patient)
@@ -31,8 +35,24 @@ class UpdatePage extends Component
         $this->phone = $patient->phone;
         $this->email = $patient->email;
         $this->age = $patient->age;
-        $this->address = $patient->address;
+        
+        $this->parseAddress($patient->address);
+        
         $this->registration_branch_id = $patient->registration_branch_id;
+    }
+
+    private function parseAddress(?string $address)
+    {
+        if (!$address) {
+            return;
+        }
+
+        $parts = array_map('trim', explode(',', $address));
+        
+        $this->street = $parts[0] ?? '';
+        $this->barangay = $parts[1] ?? '';
+        $this->town_city = $parts[2] ?? '';
+        $this->province = $parts[3] ?? '';
     }
 
     public function rules()
@@ -44,12 +64,16 @@ class UpdatePage extends Component
             'email' => [
                 'nullable',
                 'email',
-                'max:100',
+                'max:100', 
                 Rule::unique('patients')->ignore($this->patient->id),
                 'regex:/^.+@\w+\.\w{2,}$/'
             ],
             'age' => 'nullable|integer|min:0|max:150',
-            'address' => 'nullable|string|max:1000',
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'nullable|string|max:255',
+            'town_city' => 'nullable|string|max:255',
+            'province' => 'nullable|string|max:255',
+            
             'registration_branch_id' => 'required|exists:branches,id',
         ];
 
@@ -59,10 +83,19 @@ class UpdatePage extends Component
 
         return $rules;
     }
-
+    
     public function updated($propertyName)
     {
         $this->validateOnly($propertyName);
+    }
+    
+    private function combineAddress(): ?string
+    {
+        $parts = array_filter([$this->street, $this->barangay, $this->town_city, $this->province]);
+        if (empty($parts)) {
+            return null;
+        }
+        return implode(', ', $parts);
     }
 
     public function update()
@@ -76,7 +109,7 @@ class UpdatePage extends Component
             'phone' => $this->phone,
             'email' => $this->email ?: null,
             'age' => $this->age ?: null,
-            'address' => $this->address ?: null,
+            'address' => $this->combineAddress(),
             'registration_branch_id' => $this->registration_branch_id,
         ]);
 
@@ -86,7 +119,7 @@ class UpdatePage extends Component
     }
 
     public function render()
-        {
+    {
         $this->authorize('update', $this->patient);
         return view('livewire.patients.update-page', [
             'branchOptions' => $this->getBranchOptions(),

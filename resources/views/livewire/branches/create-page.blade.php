@@ -16,20 +16,30 @@
         wire:submit="save">
         <div class="grid grid-cols-1 gap-6">
             <x-form.field label="Branch Name" name="name" type="text" placeholder="Enter branch name"
-                wire:model="name" required icon="fas fa-building" />
+                wire:model.live="name" required icon="fas fa-building" />
         </div>
 
-        <div class="grid grid-cols-1 gap-6">
-            <x-form.field label="Address" name="address" type="textarea" placeholder="Enter branch address"
-                wire:model="address" icon="fas fa-map-marker-alt" rows="3" />
+        <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mt-6 mb-3">Address Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <x-form.field label="Street Name / House No." name="street" type="text" placeholder="e.g. 123 Main St."
+                wire:model.live="street" icon="fas fa-road" />
+
+            <x-form.field label="Barangay" name="barangay" type="text" placeholder="Enter Barangay"
+                wire:model.live="barangay" icon="fas fa-map-marker-alt" />
+
+            <x-form.field label="Town / City" name="town_city" type="text" placeholder="Enter Town or City"
+                wire:model.live="town_city" icon="fas fa-city" />
+
+            <x-form.field label="Province" name="province" type="text" placeholder="Enter Province"
+                wire:model.live="province" icon="fas fa-map" />
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <x-form.field label="Phone Number" name="phone" type="tel" placeholder="Enter phone number"
-                wire:model="phone" icon="fas fa-phone" />
+                wire:model.live="phone" icon="fas fa-phone" />
 
             <x-form.field label="Email Address" name="email" type="email" placeholder="Enter email address"
-                wire:model="email" icon="fas fa-envelope" />
+                wire:model.live="email" icon="fas fa-envelope" />
         </div>
 
         <div class="flex justify-end space-x-3 pt-6">

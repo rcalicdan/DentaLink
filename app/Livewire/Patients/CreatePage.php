@@ -14,7 +14,11 @@ class CreatePage extends Component
     public $phone = '';
     public $email = '';
     public $age = '';
-    public $address = '';
+    public $street = '';
+    public $barangay = '';
+    public $town_city = '';
+    public $province = '';
+    
     public $registration_branch_id = '';
 
     public function mount()
@@ -38,7 +42,13 @@ class CreatePage extends Component
                 'regex:/^.+@\w+\.\w{2,}$/'
             ],
             'age' => 'nullable|integer|min:0|max:150',
-            'address' => 'nullable|string|max:1000',
+            
+            // New Address Rules
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'nullable|string|max:255',
+            'town_city' => 'nullable|string|max:255',
+            'province' => 'nullable|string|max:255',
+            
             'registration_branch_id' => 'required|exists:branches,id',
         ];
 
@@ -54,6 +64,15 @@ class CreatePage extends Component
         $this->validateOnly($propertyName);
     }
     
+    private function combineAddress(): ?string
+    {
+        $parts = array_filter([$this->street, $this->barangay, $this->town_city, $this->province]);
+        if (empty($parts)) {
+            return null;
+        }
+        return implode(', ', $parts);
+    }
+
     public function save()
     {
         $this->authorize('create', Patient::class);
@@ -66,7 +85,7 @@ class CreatePage extends Component
             'phone' => $this->phone,
             'email' => $this->email ?: null,
             'age' => $this->age ?: null,
-            'address' => $this->address ?: null,
+            'address' => $this->combineAddress(),
             'registration_branch_id' => $this->registration_branch_id,
         ]);
 
