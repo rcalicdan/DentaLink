@@ -15,7 +15,7 @@ class UpdatePage extends Component
     public $last_name;
     public $phone;
     public $email;
-    public $age;
+    public $birthday;
     public $street;
     public $barangay;
     public $town_city;
@@ -34,7 +34,7 @@ class UpdatePage extends Component
         $this->last_name = $patient->last_name;
         $this->phone = $patient->phone;
         $this->email = $patient->email;
-        $this->age = $patient->age;
+        $this->birthday = $patient->birthday ? $patient->birthday->format('Y-m-d') : '';
         
         $this->parseAddress($patient->address);
         
@@ -68,7 +68,7 @@ class UpdatePage extends Component
                 Rule::unique('patients')->ignore($this->patient->id),
                 'regex:/^.+@\w+\.\w{2,}$/'
             ],
-            'age' => 'nullable|integer|min:0|max:150',
+            'birthday' => 'nullable|date|before:today|after:1900-01-01',
             'street' => 'nullable|string|max:255',
             'barangay' => 'nullable|string|max:255',
             'town_city' => 'nullable|string|max:255',
@@ -108,7 +108,7 @@ class UpdatePage extends Component
             'last_name' => $this->last_name,
             'phone' => $this->phone,
             'email' => $this->email ?: null,
-            'age' => $this->age ?: null,
+            'birthday' => $this->birthday ?: null,
             'address' => $this->combineAddress(),
             'registration_branch_id' => $this->registration_branch_id,
         ]);

@@ -58,21 +58,10 @@ class Table extends Component
                     'sortable' => true
                 ],
                 [
-                    'key' => 'age',
-                    'label' => 'Age',
-                    'sortable' => true
-                ],
-                [
                     'key' => 'registration_branch_name',
                     'label' => 'Registration Branch',
                     'sortable' => true,
                     'accessor' => true,
-                ],
-                [
-                    'key' => 'created_at',
-                    'label' => 'Registered',
-                    'sortable' => true,
-                    'type' => 'datetime'
                 ],
             ])
             ->deleteAction('deletePatient')

@@ -30,8 +30,9 @@
                 wire:model.live="email" icon="fas fa-envelope" />
         </div>
 
-        <x-form.field label="Age" name="age" type="number" wire:model.live="age" icon="fas fa-calendar"
-            placeholder="Enter age" min="0" max="150" />
+        <x-form.field label="Birthday" name="birthday" type="date" wire:model.live="birthday" 
+            icon="fas fa-birthday-cake" placeholder="Select birthday" 
+            help="Age will be calculated automatically from birthday" />
 
         <x-form.field label="Registration Branch" name="registration_branch_id" type="select"
             wire:model.live="registration_branch_id" :options="$branchOptions" required icon="fas fa-building"

@@ -40,8 +40,8 @@ class Table extends Component
                 [
                     'key' => 'service_type_name',
                     'label' => 'Service Type',
-                    'sortable' => true,
                     'accessor' => true,
+                    "sortable" => false,
                 ],
                 [
                     'key' => 'price',
@@ -54,12 +54,6 @@ class Table extends Component
                     'label' => 'Usage Count',
                     'sortable' => true,
                     'accessor' => true,
-                ],
-                [
-                    'key' => 'created_at',
-                    'label' => 'Created',
-                    'sortable' => true,
-                    'type' => 'datetime'
                 ],
             ])
             ->deleteAction('deleteDentalService')

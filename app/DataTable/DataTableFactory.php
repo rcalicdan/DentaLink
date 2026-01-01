@@ -4,7 +4,6 @@ namespace App\DataTable;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class DataTableFactory
@@ -480,7 +479,7 @@ class DataTableFactory
             return '#';
         }
 
-        if (Route::has($route)) {
+        if (\Route::has($route)) {
             return route($route);
         }
 

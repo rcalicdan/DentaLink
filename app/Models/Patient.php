@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Libraries\Audit\Auditable;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Patient extends Model
 {
@@ -14,7 +15,7 @@ class Patient extends Model
         'last_name',
         'phone',
         'email',
-        'age',
+        'birthday',
         'address',
         'registration_branch_id',
     ];
@@ -22,7 +23,7 @@ class Patient extends Model
     protected function casts(): array
     {
         return [
-            'age' => 'integer',
+            'birthday' => 'date',
         ];
     }
 
@@ -49,5 +50,23 @@ class Patient extends Model
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->last_name;
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->birthday) {
+            return null;
+        }
+
+        return Carbon::parse($this->birthday)->age;
+    }
+
+    public function getFormattedBirthdayAttribute(): ?string
+    {
+        if (!$this->birthday) {
+            return null;
+        }
+
+        return Carbon::parse($this->birthday)->format('M d, Y');
     }
 }
