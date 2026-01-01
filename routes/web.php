@@ -66,10 +66,6 @@ Route::middleware(['auth'])->group(function () {
     //     Route::get('/{inventory}/edit', \App\Livewire\Inventories\UpdatePage::class)->name('edit');
     // });
 
-    Route::post('/dashboard/refresh-forecast', [DashboardController::class, 'refreshForecast'])
-        ->name('dashboard.refresh-forecast')
-        ->middleware(['auth', 'can:view-ai-assistant']);
-
     Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
         Route::get('', \App\Livewire\AuditLogs\Table::class)->name('index');
         Route::get('/{auditLog}', \App\Livewire\AuditLogs\ViewPage::class)->name('view');
