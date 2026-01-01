@@ -16,6 +16,7 @@ class Appointment extends Model
     protected $fillable = [
         'patient_id',
         'branch_id',
+        'dentist_id',
         'appointment_date',
         'start_time',
         'end_time',
@@ -43,6 +44,11 @@ class Appointment extends Model
         return "{$this->patient->first_name} {$this->patient->last_name}";
     }
 
+    public function getDentistNameAttribute(): ?string
+    {
+        return $this->dentist?->full_name;
+    }
+
     public function patient()
     {
         return $this->belongsTo(Patient::class);
@@ -51,6 +57,11 @@ class Appointment extends Model
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function dentist()
+    {
+        return $this->belongsTo(User::class, 'dentist_id');
     }
 
     public function creator()
@@ -95,20 +106,18 @@ class Appointment extends Model
         $appointmentDate = $this->appointment_date;
 
         if ($oldQueueNumber === $newQueueNumber) {
-            return true; // No change needed
+            return true;
         }
 
         try {
             DB::transaction(function () use ($newQueueNumber, $oldQueueNumber, $appointmentDate) {
                 if ($newQueueNumber > $oldQueueNumber) {
-                    // Moving down: shift appointments between old and new position up by 1
                     Appointment::where('appointment_date', $appointmentDate)
                         ->where('queue_number', '>', $oldQueueNumber)
                         ->where('queue_number', '<=', $newQueueNumber)
                         ->where('id', '!=', $this->id)
                         ->decrement('queue_number');
                 } else {
-                    // Moving up: shift appointments between new and old position down by 1
                     Appointment::where('appointment_date', $appointmentDate)
                         ->where('queue_number', '>=', $newQueueNumber)
                         ->where('queue_number', '<', $oldQueueNumber)
@@ -116,7 +125,6 @@ class Appointment extends Model
                         ->increment('queue_number');
                 }
 
-                // Update this appointment's queue number without triggering events
                 $this->withoutEvents(function () use ($newQueueNumber) {
                     $this->update(['queue_number' => $newQueueNumber]);
                 });
@@ -152,6 +160,36 @@ class Appointment extends Model
 
         if ($query->exists()) {
             throw new \Exception('Patient already has an active appointment on this date.');
+        }
+    }
+
+    public static function checkDentistConflict($dentistId, $date, $startTime, $endTime, $excludeId = null)
+    {
+        if (!$dentistId) {
+            return; 
+        }
+
+        $query = static::where('dentist_id', $dentistId)
+            ->whereDate('appointment_date', $date)
+            ->where(function ($q) use ($startTime, $endTime) {
+                $q->whereBetween('start_time', [$startTime, $endTime])
+                  ->orWhereBetween('end_time', [$startTime, $endTime])
+                  ->orWhere(function ($q2) use ($startTime, $endTime) {
+                      $q2->where('start_time', '<=', $startTime)
+                         ->where('end_time', '>=', $endTime);
+                  });
+            })
+            ->whereIn('status', [
+                AppointmentStatuses::WAITING->value,
+                AppointmentStatuses::IN_PROGRESS->value
+            ]);
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        if ($query->exists()) {
+            throw new \Exception('Dentist already has an appointment at this time.');
         }
     }
 

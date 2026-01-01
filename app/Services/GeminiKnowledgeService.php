@@ -357,12 +357,7 @@ class GeminiKnowledgeService
     {
         return async(fn() => $this->batchGenerateEmbeddings($texts));
     }
-
-    // ==========================================
-    // INDEXING METHODS (existing methods remain the same)
-    // ==========================================
-
-    // ... (keep all your existing indexing methods unchanged) ...
+    
     
     public function indexUser(User $user): void
     {

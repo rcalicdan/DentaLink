@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Libraries\Audit\Auditable;
+use App\Enums\UserRoles;
 use Illuminate\Database\Eloquent\Model;
 
 class Branch extends Model
@@ -16,10 +17,14 @@ class Branch extends Model
         'email',
     ];
 
-    // Relationships
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function dentists()
+    {
+        return $this->hasMany(User::class)->where('role', UserRoles::DENTIST->value);
     }
 
     public function patients()
@@ -40,5 +45,10 @@ class Branch extends Model
     public function inventoryItems()
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function getDentistsCountAttribute(): int
+    {
+        return $this->dentists()->count();
     }
 }

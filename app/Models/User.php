@@ -65,6 +65,11 @@ class User extends Authenticatable
         return $this->role === UserRoles::ADMIN->value;
     }
 
+    public function isDentist(): bool
+    {
+        return $this->role === UserRoles::DENTIST->value;
+    }
+
     public function isEmployee(): bool
     {
         return $this->role === UserRoles::EMPLOYEE->value;
@@ -83,5 +88,41 @@ class User extends Authenticatable
     public function createdPatientVisits()
     {
         return $this->hasMany(PatientVisit::class, 'created_by');
+    }
+
+    public function dentistAppointments()
+    {
+        return $this->hasMany(Appointment::class, 'dentist_id');
+    }
+
+    public function dentistPatientVisits()
+    {
+        return $this->hasMany(PatientVisit::class, 'dentist_id');
+    }
+
+    public static function getDentists(?int $branchId = null)
+    {
+        $query = self::where('role', UserRoles::DENTIST->value)
+            ->orderBy('first_name')
+            ->orderBy('last_name');
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        return $query->get();
+    }
+
+    public static function getDentistOptions(?int $branchId = null): array
+    {
+        $dentists = self::getDentists($branchId);
+        
+        $options = ['' => 'Select Dentist'];
+        
+        foreach ($dentists as $dentist) {
+            $options[$dentist->id] = $dentist->full_name;
+        }
+        
+        return $options;
     }
 }
