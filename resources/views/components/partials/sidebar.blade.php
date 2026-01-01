@@ -18,9 +18,9 @@
     <nav class="flex-1 p-3 overflow-y-auto">
         <ul class="space-y-2">
             @can('view-dashboard')
-            <x-partials.nav-item href="{{ route('dashboard.index') }}" icon="fas fa-home" :active="request()->routeIs('dashboard.index')">
-                Dashboard
-            </x-partials.nav-item>
+                <x-partials.nav-item href="{{ route('dashboard.index') }}" icon="fas fa-home" :active="request()->routeIs('dashboard.index')">
+                    Dashboard
+                </x-partials.nav-item>
             @endcan
 
             @can('viewAny', App\Models\Branch::class)
@@ -54,8 +54,18 @@
             @endcan
 
             @can('viewAny', App\Models\Appointment::class)
+                <x-partials.nav-item href="{{ route('appointments.calendar') }}" icon="fas fa-calendar-alt"
+                    :active="request()->routeIs('appointments.calendar')">
+                    Appointment Calendar
+                </x-partials.nav-item>
+
                 <x-partials.nav-item href="{{ route('appointments.index') }}" icon="fas fa-calendar-check"
-                    :active="request()->routeIs('appointments.*')">
+                    :active="request()->routeIs(
+                        'appointments.index',
+                        'appointments.create',
+                        'appointments.edit',
+                        'appointments.view',
+                    )">
                     Appointments
                 </x-partials.nav-item>
             @endcan
@@ -72,6 +82,12 @@
                     Inventory
                 </x-partials.nav-item>
             @endcan --}}
+
+            @can('viewAny', App\Models\Feedback::class)
+                <x-partials.nav-item href="{{ route('feedback.index') }}" icon="fas fa-comments" :active="request()->routeIs('feedback.*')">
+                    Feedback
+                </x-partials.nav-item>
+            @endcan
 
             @can('viewAny', App\Models\AuditLog::class)
                 <x-partials.nav-item href="{{ route('audit-logs.index') }}" icon="fas fa-history" :active="request()->routeIs('audit-logs.*')">

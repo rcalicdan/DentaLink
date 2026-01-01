@@ -11,27 +11,68 @@ class UpdatePage extends Component
 {
     public Branch $branch;
     public $name;
-    public $address;
     public $phone;
     public $email;
+    
+    // New Address Fields
+    public $street;
+    public $barangay;
+    public $town_city;
+    public $province;
 
     public function mount(Branch $branch)
     {
         $this->branch = $branch;
         $this->name = $branch->name;
-        $this->address = $branch->address;
         $this->phone = $branch->phone;
         $this->email = $branch->email;
+        
+        $this->parseAddress($branch->address);
+    }
+
+    private function parseAddress(?string $address)
+    {
+        if (!$address) {
+            $this->street = '';
+            $this->barangay = '';
+            $this->town_city = '';
+            $this->province = '';
+            return;
+        }
+
+        $parts = array_map('trim', explode(',', $address));
+        
+        $this->street = $parts[0] ?? '';
+        $this->barangay = $parts[1] ?? '';
+        $this->town_city = $parts[2] ?? '';
+        $this->province = $parts[3] ?? '';
     }
 
     public function rules()
     {
         return [
             'name' => ['required', 'string', 'max:255', Rule::unique('branches')->ignore($this->branch->id)],
-            'address' => 'nullable|string|max:500',
             'phone' => 'nullable|string|max:20',
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('branches')->ignore($this->branch->id)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('branches')->ignore($this->branch->id), 'regex:/^.+@\w+\.\w{2,}$/'],
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'nullable|string|max:255',
+            'town_city' => 'nullable|string|max:255',
+            'province' => 'nullable|string|max:255',
         ];
+    }
+
+    public function updated($propertyName)
+    {
+        $this->validateOnly($propertyName);
+    }
+    
+    private function combineAddress(): ?string
+    {
+        $parts = array_filter([$this->street, $this->barangay, $this->town_city, $this->province]);
+        if (empty($parts)) {
+            return null;
+        }
+        return implode(', ', $parts);
     }
 
     public function update()
@@ -41,7 +82,7 @@ class UpdatePage extends Component
 
         $this->branch->update([
             'name' => $this->name,
-            'address' => $this->address,
+            'address' => $this->combineAddress(),
             'phone' => $this->phone,
             'email' => $this->email ?: null,
         ]);

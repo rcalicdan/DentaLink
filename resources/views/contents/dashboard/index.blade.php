@@ -1,5 +1,4 @@
 <x-layouts.app>
-
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 flex items-center justify-between">
@@ -49,6 +48,7 @@
         </div>
     </div>
 
+    {{-- Charts Section --}}
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-6">
         <div class="lg:col-span-3 bg-white dark:bg-slate-800 rounded-lg shadow p-6" x-data="appointmentsChart()">
             <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Weekly Appointments</h3>
@@ -91,6 +91,12 @@
             @endif
         </div>
     </div>
+
+    {{-- AI Forecast Section --}}
+    @can('view-ai-assistant')
+        @livewire('dashboard.ai-forecast')
+    @endcan
+
 
     <div class="mt-8">
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
@@ -138,9 +144,8 @@
     </div>
 
     @can('view-ai-assistant')
-       @include('contents.dashboard.ai-chat-modal')
+        @include('contents.dashboard.ai-chat-modal')
     @endcan
 
     @include('contents.dashboard.charts-js')
-
 </x-layouts.app>

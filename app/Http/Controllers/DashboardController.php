@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
+use App\Services\GeminiKnowledgeService;
 
 class DashboardController extends Controller
 {
@@ -23,7 +24,7 @@ class DashboardController extends Controller
             'revenueGrowth' => $this->calculateRevenueGrowth(),
             'weeklyAppointments' => $this->getWeeklyAppointmentsData(),
             'servicesBreakdown' => $this->getServicesBreakdownData(),
-            'upcomingAppointmentsList' => $this->getUpcomingAppointmentsList()
+            'upcomingAppointmentsList' => $this->getUpcomingAppointmentsList(),
         ]);
     }
 
@@ -66,12 +67,10 @@ class DashboardController extends Controller
 
     private function getAppointmentsToday(): int
     {
-        // Return cached value if available
         if ($this->appointmentsTodayCache !== null) {
             return $this->appointmentsTodayCache;
         }
 
-        // Query and cache the result
         $this->appointmentsTodayCache = DB::table('appointments')
             ->whereDate('appointment_date', Carbon::today())
             ->count();
@@ -93,12 +92,10 @@ class DashboardController extends Controller
 
     private function getMonthlyRevenue(): float
     {
-        // Return cached value if available
         if ($this->monthlyRevenueCache !== null) {
             return $this->monthlyRevenueCache;
         }
 
-        // Query and cache the result
         $this->monthlyRevenueCache = $this->getRevenueForPeriod(
             Carbon::now()->month,
             Carbon::now()->year
@@ -109,7 +106,7 @@ class DashboardController extends Controller
 
     private function calculateRevenueGrowth(): float
     {
-        $currentRevenue = $this->getMonthlyRevenue(); // Uses cached value
+        $currentRevenue = $this->getMonthlyRevenue();
 
         $lastMonth = Carbon::now()->subMonth();
         $lastRevenue = $this->getLastMonthRevenue($lastMonth->month, $lastMonth->year);
@@ -119,12 +116,10 @@ class DashboardController extends Controller
 
     private function getLastMonthRevenue(int $month, int $year): float
     {
-        // Return cached value if available
         if ($this->lastMonthRevenueCache !== null) {
             return $this->lastMonthRevenueCache;
         }
 
-        // Query and cache the result
         $this->lastMonthRevenueCache = $this->getRevenueForPeriod($month, $year);
 
         return $this->lastMonthRevenueCache;

@@ -10,13 +10,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "google-gemini-php/laravel": "^2.0",
-        "hiblaphp/http-client": "dev-main",
         "laravel/framework": "^12.0",
         "laravel/nightwatch": "^1.17",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6",
-        "rcalicdan/gemini-client": "^0.2"
+        "league/csv": "^9.24",
+        "tecnickcom/tcpdf": "^6.10",
+        "rcalicdan/gemini-client": "dev-main"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('login', App\Livewire\Auth\LoginPage::class)->name('login');
 Route::get('/', fn() => redirect()->route('login'))->name('home');
+Route::get('feedback', \App\Livewire\Feedback\PublicFeedbackPage::class)->name('feedback.public');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->can('view-dashboard');
@@ -35,6 +36,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{dentalServiceType}/edit', \App\Livewire\DentalServiceTypes\UpdatePage::class)->name('edit');
     });
 
+    Route::prefix('feedback-admin')->name('feedback.')->group(function () {
+        Route::get('', \App\Livewire\Feedback\Table::class)->name('index');
+    });
+
     Route::prefix('dental-services')->name('dental-services.')->group(function () {
         Route::get('', \App\Livewire\DentalServices\Table::class)->name('index');
         Route::get('/create', \App\Livewire\DentalServices\CreatePage::class)->name('create');
@@ -43,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('appointments')->name('appointments.')->group(function () {
         Route::get('', \App\Livewire\Appointments\Table::class)->name('index');
+        Route::get('/calendar', \App\Livewire\Appointments\Calendar::class)->name('calendar'); // Add this
         Route::get('/create', \App\Livewire\Appointments\CreatePage::class)->name('create');
         Route::get('/{appointment}/edit', \App\Livewire\Appointments\UpdatePage::class)->name('edit');
         Route::get('/{appointment}/view', \App\Livewire\Appointments\ViewPage::class)->name('view');
