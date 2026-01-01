@@ -36,6 +36,11 @@ class Table extends Component
         $this->routeIdColumn = 'id';
         $this->setDataTableFactory($this->getDataTableConfig());
 
+        if (request()->has('date')) {
+            $this->searchDate = request()->get('date');
+            $this->searchDateRange = 'single';
+        }
+
         if (empty($this->searchDate) && $this->searchDateRange === 'single') {
             $this->searchDate = Carbon::today()->format('Y-m-d');
         }
@@ -164,8 +169,8 @@ class Table extends Component
         }
 
         $query->when($this->searchStatus, function ($q) {
-                return $q->where('status', $this->searchStatus);
-            })
+            return $q->where('status', $this->searchStatus);
+        })
             ->when($this->searchBranch, function ($q) {
                 return $q->where('branch_id', $this->searchBranch);
             });
