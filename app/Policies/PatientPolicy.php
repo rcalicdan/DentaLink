@@ -23,33 +23,45 @@ class PatientPolicy
 
     public function view(User $user, Patient $patient): bool
     {
-        if ($user->isAdmin()) {
-            return $patient->registration_branch_id === $user->branch_id;
+        if ($user->isAdmin() || $user->isEmployee() || $user->isDentist()) {
+            if ($user->isAdmin() && $patient->registration_branch_id !== $user->branch_id) {
+                return false;
+            }
+
+            return true;
         }
         
-        return true;
+        return false;
     }
 
     public function create(User $user): bool
     {
-        return true; 
+        return $user->isAdmin() || $user->isEmployee(); 
     }
 
     public function update(User $user, Patient $patient): bool
     {
+        if ($user->isDentist()) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return $patient->registration_branch_id === $user->branch_id;
         }
         
-        return true;
+        return $user->isEmployee();
     }
 
     public function delete(User $user, Patient $patient): bool
     {
+        if ($user->isDentist()) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return $patient->registration_branch_id === $user->branch_id;
         }
         
-        return true;
+        return $user->isEmployee();
     }
 }

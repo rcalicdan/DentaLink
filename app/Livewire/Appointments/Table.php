@@ -6,7 +6,6 @@ use App\Actions\Appointments\GenerateAppointmentsPdfAction;
 use App\Actions\Appointments\GenerateAppointmentsCsvAction;
 use App\DataTable\DataTableFactory;
 use App\Models\Appointment;
-use App\Models\Patient;
 use App\Enums\AppointmentStatuses;
 use App\Models\Branch;
 use App\Traits\Livewire\WithDataTable;
@@ -25,10 +24,11 @@ class Table extends Component
     public $searchDate = '';
     public $searchDateFrom = '';
     public $searchDateTo = '';
-    public $searchDateRange = 'single'; // single, 7days, 15days, 30days, 3months, custom
+    public $searchDateRange = 'single'; 
     public $searchStatus = '';
     public $searchPatient = '';
     public $searchBranch = '';
+    public $showMyAppointments = false;
 
     public function boot()
     {
@@ -161,7 +161,6 @@ class Table extends Component
     {
         $query = Appointment::with(['patient', 'branch']);
 
-        // Apply date filters based on range type
         if ($this->searchDateRange === 'single' && $this->searchDate) {
             $query->whereDate('appointment_date', $this->searchDate);
         } elseif ($this->searchDateRange !== 'single' && $this->searchDateFrom && $this->searchDateTo) {
@@ -171,9 +170,13 @@ class Table extends Component
         $query->when($this->searchStatus, function ($q) {
             return $q->where('status', $this->searchStatus);
         })
-            ->when($this->searchBranch, function ($q) {
-                return $q->where('branch_id', $this->searchBranch);
-            });
+        ->when($this->searchBranch, function ($q) {
+            return $q->where('branch_id', $this->searchBranch);
+        });
+
+        if (Auth::user()->isDentist() && $this->showMyAppointments) {
+            $query->where('dentist_id', Auth::id());
+        }
 
         $dataTable = $this->getDataTableConfig();
         return $this->applySearchAndSort($query, ['reason', 'notes'], $dataTable);
@@ -194,6 +197,8 @@ class Table extends Component
         $this->searchDateFrom = '';
         $this->searchDateTo = '';
         $this->searchStatus = '';
+        
+        $this->showMyAppointments = false;
 
         if (Auth::user()->isSuperadmin()) {
             $this->searchBranch = '';
@@ -217,6 +222,11 @@ class Table extends Component
         } else {
             $filters['date_from'] = $this->searchDateFrom;
             $filters['date_to'] = $this->searchDateTo;
+        }
+
+        if (Auth::user()->isDentist() && $this->showMyAppointments) {
+            // Note: You might need to update the Action class to accept dentist_id filter if you want PDF to reflect this
+            // $filters['dentist_id'] = Auth::id(); 
         }
 
         if ($this->searchBranch) {
@@ -321,6 +331,10 @@ class Table extends Component
             if ($branch) {
                 $indicators[] = $branch->name;
             }
+        }
+        
+        if (Auth::user()->isDentist() && $this->showMyAppointments) {
+            $indicators[] = 'My Appointments';
         }
 
         if (!empty($indicators)) {

@@ -200,6 +200,30 @@
                             </div>
                         </div>
 
+                        <!-- Assigned Dentist -->
+                        <div>
+                            <label
+                                class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                                <div class="bg-cyan-100 dark:bg-cyan-900/50 p-1.5 rounded-lg mr-2">
+                                    <i class="fas fa-user-md text-cyan-600 dark:text-cyan-400 text-xs"></i>
+                                </div>
+                                Assigned Dentist
+                            </label>
+                            <div
+                                class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600">
+                                @if ($appointment->dentist)
+                                    <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                                        {{ $appointment->dentist->full_name }}
+                                    </p>
+                                @else
+                                    <div class="flex items-center text-slate-500 dark:text-slate-400">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        <span class="italic">No dentist assigned</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
                         <!-- Reason for Visit -->
                         <div>
                             <label

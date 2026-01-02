@@ -1,5 +1,4 @@
 <?php
-// app/Livewire/Appointments/Calendar.php
 
 namespace App\Livewire\Appointments;
 
@@ -65,11 +64,9 @@ class Calendar extends Component
         $startOfMonth = Carbon::create($this->currentYear, $this->currentMonth, 1)->startOfDay();
         $endOfMonth = $startOfMonth->copy()->endOfMonth()->endOfDay();
         
-        // Get the start of the calendar (previous month days if needed)
         $calendarStart = $startOfMonth->copy()->startOfWeek(Carbon::SUNDAY);
         $calendarEnd = $endOfMonth->copy()->endOfWeek(Carbon::SATURDAY);
 
-        // Fetch appointments for the entire calendar view
         $query = Appointment::whereBetween('appointment_date', [
             $calendarStart->format('Y-m-d'),
             $calendarEnd->format('Y-m-d')
@@ -79,11 +76,14 @@ class Calendar extends Component
             $query->where('branch_id', $this->searchBranch);
         }
 
+        if (Auth::user()->isDentist()) {
+            $query->where('dentist_id', Auth::id());
+        }
+
         $appointments = $query->get()->groupBy(function($appointment) {
             return $appointment->appointment_date->format('Y-m-d');
         });
 
-        // Build appointment data with status counts
         $this->appointmentData = [];
         foreach ($appointments as $date => $dateAppointments) {
             $this->appointmentData[$date] = [
@@ -92,7 +92,6 @@ class Calendar extends Component
             ];
         }
 
-        // Build calendar days
         $this->calendarDays = [];
         $currentDate = $calendarStart->copy();
         
@@ -117,7 +116,10 @@ class Calendar extends Component
         $this->authorize('viewAny', Appointment::class);
         
         $currentMonthName = Carbon::create($this->currentYear, $this->currentMonth, 1)->format('F Y');
-        $branches = Branch::orderBy('name')->get();
+        
+        $branches = Auth::user()->isSuperadmin() 
+            ? Branch::orderBy('name')->get() 
+            : [];
         
         return view('livewire.appointments.calendar', [
             'currentMonthName' => $currentMonthName,

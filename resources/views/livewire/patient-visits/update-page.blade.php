@@ -230,26 +230,44 @@
             </div>
         </div>
 
-        {{-- Branch Selection --}}
-        @if ($canUpdateBranch && !$isReadonly)
-            <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
-                icon="fas fa-building">
-                <option value="">Select a branch</option>
-                @foreach ($branches as $branch)
-                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+        {{-- Branch and Dentist Selection --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @if ($canUpdateBranch && !$isReadonly)
+                <x-form.field label="Branch" name="branch_id" type="select" wire:model.live="branch_id" required
+                    icon="fas fa-building">
+                    <option value="">Select a branch</option>
+                    @foreach ($branches as $branch)
+                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                    @endforeach
+                </x-form.field>
+            @else
+                <div>
+                    <input type="hidden" wire:model="branch_id" />
+                    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg h-full">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-building text-blue-500 mr-2"></i>
+                            <span class="text-sm font-semibold text-blue-800 dark:text-blue-200">Branch</span>
+                        </div>
+                        <span class="text-sm text-blue-700 dark:text-blue-300 block">
+                            {{ $branches->firstWhere('id', $branch_id)->name ?? 'Current Branch' }}
+                        </span>
+                    </div>
+                </div>
+            @endif
+
+            <x-form.field label="Attending Dentist (Optional)" name="dentist_id" type="select" wire:model="dentist_id"
+                icon="fas fa-user-md" :readonly="$isReadonly">
+                <option value="">Select Dentist</option>
+                @foreach ($dentists as $dentist)
+                    <option value="{{ $dentist->id }}">
+                        Dr. {{ $dentist->full_name }}
+                        @if(auth()->user()->isSuperadmin() && $dentist->branch)
+                            ({{ $dentist->branch->name }})
+                        @endif
+                    </option>
                 @endforeach
             </x-form.field>
-        @else
-            <input type="hidden" wire:model="branch_id" />
-            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div class="flex items-center">
-                    <i class="fas fa-building text-blue-500 mr-2"></i>
-                    <span class="text-sm text-blue-700 dark:text-blue-300">
-                        <strong>Branch:</strong> {{ $branches[0]->name ?? 'No branch assigned' }}
-                    </span>
-                </div>
-            </div>
-        @endif
+        </div>
 
         <x-form.field label="Visit Notes" name="notes" type="textarea"
             placeholder="{{ $isReadonly ? 'No additional notes' : 'Additional notes about the visit (optional)' }}"

@@ -8,11 +8,14 @@ use App\Models\Branch;
 use App\Models\Appointment;
 use App\Models\DentalService;
 use App\Models\PatientVisitService;
+use App\Models\User;
+use App\Enums\UserRoles;
 use App\Traits\DispatchFlashMessage;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CreatePage extends Component
 {
@@ -20,6 +23,7 @@ class CreatePage extends Component
 
     public $patient_id = '';
     public $appointment_id = '';
+    public $dentist_id = '';
     public $notes = '';
     public $branch_id = '';
     public $visit_type = 'walk-in';
@@ -35,10 +39,11 @@ class CreatePage extends Component
     public $services = [];
     public $serviceSearches = [];
     public $showServiceDropdowns = [];
-    public $manualPriceOverrides = []; // Track which services have manual price override
+    public $manualPriceOverrides = [];
 
     public function mount()
     {
+        // Default to user's branch, can be overridden if appointment is selected
         $this->branch_id = Auth::user()->branch_id;
 
         $this->services = [
@@ -54,6 +59,7 @@ class CreatePage extends Component
 
         $this->initializeServiceSearches();
 
+        // Handle URL parameters
         if (request()->has('appointment_id') && request()->has('patient_id')) {
             $appointmentId = request()->get('appointment_id');
             $patientId = request()->get('patient_id');
@@ -67,6 +73,12 @@ class CreatePage extends Component
                 $this->visit_type = 'appointment';
                 $this->appointment_id = $appointment->id;
                 $this->patient_id = $appointment->patient_id;
+                
+                // Pre-populate dentist from appointment
+                $this->dentist_id = $appointment->dentist_id;
+                
+                // Pre-populate branch from appointment
+                $this->branch_id = $appointment->branch_id;
 
                 $this->selectedAppointment = $appointment;
                 $this->selectedPatient = $appointment->patient;
@@ -94,6 +106,7 @@ class CreatePage extends Component
             'patient_id' => 'required|exists:patients,id',
             'notes' => 'nullable|string|max:1000',
             'visit_type' => 'required|in:walk-in,appointment',
+            'dentist_id' => 'nullable|exists:users,id',
             'services' => 'required|array|min:1',
             'services.*.dental_service_id' => 'required|exists:dental_services,id',
             'services.*.quantity' => 'required|integer|min:1',
@@ -110,7 +123,40 @@ class CreatePage extends Component
             $rules['branch_id'] = 'required|exists:branches,id';
         }
 
+        // Validate that the selected dentist belongs to the selected branch
+        if ($this->branch_id && $this->dentist_id) {
+             $rules['dentist_id'] = [
+                'nullable',
+                'exists:users,id',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->where('branch_id', $this->branch_id)
+                          ->where('role', UserRoles::DENTIST->value);
+                })
+            ];
+        }
+
         return $rules;
+    }
+
+    public function updatedBranchId()
+    {
+        // Clear dentist selection if branch changes to prevent mismatch
+        $this->dentist_id = '';
+    }
+
+    public function getDentistsProperty()
+    {
+        $query = User::where('role', UserRoles::DENTIST->value);
+
+        if (Auth::user()->isSuperadmin()) {
+            if ($this->branch_id) {
+                $query->where('branch_id', $this->branch_id);
+            }
+        } else {
+            $query->where('branch_id', Auth::user()->branch_id);
+        }
+
+        return $query->orderBy('first_name')->orderBy('last_name')->get();
     }
 
     private function initializeServiceSearches()
@@ -136,6 +182,12 @@ class CreatePage extends Component
             $this->selectedAppointment = null;
             $this->appointmentSearch = '';
             $this->showAppointmentDropdown = false;
+            
+            // Optional: Reset to user's branch if they are Superadmin and switched to walk-in
+            // For regular users, branch_id is fixed anyway.
+            if (Auth::user()->isSuperadmin() && !$this->branch_id) {
+                 $this->branch_id = Auth::user()->branch_id;
+            }
         }
     }
 
@@ -185,6 +237,16 @@ class CreatePage extends Component
             $this->selectedAppointment = $appointment;
             $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
             $this->showAppointmentDropdown = false;
+
+            // Pre-populate dentist if assigned
+            if ($appointment->dentist_id) {
+                $this->dentist_id = $appointment->dentist_id;
+            }
+
+            // Pre-populate branch from appointment
+            if ($appointment->branch_id) {
+                $this->branch_id = $appointment->branch_id;
+            }
 
             if (!$this->selectedPatient) {
                 $this->selectPatient($appointment->patient_id);
@@ -243,7 +305,6 @@ class CreatePage extends Component
         $service = DentalService::find($serviceId);
         if ($service) {
             $this->services[$index]['dental_service_id'] = $service->id;
-            // Updated Line: Handle null prices by converting them to 0
             $this->services[$index]['service_price'] = $service->price ?? 0;
 
             if (!$service->is_quantifiable) {
@@ -260,7 +321,6 @@ class CreatePage extends Component
         $this->services[$index]['use_manual_total'] = !$this->services[$index]['use_manual_total'];
 
         if ($this->services[$index]['use_manual_total']) {
-            // Initialize manual total with current calculated total
             $currentTotal = (float)$this->services[$index]['service_price'] * (int)$this->services[$index]['quantity'];
             $this->services[$index]['manual_total'] = $currentTotal;
         } else {
@@ -270,17 +330,14 @@ class CreatePage extends Component
 
     public function updatedServices($value, $key)
     {
-        // Parse the key to get index and field
         $parts = explode('.', $key);
         if (count($parts) >= 2) {
             $index = $parts[0];
             $field = $parts[1];
 
-            // If quantity or service changes and not using manual total, recalculate
             if (($field === 'quantity' || $field === 'dental_service_id') &&
                 !$this->services[$index]['use_manual_total']
             ) {
-
                 if (!empty($this->services[$index]['dental_service_id'])) {
                     $dentalService = DentalService::find($this->services[$index]['dental_service_id']);
                     if ($dentalService) {
@@ -394,6 +451,7 @@ class CreatePage extends Component
                 $visitData = [
                     'patient_id' => $this->patient_id,
                     'branch_id' => $this->branch_id,
+                    'dentist_id' => $this->dentist_id ?: null,
                     'visit_date' => Carbon::now(),
                     'notes' => $this->notes,
                     'total_amount_paid' => $totalAmount,
@@ -408,8 +466,6 @@ class CreatePage extends Component
 
                 foreach ($this->services as $index => $service) {
                     if (!empty($service['dental_service_id'])) {
-                        $serviceTotal = $this->getServiceTotal($index);
-
                         PatientVisitService::create([
                             'patient_visit_id' => $patientVisit->id,
                             'dental_service_id' => $service['dental_service_id'],
@@ -460,6 +516,7 @@ class CreatePage extends Component
             'searchedAppointments' => $this->searchedAppointments,
             'searchedServices' => $this->searchedServices,
             'branches' => $this->getBranchesForUser(),
+            'dentists' => $this->dentists,
             'canUpdateBranch' => $this->canUpdateBranch()
         ]);
     }

@@ -27,6 +27,7 @@ class Table extends Component
     public $searchDateRange = 'single'; 
     public $searchBranch = '';
     public $searchVisitType = '';
+    public $showMyVisits = false;
 
     public function boot()
     {
@@ -162,7 +163,6 @@ class Table extends Component
     {
         $query = PatientVisit::with(['patient', 'branch', 'appointment']);
 
-        // Apply date filters based on range type
         if ($this->searchDateRange === 'single' && $this->searchDate) {
             $query->whereDate('visit_date', $this->searchDate);
         } elseif ($this->searchDateRange !== 'single' && $this->searchDateFrom && $this->searchDateTo) {
@@ -179,6 +179,10 @@ class Table extends Component
                     return $q->whereNotNull('appointment_id');
                 }
             });
+            
+        if (Auth::user()->isDentist() && $this->showMyVisits) {
+            $query->where('dentist_id', Auth::id());
+        }
 
         $dataTable = $this->getDataTableConfig();
         return $this->applySearchAndSort($query, ['notes'], $dataTable);
@@ -199,6 +203,8 @@ class Table extends Component
         $this->searchDateFrom = '';
         $this->searchDateTo = '';
         $this->searchVisitType = '';
+        
+        $this->showMyVisits = false;
 
         if (Auth::user()->isSuperadmin()) {
             $this->searchBranch = '';
@@ -303,6 +309,10 @@ class Table extends Component
             if ($branch) {
                 $indicators[] = $branch->name;
             }
+        }
+        
+        if (Auth::user()->isDentist() && $this->showMyVisits) {
+            $indicators[] = 'My Visits';
         }
 
         if (!empty($indicators)) {

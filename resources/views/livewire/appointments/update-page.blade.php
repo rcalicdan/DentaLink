@@ -1,4 +1,3 @@
-<!-- resources/views/livewire/appointments/update-page.blade.php -->
 <div class="container mx-auto px-6 py-8">
     <div class="flex justify-between items-center mb-6">
         <div>
@@ -78,7 +77,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <x-form.field label="Appointment Date" name="appointment_date" type="date" wire:model="appointment_date"
+            <x-form.field label="Appointment Date" name="appointment_date" type="date" wire:model.live="appointment_date"
                 required icon="fas fa-calendar" :readonly="!$canUpdateDate"
                 help="{{ !$canUpdateDate ? 'Date can only be changed for waiting appointments or by superadmin/admin' : '' }}" />
 
@@ -88,14 +87,59 @@
             @endif
         </div>
 
-        <!-- Add Time Fields (Optional) -->
+        {{-- Branch and Dentist Fields --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @if ($canUpdateBranch)
+                <x-form.field label="Branch" name="branch_id" type="select" wire:model.live="branch_id" required
+                    icon="fas fa-building">
+                    <option value="">Select a branch</option>
+                    @foreach ($branches as $branch)
+                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                    @endforeach
+                </x-form.field>
+            @else
+                {{-- Hidden field and display for non-superadmin users --}}
+                <div>
+                    <input type="hidden" wire:model="branch_id" />
+                    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-building text-blue-500 mr-2"></i>
+                            <span class="text-sm text-blue-700 dark:text-blue-300">
+                                <strong>Branch:</strong> {{ auth()->user()->branch->name ?? 'Not Assigned' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Dentist Dropdown --}}
+            <x-form.field label="Assign Dentist (Optional)" name="dentist_id" type="select" wire:model="dentist_id"
+                icon="fas fa-user-md" help="Select a dentist for this appointment">
+                <option value="">No Dentist Assigned</option>
+                @forelse($dentists as $dentist)
+                    <option value="{{ $dentist->id }}">
+                        Dr. {{ $dentist->full_name }}
+                        @if(auth()->user()->isSuperadmin())
+                            ({{ $dentist->branch_name }})
+                        @endif
+                    </option>
+                @empty
+                    <option value="" disabled>No dentists available</option>
+                @endforelse
+            </x-form.field>
+        </div>
+
+        <!-- Time Fields (Optional) -->
         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
             <div class="flex items-center mb-3">
                 <i class="fas fa-clock text-blue-600 dark:text-blue-400 mr-2"></i>
                 <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-200">Appointment Time (Optional)</h3>
             </div>
             <p class="text-xs text-blue-600 dark:text-blue-300 mb-4">
-                Specify a time range if you want to schedule the appointment for a specific time slot
+                Specify a time range if you want to schedule the appointment for a specific time slot.
+                @if($dentist_id)
+                    <span class="font-semibold">Required when dentist is assigned to check for conflicts.</span>
+                @endif
             </p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <x-form.field label="Start Time" name="start_time" type="time" wire:model="start_time"
@@ -105,30 +149,6 @@
                     icon="fas fa-clock" placeholder="--:-- --" 
                     help="Must be after start time" />
             </div>
-        </div>
-
-        {{-- Branch field --}}
-        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
-            @if ($canUpdateBranch)
-                <x-form.field label="Branch" name="branch_id" type="select" wire:model="branch_id" required
-                    icon="fas fa-building">
-                    <option value="">Select a branch</option>
-                    @foreach ($branches as $branch)
-                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                    @endforeach
-                </x-form.field>
-            @else
-                {{-- Hidden field and display for non-superadmin users --}}
-                <input type="hidden" wire:model="branch_id" />
-                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div class="flex items-center">
-                        <i class="fas fa-building text-blue-500 mr-2"></i>
-                        <span class="text-sm text-blue-700 dark:text-blue-300">
-                            <strong>Branch:</strong> {{ auth()->user()->branch->name ?? 'Not Assigned' }}
-                        </span>
-                    </div>
-                </div>
-            @endif
         </div>
 
         <x-form.field label="Reason for Visit" name="reason" type="text" placeholder="Enter reason for appointment"

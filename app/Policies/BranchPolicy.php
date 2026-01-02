@@ -18,12 +18,12 @@ class BranchPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isDentist() || $user->isEmployee();
     }
 
     public function view(User $user, Branch $branch): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isDentist() || $user->isEmployee();
     }
 
     public function create(User $user): bool

@@ -5,7 +5,9 @@ namespace App\Livewire\Appointments;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Branch;
+use App\Models\User;
 use App\Enums\AppointmentStatuses;
+use App\Enums\UserRoles;
 use App\Traits\DispatchFlashMessage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -23,8 +25,8 @@ class CreatePage extends Component
     public $reason = '';
     public $notes = '';
     public $branch_id = '';
+    public $dentist_id = '';
     public $queue_number = null;
-
 
     public $patientSearch = '';
     public $showPatientDropdown = false;
@@ -47,6 +49,7 @@ class CreatePage extends Component
             'end_time' => 'nullable|date_format:H:i|after:start_time',
             'reason' => 'required|string|min:5|max:255',
             'notes' => 'nullable|string|max:500',
+            'dentist_id' => 'nullable|exists:users,id',
         ];
 
         if ($user->isSuperadmin()) {
@@ -58,14 +61,29 @@ class CreatePage extends Component
                 'exists:branches,id',
                 Rule::in([$user->branch_id])
             ];
+            
+            if ($this->dentist_id) {
+                $rules['dentist_id'] = [
+                    'nullable',
+                    'exists:users,id',
+                    Rule::exists('users', 'id')->where(function ($query) use ($user) {
+                        $query->where('role', UserRoles::DENTIST->value)
+                              ->where('branch_id', $user->branch_id);
+                    })
+                ];
+            }
         }
 
         return $rules;
     }
 
+    public function updatedBranchId()
+    {
+        $this->dentist_id = '';
+    }
+
     public function updatedAppointmentDate()
     {
-        // Reset queue number when date changes
         if (Auth::user()->isSuperadmin()) {
             $this->queue_number = null;
         }
@@ -143,6 +161,16 @@ class CreatePage extends Component
                 $this->appointment_date
             );
 
+            // Check dentist conflict if dentist is assigned and time is specified
+            if ($this->dentist_id && $this->start_time && $this->end_time) {
+                Appointment::checkDentistConflict(
+                    $this->dentist_id,
+                    $this->appointment_date,
+                    $this->start_time,
+                    $this->end_time
+                );
+            }
+
             $queueNumber = $this->queue_number;
 
             if (Auth::user()->isSuperadmin() && $queueNumber) {
@@ -160,6 +188,7 @@ class CreatePage extends Component
                 'reason' => $this->reason,
                 'notes' => $this->notes,
                 'branch_id' => $this->branch_id,
+                'dentist_id' => $this->dentist_id ?: null,
                 'status' => AppointmentStatuses::WAITING,
                 'queue_number' => $queueNumber,
             ]);
@@ -197,6 +226,32 @@ class CreatePage extends Component
         return $user->branch ? [$user->branch] : [];
     }
 
+    private function getDentistsForUser()
+    {
+        $user = Auth::user();
+        
+        $branchId = $this->branch_id ?: $user->branch_id;
+        
+        if ($user->isSuperadmin() && $this->branch_id) {
+            return User::where('role', UserRoles::DENTIST->value)
+                ->where('branch_id', $this->branch_id)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+        } elseif ($user->isSuperadmin()) {
+            return User::where('role', UserRoles::DENTIST->value)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+        } else {
+            return User::where('role', UserRoles::DENTIST->value)
+                ->where('branch_id', $user->branch_id)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+        }
+    }
+
     public function render()
     {
         $this->authorize('create', Appointment::class);
@@ -204,6 +259,7 @@ class CreatePage extends Component
         return view('livewire.appointments.create-page', [
             'searchedPatients' => $this->searchedPatients,
             'branches' => $this->getBranchesForUser(),
+            'dentists' => $this->getDentistsForUser(),
             'canUpdateBranch' => $this->canUpdateBranch(),
             'canEditQueueNumber' => $this->canEditQueueNumber(),
             'maxQueueNumber' => $this->maxQueueNumber

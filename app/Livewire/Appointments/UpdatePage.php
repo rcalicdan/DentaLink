@@ -5,7 +5,9 @@ namespace App\Livewire\Appointments;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Branch;
+use App\Models\User;
 use App\Enums\AppointmentStatuses;
+use App\Enums\UserRoles;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +26,7 @@ class UpdatePage extends Component
     public $start_time;
     public $end_time;
     public $branch_id;
+    public $dentist_id;
     public $queue_number;
     public $patientSearch = '';
     public $showPatientDropdown = false;
@@ -42,12 +45,12 @@ class UpdatePage extends Component
         $this->notes = $appointment->notes;
         $this->status = $appointment->status->value;
         $this->branch_id = $appointment->branch_id;
+        $this->dentist_id = $appointment->dentist_id;
         $this->queue_number = $appointment->queue_number;
 
         $this->selectedPatient = $appointment->patient;
         $this->patientSearch = $appointment->patient->full_name . ' (ID: ' . $appointment->patient->id . ')';
     }
-
 
     public function rules()
     {
@@ -59,6 +62,7 @@ class UpdatePage extends Component
             'end_time' => 'nullable|date_format:H:i|after:start_time',
             'reason' => 'required|string|min:5|max:255',
             'notes' => 'nullable|string|max:500',
+            'dentist_id' => 'nullable|exists:users,id',
         ];
 
         if ($user->isSuperadmin()) {
@@ -70,6 +74,17 @@ class UpdatePage extends Component
                 'exists:branches,id',
                 Rule::in([$user->branch_id])
             ];
+            
+            if ($this->dentist_id) {
+                $rules['dentist_id'] = [
+                    'nullable',
+                    'exists:users,id',
+                    Rule::exists('users', 'id')->where(function ($query) use ($user) {
+                        $query->where('role', UserRoles::DENTIST->value)
+                              ->where('branch_id', $user->branch_id);
+                    })
+                ];
+            }
         }
 
         if ($user->isSuperadmin() || $user->isAdmin() || $this->appointment->status === AppointmentStatuses::WAITING) {
@@ -88,9 +103,13 @@ class UpdatePage extends Component
         return $rules;
     }
 
+    public function updatedBranchId()
+    {
+        $this->dentist_id = '';
+    }
+
     public function updatedAppointmentDate()
     {
-        // Reset queue number when date changes for superadmin
         if (Auth::user()->isSuperadmin()) {
             $this->queue_number = 1;
         }
@@ -162,6 +181,10 @@ class UpdatePage extends Component
 
         $validatedData = $this->validate();
 
+        $validatedData['start_time'] = !empty($validatedData['start_time']) ? $validatedData['start_time'] : null;
+        $validatedData['end_time'] = !empty($validatedData['end_time']) ? $validatedData['end_time'] : null;
+        $validatedData['dentist_id'] = !empty($validatedData['dentist_id']) ? $validatedData['dentist_id'] : null;
+
         try {
             $patientChanged = $validatedData['patient_id'] != $this->appointment->patient_id;
             $dateChanged = isset($validatedData['appointment_date']) &&
@@ -178,18 +201,36 @@ class UpdatePage extends Component
                 );
             }
 
-            // Handle queue number changes for superadmin
+            $dentistChanged = isset($validatedData['dentist_id']) && 
+                $validatedData['dentist_id'] != $this->appointment->dentist_id;
+            
+            $currentStart = $this->appointment->start_time ? $this->appointment->start_time->format('H:i') : null;
+            $currentEnd = $this->appointment->end_time ? $this->appointment->end_time->format('H:i') : null;
+            
+            $timeChanged = (isset($validatedData['start_time']) && $validatedData['start_time'] != $currentStart) ||
+                           (isset($validatedData['end_time']) && $validatedData['end_time'] != $currentEnd);
+
+            if (($dentistChanged || $timeChanged || $dateChanged) && $this->dentist_id && $this->start_time && $this->end_time) {
+                $checkDate = $validatedData['appointment_date'] ?? $this->appointment->appointment_date->format('Y-m-d');
+                
+                Appointment::checkDentistConflict(
+                    $this->dentist_id,
+                    $checkDate,
+                    $this->start_time,
+                    $this->end_time,
+                    $this->appointment->id
+                );
+            }
+
             if (Auth::user()->isSuperadmin() && isset($validatedData['queue_number'])) {
                 $newQueueNumber = $validatedData['queue_number'];
                 $maxQueue = $this->maxQueueNumber;
 
-                // If new queue number is greater than max, set it to max + 1
                 if ($newQueueNumber > $maxQueue + 1) {
                     $newQueueNumber = $maxQueue + 1;
                     $this->queue_number = $newQueueNumber;
                 }
 
-                // Handle queue number swapping
                 if ($newQueueNumber != $this->appointment->queue_number) {
                     $this->appointment->updateQueueNumber($newQueueNumber);
                 }
@@ -263,6 +304,32 @@ class UpdatePage extends Component
         return $user->branch ? [$user->branch] : [];
     }
 
+    private function getDentistsForUser()
+    {
+        $user = Auth::user();
+        
+        $branchId = $this->branch_id ?: $user->branch_id;
+        
+        if ($user->isSuperadmin() && $this->branch_id) {
+            return User::where('role', UserRoles::DENTIST->value)
+                ->where('branch_id', $this->branch_id)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+        } elseif ($user->isSuperadmin()) {
+            return User::where('role', UserRoles::DENTIST->value)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+        } else {
+            return User::where('role', UserRoles::DENTIST->value)
+                ->where('branch_id', $user->branch_id)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+        }
+    }
+
     public function render()
     {
         $availableStatuses = $this->getAvailableStatuses();
@@ -275,6 +342,7 @@ class UpdatePage extends Component
             'canUpdateBranch' => $this->canUpdateBranch(),
             'canEditQueueNumber' => $this->canEditQueueNumber(),
             'branches' => $this->getBranchesForUser(),
+            'dentists' => $this->getDentistsForUser(),
             'maxQueueNumber' => $this->maxQueueNumber
         ]);
     }

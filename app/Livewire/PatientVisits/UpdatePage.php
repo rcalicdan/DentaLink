@@ -8,12 +8,15 @@ use App\Models\Branch;
 use App\Models\Appointment;
 use App\Models\DentalService;
 use App\Models\PatientVisitService;
+use App\Models\User;
+use App\Enums\UserRoles;
 use App\Traits\DispatchFlashMessage;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Validation\UnauthorizedException;
+use Illuminate\Validation\Rule;
 
 class UpdatePage extends Component
 {
@@ -22,6 +25,7 @@ class UpdatePage extends Component
     public PatientVisit $patientVisit;
     public $patient_id;
     public $appointment_id;
+    public $dentist_id; // Added dentist_id
     public $notes;
     public $branch_id;
     public $visit_type;
@@ -49,6 +53,7 @@ class UpdatePage extends Component
         $this->patientVisit = $patientVisit;
         $this->patient_id = $patientVisit->patient_id;
         $this->appointment_id = $patientVisit->appointment_id;
+        $this->dentist_id = $patientVisit->dentist_id; 
         $this->notes = $patientVisit->notes;
         $this->branch_id = $patientVisit->branch_id;
         $this->visit_type = $patientVisit->appointment_id ? 'appointment' : 'walk-in';
@@ -64,13 +69,10 @@ class UpdatePage extends Component
         foreach ($patientVisit->patientVisitServices as $visitService) {
             $dentalService = DentalService::find($visitService->dental_service_id);
 
-            // Determine if this was saved with manual total
-            // If quantity is 1 and service is quantifiable, it might be a manual total
             $useManualTotal = false;
             $manualTotal = 0;
 
             if ($dentalService && $dentalService->is_quantifiable && $visitService->quantity == 1) {
-                // Check if the stored price differs from the service's base price
                 if ($visitService->service_price != $dentalService->price) {
                     $useManualTotal = true;
                     $manualTotal = $visitService->service_price;
@@ -123,6 +125,7 @@ class UpdatePage extends Component
             'patient_id' => 'required|exists:patients,id',
             'notes' => 'nullable|string|max:1000',
             'visit_type' => 'required|in:walk-in,appointment',
+            'dentist_id' => 'nullable|exists:users,id',
             'services' => 'required|array|min:1',
             'services.*.dental_service_id' => 'required|exists:dental_services,id',
             'services.*.quantity' => 'required|integer|min:1',
@@ -137,6 +140,17 @@ class UpdatePage extends Component
 
         if ($user->isSuperadmin()) {
             $rules['branch_id'] = 'required|exists:branches,id';
+        }
+
+        if ($this->branch_id && $this->dentist_id) {
+             $rules['dentist_id'] = [
+                'nullable',
+                'exists:users,id',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->where('branch_id', $this->branch_id)
+                          ->where('role', UserRoles::DENTIST->value);
+                })
+            ];
         }
 
         return $rules;
@@ -202,6 +216,26 @@ class UpdatePage extends Component
         }
     }
 
+    public function updatedBranchId()
+    {
+        $this->dentist_id = '';
+    }
+
+    public function getDentistsProperty()
+    {
+        $query = User::where('role', UserRoles::DENTIST->value);
+
+        if (Auth::user()->isSuperadmin()) {
+            if ($this->branch_id) {
+                $query->where('branch_id', $this->branch_id);
+            }
+        } else {
+            $query->where('branch_id', Auth::user()->branch_id);
+        }
+
+        return $query->orderBy('first_name')->orderBy('last_name')->get();
+    }
+
     public function selectPatient($patientId)
     {
         $this->checkWritePermission();
@@ -226,6 +260,14 @@ class UpdatePage extends Component
             $this->selectedAppointment = $appointment;
             $this->appointmentSearch = "Queue #{$appointment->queue_number} - {$appointment->appointment_date->format('M d, Y')} - {$appointment->reason}";
             $this->showAppointmentDropdown = false;
+
+            if ($appointment->dentist_id) {
+                $this->dentist_id = $appointment->dentist_id;
+            }
+
+            if ($appointment->branch_id && Auth::user()->isSuperadmin()) {
+                $this->branch_id = $appointment->branch_id;
+            }
         }
     }
 
@@ -308,7 +350,6 @@ class UpdatePage extends Component
         $this->services[$index]['use_manual_total'] = !$this->services[$index]['use_manual_total'];
 
         if ($this->services[$index]['use_manual_total']) {
-            // Initialize manual total with current calculated total
             $currentTotal = (float)$this->services[$index]['service_price'] * (int)$this->services[$index]['quantity'];
             $this->services[$index]['manual_total'] = $currentTotal;
         } else {
@@ -320,17 +361,14 @@ class UpdatePage extends Component
     {
         $this->checkWritePermission();
 
-        // Parse the key to get index and field
         $parts = explode('.', $key);
         if (count($parts) >= 2) {
             $index = $parts[0];
             $field = $parts[1];
 
-            // If quantity or service changes and not using manual total, recalculate
             if (($field === 'quantity' || $field === 'dental_service_id') &&
                 !$this->services[$index]['use_manual_total']
             ) {
-
                 if (!empty($this->services[$index]['dental_service_id'])) {
                     $dentalService = DentalService::find($this->services[$index]['dental_service_id']);
                     if ($dentalService) {
@@ -445,6 +483,7 @@ class UpdatePage extends Component
                 $updateData = [
                     'patient_id' => $this->patient_id,
                     'branch_id' => $this->branch_id,
+                    'dentist_id' => $this->dentist_id ?: null, // Save dentist
                     'notes' => $this->notes,
                     'total_amount_paid' => $totalAmount,
                 ];
@@ -461,8 +500,6 @@ class UpdatePage extends Component
 
                 foreach ($this->services as $index => $service) {
                     if (!empty($service['dental_service_id'])) {
-                        $serviceTotal = $this->getServiceTotal($index);
-
                         PatientVisitService::create([
                             'patient_visit_id' => $this->patientVisit->id,
                             'dental_service_id' => $service['dental_service_id'],
@@ -512,6 +549,7 @@ class UpdatePage extends Component
             'searchedServices' => $this->searchedServices,
             'canUpdateBranch' => $this->canUpdateBranch(),
             'branches' => $this->getBranchesForUser(),
+            'dentists' => $this->dentists, 
             'isReadonly' => $this->isReadonlyMode()
         ]);
     }

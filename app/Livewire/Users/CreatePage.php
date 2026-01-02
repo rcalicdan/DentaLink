@@ -1,5 +1,4 @@
 <?php
-// app/Livewire/Users/CreatePage.php
 
 namespace App\Livewire\Users;
 
@@ -89,7 +88,9 @@ class CreatePage extends Component
         $currentUser = Auth::user();
 
         if ($currentUser->isAdmin()) {
-            return [UserRoles::EMPLOYEE->value => 'Employee'];
+            $options[UserRoles::EMPLOYEE->value] = 'Employee';
+            $options[UserRoles::DENTIST->value] = 'Dentist';
+            return $options;
         }
 
         $options = ['' => 'Select a role'];
@@ -97,6 +98,7 @@ class CreatePage extends Component
         if ($currentUser->isSuperadmin()) {
             $options[UserRoles::ADMIN->value] = 'Admin';
             $options[UserRoles::EMPLOYEE->value] = 'Employee';
+            $options[UserRoles::DENTIST->value] = 'Dentist';
             return $options;
         }
 
@@ -108,14 +110,14 @@ class CreatePage extends Component
         $currentUser = Auth::user();
 
         if ($currentUser->isAdmin()) {
-            return [UserRoles::EMPLOYEE->value];
+            return [UserRoles::EMPLOYEE->value, UserRoles::DENTIST->value];
         }
 
         if ($currentUser->isSuperadmin()) {
-            return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value];
+            return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value, UserRoles::DENTIST->value];
         }
 
-        return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value];
+        return [UserRoles::ADMIN->value, UserRoles::EMPLOYEE->value, UserRoles::DENTIST->value];
     }
 
     private function getBranchOptions()
