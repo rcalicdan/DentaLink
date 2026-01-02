@@ -71,7 +71,7 @@ class Table extends Component
             ->sortColumn($this->sortColumn)
             ->sortDirection($this->sortDirection)
             ->showBulkActions(true)
-            ->showCreate(true)
+            ->showCreate(!Auth::user()->isDentist())
             ->createRoute('patients.create')
             ->editRoute('patients.edit')
             ->viewRoute('patients.view')

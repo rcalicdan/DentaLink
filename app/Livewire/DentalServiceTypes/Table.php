@@ -52,7 +52,8 @@ class Table extends Component
             ->sortColumn($this->sortColumn)
             ->sortDirection($this->sortDirection)
             ->showBulkActions(true)
-            ->showCreate(true)
+            ->showCreate(!Auth::user()->isDentist())
+            ->showActions(!Auth::user()->isDentist())
             ->createRoute('dental-service-types.create')
             ->editRoute('dental-service-types.edit')
             ->bulkDeleteAction('bulkDelete');
@@ -92,7 +93,7 @@ class Table extends Component
             } else {
                 $query->whereIn('id', $this->selectedRows);
             }
-            
+
             // Check if any of the selected service types have associated dental services
             $serviceTypesWithServices = $query->withCount('dentalServices')
                 ->having('dental_services_count', '>', 0)
@@ -101,12 +102,12 @@ class Table extends Component
             if ($serviceTypesWithServices->count() > 0) {
                 $serviceTypeNames = $serviceTypesWithServices->pluck('name')->toArray();
                 $serviceTypeCounts = $serviceTypesWithServices->sum('dental_services_count');
-                
+
                 throw new \Exception(
-                    'Cannot delete the following service types because they have associated dental services: ' . 
-                    implode(', ', $serviceTypeNames) . '. ' .
-                    'These service types are currently being used by ' . $serviceTypeCounts . ' dental service(s). ' .
-                    'Please remove or reassign the associated services before deleting these service types.'
+                    'Cannot delete the following service types because they have associated dental services: ' .
+                        implode(', ', $serviceTypeNames) . '. ' .
+                        'These service types are currently being used by ' . $serviceTypeCounts . ' dental service(s). ' .
+                        'Please remove or reassign the associated services before deleting these service types.'
                 );
             }
 
@@ -116,7 +117,6 @@ class Table extends Component
                 'message' => 'Dental service types deleted successfully.',
                 'type' => 'success'
             ]);
-
         } catch (QueryException $e) {
             $this->dispatch('show-message', [
                 'message' => 'Cannot delete these service types due to database constraints. They may have associated records.',
@@ -135,14 +135,14 @@ class Table extends Component
         try {
             $dentalServiceType = DentalServiceType::findOrFail($id);
             $this->authorize('delete', $dentalServiceType);
-            
+
             $dentalServiceType->loadCount('dentalServices');
-            
+
             if ($dentalServiceType->dental_services_count > 0) {
                 throw new \Exception(
-                    'Cannot delete "' . $dentalServiceType->name . '" because it has ' . 
-                    $dentalServiceType->dental_services_count . ' associated dental service(s). ' .
-                    'Please remove or reassign the associated services before deleting this service type.'
+                    'Cannot delete "' . $dentalServiceType->name . '" because it has ' .
+                        $dentalServiceType->dental_services_count . ' associated dental service(s). ' .
+                        'Please remove or reassign the associated services before deleting this service type.'
                 );
             }
 
@@ -152,7 +152,6 @@ class Table extends Component
                 'message' => 'Dental service type "' . $dentalServiceType->name . '" deleted successfully.',
                 'type' => 'success'
             ]);
-
         } catch (QueryException $e) {
             $this->dispatch('show-message', [
                 'message' => 'Cannot delete this service type due to database constraints. It may have associated records.',

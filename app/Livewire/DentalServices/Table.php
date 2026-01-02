@@ -63,7 +63,8 @@ class Table extends Component
             ->sortColumn($this->sortColumn)
             ->sortDirection($this->sortDirection)
             ->showBulkActions(true)
-            ->showCreate(true)
+            ->showCreate(!Auth::user()->isDentist())
+            ->showActions(!Auth::user()->isDentist())
             ->createRoute('dental-services.create')
             ->editRoute('dental-services.edit')
             ->bulkDeleteAction('bulkDelete');
@@ -74,7 +75,7 @@ class Table extends Component
         $query = DentalService::query()
             ->with('dentalServiceType')
             ->withCount('patientVisitServices as visits_count');
-        
+
         $dataTable = $this->getDataTableConfig();
 
         return $this->applySearchAndSort($query, ['name', 'price'], $dataTable);

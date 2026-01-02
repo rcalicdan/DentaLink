@@ -14,25 +14,27 @@
                     </div>
                     <h3 class="text-lg font-semibold text-white">Filters</h3>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <!-- CSV Download Button -->
-                    <button wire:click="downloadCsv" type="button"
-                        class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium text-sm rounded-lg 
+                @can('export', App\Models\PatientVisit::class)
+                    <div class="flex items-center space-x-3">
+                        <!-- CSV Download Button -->
+                        <button wire:click="downloadCsv" type="button"
+                            class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium text-sm rounded-lg 
                        shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150
                        flex items-center space-x-2">
-                        <i class="fas fa-file-excel"></i>
-                        <span>Download CSV</span>
-                    </button>
+                            <i class="fas fa-file-excel"></i>
+                            <span>Download CSV</span>
+                        </button>
 
-                    <!-- PDF Download Button -->
-                    <button wire:click="downloadPdf" type="button"
-                        class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium text-sm rounded-lg 
+                        <!-- PDF Download Button -->
+                        <button wire:click="downloadPdf" type="button"
+                            class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium text-sm rounded-lg 
                        shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150
                        flex items-center space-x-2">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>Download PDF</span>
-                    </button>
-                </div>
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Download PDF</span>
+                        </button>
+                    </div>
+                @endcan
             </div>
         </div>
 
@@ -127,7 +129,7 @@
                         </div>
                     </div>
                 @endif
-                
+
                 <!-- 4. Visit Type Filter -->
                 <div class="group lg:col-span-2 xl:col-span-1">
                     <label class="flex items-center text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
@@ -182,9 +184,28 @@
                     </div>
                 </div>
 
-                <!-- 6. Clear Filters -->
-                <div
-                    class="flex items-end lg:col-span-2 xl:col-span-1">
+                <!-- 6. Dentist "My Visits" Toggle -->
+                @if (Auth::user()->isDentist())
+                    <div class="group lg:col-span-2 xl:col-span-1 flex flex-col justify-end pb-1">
+                        <label class="flex items-center cursor-pointer select-none">
+                            <div class="relative">
+                                <input type="checkbox" wire:model.live="showMyVisits" class="sr-only">
+                                <div
+                                    class="block w-10 h-6 bg-gray-200 dark:bg-gray-700 rounded-full shadow-inner transition-colors duration-200 ease-in-out {{ $showMyVisits ? '!bg-green-600' : '' }}">
+                                </div>
+                                <div
+                                    class="dot absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ease-in-out {{ $showMyVisits ? 'transform translate-x-4' : '' }}">
+                                </div>
+                            </div>
+                            <div class="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                My Visits
+                            </div>
+                        </label>
+                    </div>
+                @endif
+
+                <!-- 7. Clear Filters -->
+                <div class="flex items-end lg:col-span-2 xl:col-span-1">
                     <button wire:click="clearFilters" type="button"
                         class="w-full px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 
                                text-white font-medium text-sm rounded-lg shadow-md hover:shadow-lg 
@@ -234,13 +255,13 @@
                                 $dateTo = \Carbon\Carbon::parse($searchDateTo);
                                 echo $dateFrom->format('M j') . ' - ' . $dateTo->format('M j, Y');
                             @endphp
-                            ({{ match($searchDateRange) {
+                            ({{ match ($searchDateRange) {
                                 '7days' => 'Next 7 Days',
                                 '15days' => 'Next 15 Days',
                                 '30days' => 'Next 30 Days',
                                 '3months' => 'Next 3 Months',
                                 'custom' => 'Custom Range',
-                                default => 'Range'
+                                default => 'Range',
                             } }})
                         </span>
                     @endif
@@ -253,7 +274,7 @@
                             {{ $visitTypes[$searchVisitType] }}
                         </span>
                     @endif
-                    
+
                     {{-- Branch Indicator --}}
                     @if ($searchBranch)
                         @php $branch = \App\Models\Branch::find($searchBranch); @endphp
@@ -264,6 +285,15 @@
                                 {{ $branch->name }}
                             </span>
                         @endif
+                    @endif
+
+                    {{-- My Visits Indicator --}}
+                    @if (Auth::user()->isDentist() && $showMyVisits)
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                            <i class="fas fa-user-md mr-1"></i>
+                            My Visits
+                        </span>
                     @endif
                 </div>
             </div>

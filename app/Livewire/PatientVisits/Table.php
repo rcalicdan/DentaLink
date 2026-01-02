@@ -14,7 +14,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Response; 
+use Illuminate\Support\Facades\Response;
 
 #[Layout('components.layouts.app')]
 class Table extends Component
@@ -24,7 +24,7 @@ class Table extends Component
     public $searchDate = '';
     public $searchDateFrom = '';
     public $searchDateTo = '';
-    public $searchDateRange = 'single'; 
+    public $searchDateRange = 'single';
     public $searchBranch = '';
     public $searchVisitType = '';
     public $showMyVisits = false;
@@ -38,7 +38,7 @@ class Table extends Component
         if (!Auth::user()->isSuperadmin() && empty($this->searchBranch)) {
             $this->searchBranch = Auth::user()->branch_id;
         }
-        
+
         $this->applyDateRange();
     }
 
@@ -152,7 +152,7 @@ class Table extends Component
             ->sortColumn($this->sortColumn)
             ->sortDirection($this->sortDirection)
             ->showBulkActions(true)
-            ->showCreate(true)
+            ->showCreate(!Auth::user()->isDentist())
             ->createRoute('patient-visits.create')
             ->editRoute('patient-visits.edit')
             ->viewRoute('patient-visits.view')
@@ -170,8 +170,8 @@ class Table extends Component
         }
 
         $query->when($this->searchBranch, function ($q) {
-                return $q->where('branch_id', $this->searchBranch);
-            })
+            return $q->where('branch_id', $this->searchBranch);
+        })
             ->when($this->searchVisitType, function ($q) {
                 if ($this->searchVisitType === 'walk-in') {
                     return $q->whereNull('appointment_id');
@@ -179,7 +179,7 @@ class Table extends Component
                     return $q->whereNotNull('appointment_id');
                 }
             });
-            
+
         if (Auth::user()->isDentist() && $this->showMyVisits) {
             $query->where('dentist_id', Auth::id());
         }
@@ -203,7 +203,7 @@ class Table extends Component
         $this->searchDateFrom = '';
         $this->searchDateTo = '';
         $this->searchVisitType = '';
-        
+
         $this->showMyVisits = false;
 
         if (Auth::user()->isSuperadmin()) {
@@ -218,6 +218,8 @@ class Table extends Component
 
     public function downloadPdf()
     {
+        $this->authorize('export', PatientVisit::class);
+
         $filters = [
             'branch_id' => $this->searchBranch,
             'visit_type' => $this->searchVisitType,
@@ -249,6 +251,8 @@ class Table extends Component
 
     public function downloadCsv()
     {
+        $this->authorize('export', PatientVisit::class);
+
         $filters = [
             'branch_id' => $this->searchBranch,
             'visit_type' => $this->searchVisitType,
@@ -310,7 +314,7 @@ class Table extends Component
                 $indicators[] = $branch->name;
             }
         }
-        
+
         if (Auth::user()->isDentist() && $this->showMyVisits) {
             $indicators[] = 'My Visits';
         }

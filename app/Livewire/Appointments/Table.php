@@ -24,7 +24,7 @@ class Table extends Component
     public $searchDate = '';
     public $searchDateFrom = '';
     public $searchDateTo = '';
-    public $searchDateRange = 'single'; 
+    public $searchDateRange = 'single';
     public $searchStatus = '';
     public $searchPatient = '';
     public $searchBranch = '';
@@ -150,7 +150,8 @@ class Table extends Component
             ->sortColumn($this->sortColumn)
             ->sortDirection($this->sortDirection)
             ->showBulkActions(true)
-            ->showCreate(true)
+            ->showCreate(!Auth::user()->isDentist())
+            ->showActions(!Auth::user()->isDentist())
             ->createRoute('appointments.create')
             ->editRoute('appointments.edit')
             ->viewRoute('appointments.view')
@@ -170,9 +171,9 @@ class Table extends Component
         $query->when($this->searchStatus, function ($q) {
             return $q->where('status', $this->searchStatus);
         })
-        ->when($this->searchBranch, function ($q) {
-            return $q->where('branch_id', $this->searchBranch);
-        });
+            ->when($this->searchBranch, function ($q) {
+                return $q->where('branch_id', $this->searchBranch);
+            });
 
         if (Auth::user()->isDentist() && $this->showMyAppointments) {
             $query->where('dentist_id', Auth::id());
@@ -197,7 +198,7 @@ class Table extends Component
         $this->searchDateFrom = '';
         $this->searchDateTo = '';
         $this->searchStatus = '';
-        
+
         $this->showMyAppointments = false;
 
         if (Auth::user()->isSuperadmin()) {
@@ -212,6 +213,8 @@ class Table extends Component
 
     public function downloadPdf()
     {
+        $this->authorize('export', Appointment::class);
+
         $filters = [
             'branch_id' => $this->searchBranch,
             'status' => $this->searchStatus,
@@ -222,11 +225,6 @@ class Table extends Component
         } else {
             $filters['date_from'] = $this->searchDateFrom;
             $filters['date_to'] = $this->searchDateTo;
-        }
-
-        if (Auth::user()->isDentist() && $this->showMyAppointments) {
-            // Note: You might need to update the Action class to accept dentist_id filter if you want PDF to reflect this
-            // $filters['dentist_id'] = Auth::id(); 
         }
 
         if ($this->searchBranch) {
@@ -253,6 +251,8 @@ class Table extends Component
 
     public function downloadCsv()
     {
+        $this->authorize('export', Appointment::class);
+
         $filters = [
             'branch_id' => $this->searchBranch,
             'status' => $this->searchStatus,
@@ -332,7 +332,7 @@ class Table extends Component
                 $indicators[] = $branch->name;
             }
         }
-        
+
         if (Auth::user()->isDentist() && $this->showMyAppointments) {
             $indicators[] = 'My Appointments';
         }

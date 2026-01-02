@@ -18,7 +18,7 @@ class PatientPolicy
 
     public function viewAny(User $user): bool
     {
-        return true; 
+        return true;
     }
 
     public function view(User $user, Patient $patient): bool
@@ -30,13 +30,18 @@ class PatientPolicy
 
             return true;
         }
-        
+
         return false;
+    }
+
+    public function export(User $user): bool
+    {
+        return $user->isAdmin();
     }
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isEmployee(); 
+        return $user->isAdmin() || $user->isEmployee();
     }
 
     public function update(User $user, Patient $patient): bool
@@ -48,7 +53,7 @@ class PatientPolicy
         if ($user->isAdmin()) {
             return $patient->registration_branch_id === $user->branch_id;
         }
-        
+
         return $user->isEmployee();
     }
 
@@ -61,7 +66,7 @@ class PatientPolicy
         if ($user->isAdmin()) {
             return $patient->registration_branch_id === $user->branch_id;
         }
-        
+
         return $user->isEmployee();
     }
 }
