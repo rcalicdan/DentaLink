@@ -79,7 +79,8 @@ class Table extends Component
             ->sortColumn($this->sortColumn)
             ->sortDirection($this->sortDirection)
             ->showBulkActions(true)
-            ->showCreate(true)
+            ->showCreate(!Auth::user()->isDentist())
+            ->showActions(!Auth::user()->isDentist())
             ->createRoute('inventory.create')
             ->editRoute('inventory.edit')
             ->bulkDeleteAction('bulkDelete');

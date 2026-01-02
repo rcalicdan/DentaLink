@@ -60,11 +60,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{patientVisit}/edit', \App\Livewire\PatientVisits\UpdatePage::class)->name('edit');
     });
 
-    // Route::prefix('inventory')->name('inventory.')->group(function () {
-    //     Route::get('', \App\Livewire\Inventories\Table::class)->name('index');
-    //     Route::get('/create', \App\Livewire\Inventories\CreatePage::class)->name('create');
-    //     Route::get('/{inventory}/edit', \App\Livewire\Inventories\UpdatePage::class)->name('edit');
-    // });
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('', \App\Livewire\Inventories\Table::class)->name('index');
+        Route::get('/create', \App\Livewire\Inventories\CreatePage::class)->name('create');
+        Route::get('/{inventory}/edit', \App\Livewire\Inventories\UpdatePage::class)->name('edit');
+    });
 
     Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
         Route::get('', \App\Livewire\AuditLogs\Table::class)->name('index');

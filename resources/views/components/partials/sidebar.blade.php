@@ -11,7 +11,6 @@
             <i class="fas fa-tooth text-2xl text-white"></i>
             <h1 class="text-xl font-bold ml-3 sidebar-text" x-show="!sidebarCollapsed">Nice Smile</h1>
         </div>
-        {{-- Removed the old toggle button from here --}}
     </div>
 
     <!-- Navigation -->
@@ -77,11 +76,11 @@
                 </x-partials.nav-item>
             @endcan
 
-            {{-- @can('viewAny', App\Models\Inventory::class)
+            @can('viewAny', App\Models\Inventory::class)
                 <x-partials.nav-item href="{{ route('inventory.index') }}" icon="fas fa-boxes" :active="request()->routeIs('inventory.*')">
                     Inventory
                 </x-partials.nav-item>
-            @endcan --}}
+            @endcan
 
             @can('viewAny', App\Models\Feedback::class)
                 <x-partials.nav-item href="{{ route('feedback.index') }}" icon="fas fa-comments" :active="request()->routeIs('feedback.*')">
