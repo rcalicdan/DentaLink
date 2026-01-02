@@ -6,14 +6,17 @@
                 <h3 class="text-xl sm:text-2xl font-semibold text-gray-900">Appointments History</h3>
                 <p class="text-gray-600 text-sm mt-1">Complete record of all scheduled appointments</p>
             </div>
-            <a wire:navigate href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}"
-                class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:translate-y-[-1px] hover:scale-[1.02]">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                New Appointment
-            </a>
+            
+            @can('create', App\Models\Appointment::class)
+                <a wire:navigate href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}"
+                    class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:translate-y-[-1px] hover:scale-[1.02]">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    New Appointment
+                </a>
+            @endcan
         </div>
     </div>
 
@@ -22,6 +25,7 @@
         <div class="hidden lg:block overflow-x-auto">
             <table class="min-w-full divide-y-2 divide-gray-200">
                 <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    {{-- Table headers remain the same --}}
                     <tr>
                         <th
                             class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">
@@ -51,6 +55,7 @@
                 <tbody class="bg-white divide-y-2 divide-gray-100">
                     @foreach ($appointments as $appointment)
                         <tr class="hover:bg-blue-50/50 transition-all duration-200 group">
+                            {{-- Table data cells remain the same --}}
                             <td class="px-6 py-5 whitespace-nowrap border-r border-gray-100">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0">
@@ -108,17 +113,21 @@
                                         </svg>
                                         View
                                     </a>
-                                    @if ($appointment->canBeModified())
-                                        <a wire:navigate href="{{ route('appointments.edit', $appointment) }}"
-                                            class="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow">
-                                            <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                            Edit
-                                        </a>
-                                    @endif
+                                    
+                                    {{-- NEW: Authorization check for updating appointments --}}
+                                    @can('update', $appointment)
+                                        @if ($appointment->canBeModified())
+                                            <a wire:navigate href="{{ route('appointments.edit', $appointment) }}"
+                                                class="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow">
+                                                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                Edit
+                                            </a>
+                                        @endif
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
@@ -209,7 +218,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Card Actions -->
                     <div class="bg-gray-50 px-5 py-4 border-t border-gray-200">
                         <div class="flex flex-col sm:flex-row gap-3">
@@ -223,17 +231,20 @@
                                 </svg>
                                 View Details
                             </a>
-                            @if ($appointment->canBeModified())
-                                <a wire:navigate href="{{ route('appointments.edit', $appointment) }}"
-                                    class="flex-1 inline-flex items-center justify-center px-4 py-3 border border-indigo-300 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    Edit Appointment
-                                </a>
-                            @endif
+                    
+                            @can('update', $appointment)
+                                @if ($appointment->canBeModified())
+                                    <a wire:navigate href="{{ route('appointments.edit', $appointment) }}"
+                                        class="flex-1 inline-flex items-center justify-center px-4 py-3 border border-indigo-300 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit Appointment
+                                    </a>
+                                @endif
+                            @endcan
                         </div>
                     </div>
                 </div>

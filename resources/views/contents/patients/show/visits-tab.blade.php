@@ -6,14 +6,17 @@
                 <h3 class="text-xl sm:text-2xl font-semibold text-gray-900">Visits History</h3>
                 <p class="text-gray-600 text-sm mt-1">Complete record of all patient visits and treatments</p>
             </div>
-            <a wire:navigate href="{{ route('patient-visits.create') }}?patient_id={{ $patient->id }}"
-                class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:translate-y-[-2px]">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span class="sm:inline">New Visit</span>
-            </a>
+            
+            @can('create', App\Models\PatientVisit::class)
+                <a wire:navigate href="{{ route('patient-visits.create') }}?patient_id={{ $patient->id }}"
+                    class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:translate-y-[-2px]">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span class="sm:inline">New Visit</span>
+                </a>
+            @endcan
         </div>
     </div>
 
@@ -40,7 +43,6 @@
                         class="bg-white mx-4 sm:mx-6 lg:mx-8 mb-6 rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:border-gray-300">
                         <!-- Visit Content -->
                         <div class="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
                             <!-- Visit Header -->
                             <div class="flex flex-col space-y-4 mb-6">
                                 <!-- Mobile: Stack vertically, Desktop: Side by side -->
@@ -174,7 +176,6 @@
                                     </div>
                                 </div>
                             @endif
-
                             <!-- Visit Footer -->
                             <div
                                 class="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 border-t-2 border-gray-200 space-y-4 sm:space-y-0">
@@ -201,14 +202,17 @@
 
                                 <!-- Action Button -->
                                 <div class="flex-shrink-0">
-                                    <a wire:navigate href="{{ route('patient-visits.edit', $visit) }}"
-                                        class="inline-flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-400">
-                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Edit Visit
-                                    </a>
+                                    {{-- NEW: Authorization check for updating visits --}}
+                                    @can('update', $visit)
+                                        <a wire:navigate href="{{ route('patient-visits.edit', $visit) }}"
+                                            class="inline-flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-400">
+                                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Edit Visit
+                                        </a>
+                                    @endcan
                                 </div>
                             </div>
                         </div>
@@ -222,8 +226,8 @@
                 {{ $visits->links() }}
             </div>
         @else
-            <!-- Empty State -->
-            <div class="bg-white mx-4 sm:mx-6 lg:mx-8 rounded-2xl shadow-lg border border-gray-200 py-16 text-center">
+             <!-- Empty State -->
+             <div class="bg-white mx-4 sm:mx-6 lg:mx-8 rounded-2xl shadow-lg border border-gray-200 py-16 text-center">
                 <div class="px-4 sm:px-6 lg:px-8">
                     <div
                         class="mx-auto w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6 border-2 border-gray-300">
